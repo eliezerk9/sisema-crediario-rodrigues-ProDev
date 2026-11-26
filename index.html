@@ -1926,10 +1926,12 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
           }
 
           if (isAdminMode) {
-            if (rawUser.trim().toLowerCase() === SUPER_ADMIN_USER.toLowerCase() && rawPass.trim() === SUPER_ADMIN_PASS.trim()) {
+            const adminUserInput = rawUser.trim().toLowerCase();
+            const adminPassInput = rawPass.trim();
+            if (adminUserInput === SUPER_ADMIN_USER.toLowerCase() && adminPassInput === SUPER_ADMIN_PASS.trim()) {
               const rememberChecked = Boolean(document.getElementById("rememberMeCheck")?.checked);
               if (rememberChecked) {
-                saveRememberedCredentials(rawUser.trim(), rawPass.trim(), true);
+                saveRememberedCredentials(adminUserInput, adminPassInput, true);
               } else {
                 clearRememberedCredentials();
               }
@@ -1944,7 +1946,7 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
               syncView();
               return;
             }
-            setAuthFeedback("Usuário ou senha de administrador incorretos.", true);
+            setAuthFeedback(`Usuário ou senha de administrador incorretos. (Usuário esperado: <strong>${escapeHtml(SUPER_ADMIN_USER)}</strong>)`, true);
             return;
           }
 
