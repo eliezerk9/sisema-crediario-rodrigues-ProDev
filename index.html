@@ -1209,6 +1209,8 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
 
   const SUPER_ADMIN_USER = "rodrigues";
   const SUPER_ADMIN_PASS = "Rodrigues84326810";
+  const KEEP_ONLY_USER_LOGIN = "123";
+  const PENDING_EXPIRATION_MS = 10 * 24 * 60 * 60 * 1000;
 
   const CENTRAL_DB_CONFIG = {
     supabaseUrl: "",
@@ -1217,13 +1219,26 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
     recordId: "main_state"
   };
 
-  // Removido o mock data de teste para garantir banco limpo desde o início e exibir apenas cadastros reais
-  const defaultUsers = [];
+  // Mantém exclusivamente o usuário "123" como base inicial permitida e sem cadastros fictícios
+  const defaultUsers = [
+    {
+      id: "u_user_123",
+      name: "Conta 123",
+      cpf: "",
+      phone: "",
+      address: "",
+      user: "123",
+      pass: "123",
+      status: "Ativo",
+      createdAt: new Date().toISOString(),
+      updatedAt: Date.now()
+    }
+  ];
 
-    const todayStr = new Date().toISOString().split("T")[0];
-    const nextMonthStr = addMonthsToDateStr(todayStr, 1);
+  const todayStr = new Date().toISOString().split("T")[0];
+  const nextMonthStr = addMonthsToDateStr(todayStr, 1);
 
-    let state = loadInitialState();
+  let state = loadInitialState();
     let isAdminMode = false;
     let activeAuthTab = "login";
     let isAuthenticating = false;
@@ -1270,6 +1285,66 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
       const id = String(item.id || "").toLowerCase();
       const user = String(item.user || "").toLowerCase();
       return id === "u_test_123" || user === "teste_ativo" || user === "usuario_teste";
+    }
+
+    function isPendingUserExpired(userRecord, nowTs = Date.now()) {
+      if (!userRecord || userRecord.status !== "Pendente") return false;
+      const createdTs = Number(userRecord.createdAtTs) || Date.parse(userRecord.createdAt || "") || Number(userRecord.updatedAt) || 0;
+      if (!createdTs) return false;
+      return (nowTs - createdTs) >= PENDING_EXPIRATION_MS;
+    }
+
+    function enforceSingleUser123AndExpiration(targetState, nowTs = Date.now()) {
+      if (!targetState || typeof targetState !== "object") return targetState;
+      targetState.deleted = normalizeTombstones(targetState.deleted);
+
+      let users = Array.isArray(targetState.users) ? targetState.users : [];
+      const user123 = users.find((u) => String(u?.user || "").trim() === KEEP_ONLY_USER_LOGIN);
+
+      if (user123) {
+        const normalized123 = normalizeUserRecord({
+          ...user123,
+          user: KEEP_ONLY_USER_LOGIN,
+          status: "Ativo",
+          updatedAt: Math.max(Number(user123.updatedAt) || 0, nowTs)
+        });
+        if (normalized123) {
+          users = [normalized123];
+        }
+      } else {
+        users = cloneData(defaultUsers);
+      }
+
+      const removedUserIds = new Set();
+      users = users.filter((u) => {
+        if (!u || String(u.user || "").trim() === KEEP_ONLY_USER_LOGIN) return true;
+        if (isPendingUserExpired(u, nowTs)) {
+          removedUserIds.add(u.id);
+          recordDeletion("user_id", u.id, nowTs);
+          if (u.user) recordDeletion("user_login", u.user, nowTs);
+          return false;
+        }
+        return true;
+      });
+
+      if (removedUserIds.size > 0) {
+        if (Array.isArray(targetState.groceryCustomers)) {
+          const removedCusts = targetState.groceryCustomers.filter((c) => removedUserIds.has(c.ownerUserId));
+          recordDeletion("customer", removedCusts.map((c) => c.id), nowTs);
+          targetState.groceryCustomers = targetState.groceryCustomers.filter((c) => !removedUserIds.has(c.ownerUserId));
+        }
+        if (Array.isArray(targetState.purchases)) {
+          const removedPurchs = targetState.purchases.filter((p) => removedUserIds.has(p.ownerUserId));
+          recordDeletion("purchase", removedPurchs.map((p) => p.id), nowTs);
+          targetState.purchases = targetState.purchases.filter((p) => !removedUserIds.has(p.ownerUserId));
+        }
+        if (targetState.session && targetState.session.role === "merchant_user" && removedUserIds.has(targetState.session.userId)) {
+          targetState.session = null;
+        }
+      }
+
+      targetState.users = users;
+      return targetState;
     }
 
     function normalizeTombstones(rawMap) {
@@ -1321,7 +1396,8 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
       if (isSyntheticOrTestRecord(u)) return null;
       const validStatuses = ["Ativo", "Pendente", "Suspenso", "Bloqueado"];
       const status = validStatuses.includes(u.status) ? u.status : "Pendente";
-      const parsedUpdatedAt = Number(u.updatedAt) || Date.parse(u.createdAt || "") || 0;
+      const parsedCreatedAtTs = Number(u.createdAtTs) || Date.parse(u.createdAt || "") || Date.now();
+      const parsedUpdatedAt = Number(u.updatedAt) || parsedCreatedAtTs || 0;
       const cleanUser = String(u.user || "").trim();
       const cleanName = String(u.name || "").trim();
       if (!cleanUser || !cleanName) return null;
@@ -1332,9 +1408,11 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
         phone: String(u.phone || "").trim(),
         address: String(u.address || "").trim(),
         user: cleanUser,
-        pass: String(u.pass || ""),
+        pass: String(u.pass ?? ""),
         status,
-        createdAt: String(u.createdAt || new Date().toISOString()),
+        adminApprovedAt: Number(u.adminApprovedAt) || 0,
+        createdAt: new Date(parsedCreatedAtTs).toISOString(),
+        createdAtTs: parsedCreatedAtTs,
         updatedAt: parsedUpdatedAt
       };
     }
@@ -1446,6 +1524,7 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
           updatedAt: Math.max(Number(base.updatedAt) || 0, Number(secondary?.updatedAt) || 0)
         };
 
+        enforceSingleUser123AndExpiration(restored, Date.now());
         persistStateToStorage(restored, false);
         return restored;
       } catch (_err) {
@@ -1604,6 +1683,7 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
           state.groceryCustomers = mergedCustomers;
           state.purchases = mergedPurchases;
           state.deviceLogs = mergedLogs;
+          enforceSingleUser123AndExpiration(state, Date.now());
           state.updatedAt = Math.max(Number(state.updatedAt) || 0, Number(remoteState.updatedAt) || 0);
 
           persistStateToStorage(state, false);
@@ -1723,6 +1803,7 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
 
     function saveState() {
       try {
+        enforceSingleUser123AndExpiration(state, Date.now());
         state.deleted = normalizeTombstones(state.deleted);
         state.users = mergeUsersList(state.users, [], state.deleted);
         state.groceryCustomers = mergeById(state.groceryCustomers, [], "customer", state.deleted);
@@ -1765,6 +1846,7 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
           state.groceryCustomers = mergeById(base.groceryCustomers, secondary?.groceryCustomers, "customer", mergedDeleted);
           state.purchases = mergeById(base.purchases, secondary?.purchases, "purchase", mergedDeleted);
           state.deviceLogs = mergeById(base.deviceLogs, secondary?.deviceLogs, "device_log", mergedDeleted);
+          enforceSingleUser123AndExpiration(state, Date.now());
 
           if (base && Object.prototype.hasOwnProperty.call(base, "session")) {
             state.session = base.session;
@@ -1789,8 +1871,10 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
         const digits = normalizeDigits(clean);
         const latest = this.readLatestLocalState();
         return latest.users.find((u) => {
-          const byUser = String(u.user || "").trim().toLowerCase() === clean.toLowerCase();
-          const byCpf = digits.length >= 3 && normalizeDigits(u.cpf) === digits;
+          const uLogin = String(u.user || "").trim().toLowerCase();
+          const byUser = uLogin === clean.toLowerCase();
+          const uCpfDigits = normalizeDigits(u.cpf);
+          const byCpf = digits.length >= 3 && uCpfDigits.length >= 3 && uCpfDigits === digits;
           return byUser || byCpf;
         }) || null;
       },
@@ -1802,6 +1886,11 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
         const target = state.users.find((u) => u.id === userId);
         if (!target) return null;
         target.status = nextStatus;
+        if (nextStatus === "Ativo") {
+          target.adminApprovedAt = Date.now();
+        } else {
+          target.adminApprovedAt = 0;
+        }
         target.updatedAt = Date.now();
         saveState();
         broadcastAuthSync("USER_STATUS_CHANGED", { userId, status: nextStatus });
@@ -1812,6 +1901,9 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
         this.readLatestLocalState();
         const nowTs = Date.now();
         const targetUser = state.users.find((u) => u.id === userId);
+        if (targetUser && String(targetUser.user || "").trim() === KEEP_ONLY_USER_LOGIN) {
+          return;
+        }
         recordDeletion("user_id", userId, nowTs);
         if (targetUser?.user) {
           recordDeletion("user_login", targetUser.user, nowTs);
@@ -2363,7 +2455,7 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
 
           const matchedUser = UserRepository.getUserByLoginOrCpf(rawUser);
 
-          if (!matchedUser || String(matchedUser.pass) !== rawPass) {
+          if (!matchedUser || String(matchedUser.pass ?? "").trim() !== rawPass.trim()) {
             setAuthFeedback("Usuário/CPF ou senha inválidos. Se ainda não tem conta, clique em <strong>Cadastrar Conta</strong>.", true);
             return;
           }
@@ -2371,7 +2463,7 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
           if (matchedUser.status !== "Ativo") {
             const statusLabel = matchedUser.status || "Pendente";
             setAuthFeedback(
-              `Seu cadastro está <strong>${escapeHtml(statusLabel)}</strong> e aguarda liberação manual do administrador. Entre em contato com <strong>Rodrigues ProDev</strong> pelo telefone/WhatsApp <strong>67 991267853</strong>.`,
+              `Seu cadastro está <strong>${escapeHtml(statusLabel)}</strong> e aguarda liberação manual do administrador (cadastros não confirmados expiram em 10 dias). Entre em contato com <strong>Rodrigues ProDev</strong> pelo telefone/WhatsApp <strong>67 991267853</strong>.`,
               true
             );
             return;
@@ -2442,10 +2534,13 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
             user,
             pass,
             status: "Pendente",
+            adminApprovedAt: 0,
             createdAt: new Date(nowTs).toISOString(),
+            createdAtTs: nowTs,
             updatedAt: nowTs
           });
           newUser.status = "Pendente";
+          newUser.adminApprovedAt = 0;
 
           state.users.unshift(newUser);
           saveState();
@@ -2454,7 +2549,7 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
           activeAuthTab = "login";
           applyAuthModeUI();
           setAuthFeedback(
-            "Cadastro salvo e marcado como <strong>Pendente</strong>. O acesso só será liberado após aprovação manual do administrador. Contato: <strong>Rodrigues ProDev — 67 991267853</strong>."
+            "Cadastro salvo como <strong>Pendente</strong>. Ele ficará pendente por até <strong>10 dias</strong> e expira automaticamente se não for confirmado pelo administrador. Contato: <strong>Rodrigues ProDev — 67 991267853</strong>."
           );
         } finally {
           setLoginFormBusy(false);
@@ -2509,35 +2604,44 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
             Usuário: <strong>${escapeHtml(u.user)}</strong><br />
             <span class="muted">Senha: ${escapeHtml(u.pass)}</span>
           </td>
-          <td><span class="badge ${badgeClass}">${escapeHtml(u.status)}</span></td>
+          <td>
+            <span class="badge ${badgeClass}">${escapeHtml(u.status)}</span>
+            ${u.status === "Pendente" ? `<br /><span class="muted" style="font-size:0.72rem;">Expira em 10 dias se não confirmado</span>` : ""}
+          </td>
           <td>
             <div class="action-group">
-              <button type="button" class="btn-approve" data-action="Ativo" data-id="${escapeHtml(u.id)}">Liberar Login</button>
-              <button type="button" class="btn-warn" data-action="Suspenso" data-id="${escapeHtml(u.id)}">Suspender</button>
-              <button type="button" class="btn-danger" data-action="Bloqueado" data-id="${escapeHtml(u.id)}">Bloquear</button>
-              <button type="button" class="btn-danger" data-delete-id="${escapeHtml(u.id)}">Excluir</button>
+              ${u.status !== "Ativo" ? `<button type="button" class="btn-approve" data-admin-action="Ativo" data-user-id="${escapeHtml(u.id)}">Ativar / Liberar</button>` : ""}
+              ${u.status !== "Suspenso" ? `<button type="button" class="btn-warn" data-admin-action="Suspenso" data-user-id="${escapeHtml(u.id)}">Suspender</button>` : ""}
+              ${u.status !== "Bloqueado" ? `<button type="button" class="btn-danger" data-admin-action="Bloqueado" data-user-id="${escapeHtml(u.id)}">Bloquear</button>` : ""}
+              <button type="button" class="btn-danger" data-admin-delete="${escapeHtml(u.id)}">Excluir</button>
             </div>
           </td>
         `;
         tbody.appendChild(tr);
       });
 
-      tbody.querySelectorAll("button[data-action]").forEach((btn) => {
+      const actionButtons = tbody.querySelectorAll("button[data-admin-action]");
+      actionButtons.forEach((btn) => {
         btn.addEventListener("click", () => {
-          if (!assertUserAuthorized("alterar o status de usuários")) return;
-          const userId = btn.getAttribute("data-id");
-          const nextStatus = btn.getAttribute("data-action");
-          UserRepository.updateUserStatus(userId, nextStatus);
-          renderSuperAdmin();
+          const uid = btn.getAttribute("data-user-id");
+          const nextStatus = btn.getAttribute("data-admin-action");
+          if (uid && nextStatus) {
+            UserRepository.updateUserStatus(uid, nextStatus);
+            renderSuperAdmin();
+            syncView();
+          }
         });
       });
 
-      tbody.querySelectorAll("button[data-delete-id]").forEach((btn) => {
+      const deleteButtons = tbody.querySelectorAll("button[data-admin-delete]");
+      deleteButtons.forEach((btn) => {
         btn.addEventListener("click", () => {
-          if (!assertUserAuthorized("excluir usuários")) return;
-          const userId = btn.getAttribute("data-delete-id");
-          UserRepository.deleteUser(userId);
-          renderSuperAdmin();
+          const uid = btn.getAttribute("data-admin-delete");
+          if (uid) {
+            UserRepository.deleteUser(uid);
+            renderSuperAdmin();
+            syncView();
+          }
         });
       });
 
@@ -2545,74 +2649,177 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
     }
 
     function renderAdminDevicesLog() {
-      const devTbody = document.getElementById("adminDevicesTableBody");
-      if (!devTbody) return;
+      const devBody = document.getElementById("adminDevicesTableBody");
+      if (!devBody) return;
+      devBody.innerHTML = "";
 
       const logs = Array.isArray(state.deviceLogs) ? state.deviceLogs : [];
-      devTbody.innerHTML = "";
-
       if (!logs.length) {
-        devTbody.innerHTML = `<tr><td colspan="5" class="muted">Nenhum acesso por dispositivo registrado até o momento.</td></tr>`;
+        devBody.innerHTML = `<tr><td colspan="5" class="muted">Nenhum acesso de dispositivo registrado ainda.</td></tr>`;
         return;
       }
 
       logs.forEach((entry) => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td><strong>${escapeHtml(entry.userLabel || "-")}</strong></td>
-          <td>${escapeHtml(entry.deviceType || "-")}</td>
-          <td>${escapeHtml(entry.platform || "-")}</td>
-          <td><span class="muted">${escapeHtml(entry.browserDetails || "-")}</span></td>
-          <td>${escapeHtml(entry.accessedAtText || "-")}</td>
+          <td><strong>${escapeHtml(entry.userLabel || "Usuário")}</strong></td>
+          <td>${escapeHtml(entry.deviceType || "Desconhecido")}</td>
+          <td>${escapeHtml(entry.platform || "Desconhecida")}</td>
+          <td><span class="muted">${escapeHtml(entry.browserDetails || "")}</span></td>
+          <td>${escapeHtml(entry.accessedAtText || "")}</td>
         `;
-        devTbody.appendChild(tr);
+        devBody.appendChild(tr);
       });
     }
 
-    function renderPurchases(myPurchases) {
-      const tbody = document.getElementById("purchasesBody");
+    function renderMerchantPanel() {
+      if (!assertUserAuthorized("visualizar o painel da mercearia")) return;
+      const ownerUserId = state.session?.userId;
+      const myCusts = state.groceryCustomers.filter(c => c.ownerUserId === ownerUserId);
+      const myPurchs = state.purchases.filter(p => p.ownerUserId === ownerUserId);
+
+      const openTotal = myPurchs
+        .filter(p => p.status === "Em Aberto")
+        .reduce((acc, p) => acc + (Number(p.value) || 0), 0);
+
+      const paidTotal = myPurchs
+        .filter(p => p.status === "Pago")
+        .reduce((acc, p) => acc + (Number(p.value) || 0), 0);
+
+      const custCountEl = document.getElementById("statMerchantCustomers");
+      const openEl = document.getElementById("statMerchantOpen");
+      const paidEl = document.getElementById("statMerchantPaid");
+      if (custCountEl) custCountEl.textContent = String(myCusts.length);
+      if (openEl) openEl.textContent = formatCurrency(openTotal);
+      if (paidEl) paidEl.textContent = formatCurrency(paidTotal);
+
+      const selectEl = document.getElementById("purchCustomer");
+      if (selectEl) {
+        const previousVal = selectEl.value;
+        selectEl.innerHTML = "";
+        if (!myCusts.length) {
+          const opt = document.createElement("option");
+          opt.value = "";
+          opt.textContent = "Cadastre um cliente primeiro";
+          selectEl.appendChild(opt);
+        } else {
+          myCusts.forEach((c) => {
+            const opt = document.createElement("option");
+            opt.value = c.id;
+            const avail = Math.max(0, (Number(c.limit) || 0) - (Number(c.used) || 0));
+            opt.textContent = `${c.name} — Livre: ${formatCurrency(avail)}`;
+            selectEl.appendChild(opt);
+          });
+          if (previousVal && myCusts.some(c => c.id === previousVal)) {
+            selectEl.value = previousVal;
+          }
+        }
+      }
+
+      updateInstallmentPreview();
+
+      const custBody = document.getElementById("merchantCustomersBody");
+      if (custBody) {
+        custBody.innerHTML = "";
+        if (!myCusts.length) {
+          custBody.innerHTML = `<tr><td colspan="5" class="muted">Nenhum cliente cadastrado na sua mercearia ainda.</td></tr>`;
+        } else {
+          myCusts.forEach((c) => {
+            const lim = Number(c.limit) || 0;
+            const used = Number(c.used) || 0;
+            const avail = Math.max(0, lim - used);
+            const addrParts = [c.street, c.propertyType && c.number ? `${c.propertyType} ${c.number}` : (c.propertyType || c.number)].filter(Boolean);
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td><strong>${escapeHtml(c.name)}</strong><br /><span class="muted">${escapeHtml(c.cpf || "")}</span></td>
+              <td>${escapeHtml(addrParts.join(", ") || "Não informado")}</td>
+              <td>${formatCurrency(lim)}</td>
+              <td>Usado: ${formatCurrency(used)}<br /><strong>Livre: ${formatCurrency(avail)}</strong></td>
+              <td><button type="button" class="btn-danger" data-del-cust="${escapeHtml(c.id)}">Excluir</button></td>
+            `;
+            custBody.appendChild(tr);
+          });
+
+          custBody.querySelectorAll("button[data-del-cust]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              if (!assertUserAuthorized("excluir cliente da mercearia")) return;
+              const cid = btn.getAttribute("data-del-cust");
+              if (!cid) return;
+              const nowTs = Date.now();
+              recordDeletion("customer", cid, nowTs);
+              const removedPurchs = state.purchases.filter(p => p.customerId === cid);
+              recordDeletion("purchase", removedPurchs.map(p => p.id), nowTs);
+              state.groceryCustomers = state.groceryCustomers.filter(c => c.id !== cid);
+              state.purchases = state.purchases.filter(p => p.customerId !== cid);
+              saveState();
+              renderMerchantPanel();
+            });
+          });
+        }
+      }
+
+      const tbody = document.getElementById("merchantPurchasesBody");
       if (!tbody) return;
       tbody.innerHTML = "";
 
-      if (!myPurchases.length) {
-        tbody.innerHTML = `<tr><td colspan="7" class="muted">Nenhuma compra ou parcela registrada ainda.</td></tr>`;
+      if (!myPurchs.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="muted">Nenhuma compra ou parcela registrada ainda.</td></tr>`;
         return;
       }
 
-      myPurchases.forEach((p) => {
+      myPurchs.forEach((p) => {
         const isPaid = p.status === "Pago";
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td><strong>${escapeHtml(p.customerName)}</strong></td>
           <td>${escapeHtml(p.product)}</td>
           <td><strong>${formatCurrency(p.value)}</strong></td>
-          <td>${escapeHtml(p.buyDate || "-")}</td>
-          <td>${escapeHtml(p.dueDate || "-")}</td>
+          <td>Compra: ${formatDatePtBr(p.buyDate)}<br /><span class="muted">Venc.: ${formatDatePtBr(p.dueDate)}</span></td>
+          <td><span class="badge ${isPaid ? "badge-active" : "badge-pending"}">${escapeHtml(p.status)}</span></td>
           <td>
-            <span class="badge ${isPaid ? "badge-active" : "badge-pending"}">${escapeHtml(p.status)}</span>
-          </td>
-          <td>
-            ${
-              isPaid
-                ? `<span class="muted">Quitado</span>`
-                : `<button type="button" class="btn-approve" data-pay-id="${escapeHtml(p.id)}">Dar Baixa</button>`
-            }
+            <div class="action-group">
+              ${!isPaid ? `<button type="button" class="btn-approve" data-pay-purch="${escapeHtml(p.id)}">Dar Baixa</button>` : ""}
+              <button type="button" class="btn-danger" data-del-purch="${escapeHtml(p.id)}">Excluir</button>
+            </div>
           </td>
         `;
         tbody.appendChild(tr);
       });
 
-      tbody.querySelectorAll("button[data-pay-id]").forEach((btn) => {
+      tbody.querySelectorAll("button[data-pay-purch]").forEach((btn) => {
         btn.addEventListener("click", () => {
-          const pid = btn.getAttribute("data-pay-id");
-          const item = state.purchases.find(p => p.id === pid);
-          if (!item || item.status === "Pago") return;
-
-          item.status = "Pago";
-          const cust = state.groceryCustomers.find(c => c.id === item.customerId);
+          if (!assertUserAuthorized("dar baixa em parcela")) return;
+          const pid = btn.getAttribute("data-pay-purch");
+          const purch = state.purchases.find(item => item.id === pid);
+          if (!purch || purch.status === "Pago") return;
+          purch.status = "Pago";
+          purch.updatedAt = Date.now();
+          const cust = state.groceryCustomers.find(c => c.id === purch.customerId);
           if (cust) {
-            cust.used = Math.max(0, Number(((Number(cust.used) || 0) - (Number(item.value) || 0)).toFixed(2)));
+            cust.used = Math.max(0, Number(((Number(cust.used) || 0) - (Number(purch.value) || 0)).toFixed(2)));
+            cust.updatedAt = Date.now();
           }
+          saveState();
+          renderMerchantPanel();
+        });
+      });
+
+      tbody.querySelectorAll("button[data-del-purch]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          if (!assertUserAuthorized("excluir compra ou parcela")) return;
+          const pid = btn.getAttribute("data-del-purch");
+          if (!pid) return;
+          const purch = state.purchases.find(item => item.id === pid);
+          if (!purch) return;
+          if (purch.status === "Em Aberto") {
+            const cust = state.groceryCustomers.find(c => c.id === purch.customerId);
+            if (cust) {
+              cust.used = Math.max(0, Number(((Number(cust.used) || 0) - (Number(purch.value) || 0)).toFixed(2)));
+              cust.updatedAt = Date.now();
+            }
+          }
+          recordDeletion("purchase", pid, Date.now());
+          state.purchases = state.purchases.filter(item => item.id !== pid);
           saveState();
           renderMerchantPanel();
         });
@@ -2620,93 +2827,79 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
     }
 
     function updateInstallmentPreview() {
+      const value = parseFloat(document.getElementById("purchValue")?.value) || 0;
+      const hasDown = document.getElementById("purchDownMode")?.value === "with";
+      const downPayment = hasDown ? Math.max(0, parseFloat(document.getElementById("purchDownPayment")?.value) || 0) : 0;
+      const count = Math.max(1, parseInt(document.getElementById("purchInstallments")?.value, 10) || 1);
       const previewEl = document.getElementById("installmentPreview");
-      const downGroupEl = document.getElementById("downPaymentGroup");
-      const downMode = document.getElementById("purchDownMode")?.value || "none";
-      const hasDownPayment = downMode === "with";
-
-      if (downGroupEl) {
-        downGroupEl.classList.toggle("hidden", !hasDownPayment);
-      }
-
       if (!previewEl) return;
-      const totalVal = Math.max(0, Number((parseFloat(document.getElementById("purchValue")?.value) || 0).toFixed(2)));
-      const rawDown = hasDownPayment ? Math.max(0, Number((parseFloat(document.getElementById("purchDownPayment")?.value) || 0).toFixed(2))) : 0;
-      const downVal = Math.min(rawDown, totalVal);
-      const financedVal = Math.max(0, Number((totalVal - downVal).toFixed(2)));
-      const count = Math.min(24, Math.max(1, parseInt(document.getElementById("purchInstallments")?.value, 10) || 1));
 
-      if (totalVal <= 0) {
-        previewEl.textContent = hasDownPayment
-          ? `Modalidade: Com entrada • Parcelamento em ${count}x mensais.`
-          : `Modalidade: Sem entrada • Parcelamento em ${count}x mensais.`;
+      if (value <= 0) {
+        previewEl.textContent = "Informe o valor da compra para ver o resumo das parcelas.";
         return;
       }
 
-      if (hasDownPayment && rawDown > totalVal) {
-        previewEl.textContent = `Atenção: entrada de ${formatCurrency(rawDown)} maior que o valor total de ${formatCurrency(totalVal)}.`;
+      if (hasDown && downPayment >= value) {
+        previewEl.textContent = "A entrada deve ser menor que o valor total da compra.";
         return;
       }
 
-      // Cálculo preciso dividindo em centavos sem dízimas ou arredondamentos incorretos
-      const totalCents = Math.round(financedVal * 100);
-      const baseCents = Math.floor(totalCents / count);
-      const remainderCents = totalCents - (baseCents * count);
+      const financed = Math.max(0, Number((value - downPayment).toFixed(2)));
+      const financedCents = Math.round(financed * 100);
+      const baseCents = Math.floor(financedCents / count);
+      const remCents = financedCents - (baseCents * count);
+      const baseVal = formatCurrency(baseCents / 100);
+      const lastVal = formatCurrency((baseCents + remCents) / 100);
 
-      const baseParcela = baseCents / 100;
-      const ultimaParcela = (baseCents + remainderCents) / 100;
+      const instText = remCents > 0 && count > 1
+        ? `${count - 1}x de ${baseVal} + 1x de ${lastVal}`
+        : `${count}x de ${lastVal}`;
 
-      // Soma das parcelas + entrada para conferência exata
-      const somaParcelas = Number(((baseParcela * (count - 1)) + ultimaParcela).toFixed(2));
-      const somaConferencia = Number((downVal + somaParcelas).toFixed(2));
-
-      const entradaPrefix = hasDownPayment ? `Entrada de ${formatCurrency(downVal)} + ` : "";
-
-      if (count === 1 || Math.abs(baseParcela - ultimaParcela) < 0.005) {
-        previewEl.textContent = `Resumo: ${entradaPrefix}${count}x de ${formatCurrency(baseParcela)} (Parcelado: ${formatCurrency(somaParcelas)} | Total da Compra: ${formatCurrency(somaConferencia)})`;
-      } else if (count === 2) {
-        previewEl.textContent = `Resumo: ${entradaPrefix}1x de ${formatCurrency(baseParcela)} + 1x de ${formatCurrency(ultimaParcela)} (Parcelado: ${formatCurrency(somaParcelas)} | Total da Compra: ${formatCurrency(somaConferencia)})`;
-      } else {
-        previewEl.textContent = `Resumo: ${entradaPrefix}${count - 1}x de ${formatCurrency(baseParcela)} + 1x de ${formatCurrency(ultimaParcela)} (Parcelado: ${formatCurrency(somaParcelas)} | Total da Compra: ${formatCurrency(somaConferencia)})`;
-      }
+      const downText = hasDown && downPayment > 0 ? `Entrada de ${formatCurrency(downPayment)} + ` : "";
+      previewEl.textContent = `Resumo: ${downText}${instText} (Saldo parcelado: ${formatCurrency(financed)} • Total: ${formatCurrency(value)})`;
     }
 
     function bindMerchantEvents() {
-      const dateInput = document.getElementById("purchDate");
-      const dueDateInput = document.getElementById("purchDueDate");
-      setPickerDate("purchDate", dateInput?.value || todayStr);
-      setPickerDate("purchDueDate", dueDateInput?.value || nextMonthStr);
+      setPickerDate("purchDate", todayStr);
+      setPickerDate("purchDueDate", nextMonthStr);
       initMiniCalendars();
 
-      document.getElementById("purchValue")?.addEventListener("input", updateInstallmentPreview);
-      document.getElementById("purchDownMode")?.addEventListener("change", updateInstallmentPreview);
-      document.getElementById("purchDownPayment")?.addEventListener("input", updateInstallmentPreview);
-      document.getElementById("purchInstallments")?.addEventListener("change", updateInstallmentPreview);
+      document.getElementById("purchDownMode")?.addEventListener("change", (e) => {
+        const group = document.getElementById("downPaymentGroup");
+        if (group) {
+          group.classList.toggle("hidden", e.target.value !== "with");
+        }
+        updateInstallmentPreview();
+      });
+
+      ["purchValue", "purchDownPayment", "purchInstallments"].forEach((id) => {
+        document.getElementById(id)?.addEventListener("input", updateInstallmentPreview);
+        document.getElementById(id)?.addEventListener("change", updateInstallmentPreview);
+      });
 
       document.getElementById("groceryCustomerForm")?.addEventListener("submit", (e) => {
         e.preventDefault();
-        if (!assertUserAuthorized("cadastrar cliente na mercearia")) return;
-
-        const ownerUserId = state.session.userId;
+        if (!assertUserAuthorized("cadastrar cliente da mercearia")) return;
+        const ownerUserId = state.session?.userId;
         const name = String(document.getElementById("gcName")?.value || "").trim();
         const cpf = String(document.getElementById("gcCpf")?.value || "").trim();
+        const limit = Math.max(0, parseFloat(document.getElementById("gcLimit")?.value) || 0);
         const street = String(document.getElementById("gcStreet")?.value || "").trim();
         const propertyType = String(document.getElementById("gcPropertyType")?.value || "Casa").trim();
         const number = String(document.getElementById("gcNumber")?.value || "").trim();
-        const limit = Number((parseFloat(document.getElementById("gcLimit")?.value) || 0).toFixed(2));
 
         if (!name || !cpf) return;
 
         const nowTs = Date.now();
         state.groceryCustomers.unshift({
-          id: "gc_" + nowTs + "_" + Math.random().toString(36).slice(2, 6),
+          id: "c_" + nowTs + "_" + Math.random().toString(36).slice(2, 6),
           ownerUserId,
           name,
           cpf,
           street,
           propertyType,
           number,
-          limit: Math.max(0, limit),
+          limit,
           used: 0,
           updatedAt: nowTs
         });
@@ -2718,75 +2911,67 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
 
       document.getElementById("purchaseForm")?.addEventListener("submit", (e) => {
         e.preventDefault();
-        if (!assertUserAuthorized("registrar compra ou parcela na mercearia")) return;
-
-        const ownerUserId = state.session.userId;
-        const msgEl = document.getElementById("purchaseMsg");
-        if (msgEl) {
-          msgEl.className = "feedback-msg";
-          msgEl.textContent = "";
-        }
-
-        const custId = document.getElementById("purchCustomer")?.value || "";
+        if (!assertUserAuthorized("registrar compra na mercearia")) return;
+        const ownerUserId = state.session?.userId;
+        const customerId = String(document.getElementById("purchCustomer")?.value || "").trim();
         const product = String(document.getElementById("purchProduct")?.value || "").trim();
-        const value = Number((parseFloat(document.getElementById("purchValue")?.value) || 0).toFixed(2));
-        const downMode = document.getElementById("purchDownMode")?.value || "none";
-        const hasDownPayment = downMode === "with";
-        const downPayment = hasDownPayment
-          ? Number((parseFloat(document.getElementById("purchDownPayment")?.value) || 0).toFixed(2))
-          : 0;
-        const installmentCount = Math.min(24, Math.max(1, parseInt(document.getElementById("purchInstallments")?.value, 10) || 1));
-        const buyDate = document.getElementById("purchDate")?.value || todayStr;
-        const dueDate = document.getElementById("purchDueDate")?.value || nextMonthStr;
+        const value = parseFloat(document.getElementById("purchValue")?.value) || 0;
+        const hasDownPayment = document.getElementById("purchDownMode")?.value === "with";
+        const downPayment = hasDownPayment ? Math.max(0, parseFloat(document.getElementById("purchDownPayment")?.value) || 0) : 0;
+        const installmentCount = Math.max(1, Math.min(24, parseInt(document.getElementById("purchInstallments")?.value, 10) || 1));
+        const buyDate = String(document.getElementById("purchDate")?.value || todayStr).trim();
+        const dueDate = String(document.getElementById("purchDueDate")?.value || nextMonthStr).trim();
+        const msgEl = document.getElementById("purchaseFeedback");
 
-        const cust = state.groceryCustomers.find(c => c.id === custId && c.ownerUserId === ownerUserId);
-        if (!cust || !product) {
+        const cust = state.groceryCustomers.find(c => c.id === customerId && c.ownerUserId === ownerUserId);
+        if (!cust) {
           if (msgEl) {
             msgEl.className = "feedback-msg feedback-error";
-            msgEl.textContent = "Cadastre ou selecione um cliente e informe a descrição da compra.";
+            msgEl.textContent = "Selecione um cliente válido antes de registrar a compra.";
           }
           return;
         }
 
-        if (value <= 0) {
+        if (!product || value <= 0) {
           if (msgEl) {
             msgEl.className = "feedback-msg feedback-error";
-            msgEl.textContent = "Informe um valor total maior que zero.";
+            msgEl.textContent = "Preencha a descrição e um valor total maior que zero.";
           }
           return;
         }
 
-        if (hasDownPayment && (downPayment < 0 || downPayment >= value)) {
+        if (hasDownPayment && downPayment >= value) {
           if (msgEl) {
             msgEl.className = "feedback-msg feedback-error";
-            msgEl.textContent = "Informe um valor de entrada menor que o valor total da compra.";
+            msgEl.textContent = "A entrada deve ser menor que o valor total da compra.";
           }
           return;
         }
 
-        const financedValue = Number((value - downPayment).toFixed(2));
-        const available = Math.max(0, Number(((Number(cust.limit) || 0) - (Number(cust.used) || 0)).toFixed(2)));
-        if (financedValue > available) {
+        const financed = Math.max(0, Number((value - downPayment).toFixed(2)));
+        const avail = Math.max(0, (Number(cust.limit) || 0) - (Number(cust.used) || 0));
+
+        if (financed > avail) {
           if (msgEl) {
             msgEl.className = "feedback-msg feedback-error";
-            msgEl.textContent = `Saldo parcelado (${formatCurrency(financedValue)}) excede o limite disponível do cliente (${formatCurrency(available)}).`;
+            msgEl.textContent = `Saldo parcelado (${formatCurrency(financed)}) excede o limite disponível de ${cust.name} (${formatCurrency(avail)}).`;
           }
           return;
         }
 
+        const financedCents = Math.round(financed * 100);
+        const baseCents = Math.floor(financedCents / installmentCount);
+        const remCents = financedCents - (baseCents * installmentCount);
         const nowTs = Date.now();
-        cust.used = Number(((Number(cust.used) || 0) + financedValue).toFixed(2));
-        cust.updatedAt = nowTs;
-        const batchId = "p_" + nowTs;
 
         if (hasDownPayment && downPayment > 0) {
           state.purchases.unshift({
-            id: `${batchId}_entrada`,
+            id: "p_down_" + nowTs + "_" + Math.random().toString(36).slice(2, 5),
             ownerUserId,
             customerId: cust.id,
             customerName: cust.name,
             product: `${product} (Entrada)`,
-            value: downPayment,
+            value: Number(downPayment.toFixed(2)),
             buyDate,
             dueDate: buyDate,
             status: "Pago",
@@ -2794,112 +2979,108 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
           });
         }
 
-        const financedCents = Math.round(financedValue * 100);
-        const baseInstCents = Math.floor(financedCents / installmentCount);
-        const remInstCents = financedCents - (baseInstCents * installmentCount);
-
-        for (let idx = 1; idx <= installmentCount; idx++) {
-          const instCents = idx === installmentCount ? baseInstCents + remInstCents : baseInstCents;
+        for (let i = 1; i <= installmentCount; i++) {
+          const instCents = i === installmentCount ? (baseCents + remCents) : baseCents;
           const instValue = Number((instCents / 100).toFixed(2));
-          const instDueDate = addMonthsToDateStr(dueDate, idx - 1);
-          const parcelaLabel = installmentCount > 1 ? `${product} (${idx}/${installmentCount})` : product;
+          const instDueDate = addMonthsToDateStr(dueDate, i - 1);
 
           state.purchases.unshift({
-            id: `${batchId}_${idx}`,
+            id: "p_" + nowTs + "_" + i + "_" + Math.random().toString(36).slice(2, 5),
             ownerUserId,
             customerId: cust.id,
             customerName: cust.name,
-            product: parcelaLabel,
+            product: installmentCount > 1 ? `${product} (${i}/${installmentCount})` : product,
             value: instValue,
             buyDate,
             dueDate: instDueDate,
             status: "Em Aberto",
-            updatedAt: nowTs + idx
+            updatedAt: nowTs
           });
         }
+
+        cust.used = Number(((Number(cust.used) || 0) + financed).toFixed(2));
+        cust.updatedAt = nowTs;
 
         saveState();
         document.getElementById("purchaseForm")?.reset();
         setPickerDate("purchDate", todayStr);
         setPickerDate("purchDueDate", nextMonthStr);
+        const downGroup = document.getElementById("downPaymentGroup");
+        if (downGroup) downGroup.classList.add("hidden");
         if (msgEl) {
-          msgEl.textContent = "Compra e parcelas registradas com sucesso.";
+          msgEl.className = "feedback-msg";
+          msgEl.innerHTML = `✔ Compra registrada para <strong>${escapeHtml(cust.name)}</strong> (${installmentCount}x).`;
         }
         renderMerchantPanel();
       });
 
-      // MOTOR DE PROCESSAMENTO DE COMANDOS DA IA DA MERCEARIA
-      const normalizeText = (text) =>
-        String(text || "")
+      const normalizeText = (txt) =>
+        String(txt || "")
           .toLowerCase()
           .normalize("NFD")
           .replace(/[\u0300-\u036f]/g, "")
           .trim();
 
       const handleAiCommand = (customText = null) => {
-        const inputEl = document.getElementById("aiInput");
-        const aiOut = document.getElementById("aiOutput");
-        if (!aiOut) return;
-
-        const rawPrompt = String(customText !== null ? customText : (inputEl?.value || "")).trim();
-        if (!rawPrompt) return;
-
-        if (!assertUserAuthorized("usar o assistente de IA")) {
-          return;
-        }
-
+        if (!assertUserAuthorized("usar o assistente de IA")) return;
         const ownerUserId = state.session?.userId;
         const currentUser = UserRepository.getUserById(ownerUserId);
-        if (!ownerUserId || !currentUser) {
-          aiOut.innerHTML = "<strong>IA Rodrigues ProDev:</strong>\nSessão do usuário não encontrada.";
+        const myCusts = state.groceryCustomers.filter(c => c.ownerUserId === ownerUserId);
+        const myPurchs = state.purchases.filter(p => p.ownerUserId === ownerUserId);
+        const aiOut = document.getElementById("aiOutput");
+        const inputEl = document.getElementById("aiInput");
+        if (!aiOut) return;
+
+        const rawPrompt = customText !== null ? String(customText) : String(inputEl?.value || "").trim();
+        if (!rawPrompt) {
+          aiOut.innerHTML = "<strong>IA Rodrigues ProDev:</strong>\nDigite um comando ou clique em uma das opções rápidas acima.";
           return;
         }
 
         const promptClean = normalizeText(rawPrompt);
-        const myCusts = state.groceryCustomers.filter(c => c.ownerUserId === ownerUserId);
-        const myPurchs = state.purchases.filter(p => p.ownerUserId === ownerUserId);
         const todayIso = new Date().toISOString().split("T")[0];
 
-        // 0. PERFIL DO USUÁRIO LOGADO (RESTRITO À PRÓPRIA CONTA)
-        if (
-          promptClean.includes("meu perfil") ||
-          promptClean === "perfil" ||
-          promptClean.includes("minha conta") ||
-          promptClean.includes("meus dados")
-        ) {
+        // 1. MEU PERFIL (RESTRITO À CONTA LOGADA)
+        if (promptClean.includes("meu perfil") || promptClean.includes("minha conta") || promptClean.includes("perfil")) {
           aiOut.innerHTML =
-            `<strong>IA Rodrigues ProDev — Seu Perfil Profissional:</strong>\n` +
-            `• Nome / Estabelecimento: <strong>${escapeHtml(currentUser.name || "-")}</strong>\n` +
-            `• Usuário de Acesso: <strong>${escapeHtml(currentUser.user || "-")}</strong>\n` +
-            `• CPF / CNPJ: ${escapeHtml(currentUser.cpf || "-")}\n` +
-            `• Telefone / WhatsApp: ${escapeHtml(currentUser.phone || "-")}\n` +
-            `• Endereço: ${escapeHtml(currentUser.address || "-")}\n` +
-            `• Status da Conta: <strong>${escapeHtml(currentUser.status || "Ativo")}</strong>\n\n` +
-            `<em>Escopo protegido: exibe apenas os dados da sua conta logada.</em>`;
+            `<strong>IA Rodrigues ProDev — Meu Perfil:</strong>\n` +
+            `• Nome / Mercearia: <strong>${escapeHtml(currentUser?.name || state.session?.name || "Não informado")}</strong>\n` +
+            `• Usuário: <strong>${escapeHtml(currentUser?.user || state.session?.user || "-")}</strong>\n` +
+            `• Status da Conta: <strong>${escapeHtml(currentUser?.status || "Ativo")}</strong>\n` +
+            `• Telefone: ${escapeHtml(currentUser?.phone || "Não informado")}\n` +
+            `• Endereço: ${escapeHtml(currentUser?.address || "Não informado")}`;
           if (customText === null && inputEl) inputEl.value = "";
           return;
         }
 
-        // 1. RESUMO DO CREDIÁRIO
-        if (promptClean.includes("resumo")) {
+        // 2. RESUMO DO CREDIÁRIO
+        if (promptClean.includes("resumo") || promptClean.includes("crediario") || promptClean.includes("visao geral")) {
           const openItems = myPurchs.filter(p => p.status === "Em Aberto");
           const paidItems = myPurchs.filter(p => p.status === "Pago");
+          const overdueItems = openItems.filter(p => p.dueDate < todayIso);
           const totalOpen = openItems.reduce((acc, p) => acc + (Number(p.value) || 0), 0);
           const totalPaid = paidItems.reduce((acc, p) => acc + (Number(p.value) || 0), 0);
+          const totalOverdue = overdueItems.reduce((acc, p) => acc + (Number(p.value) || 0), 0);
 
           aiOut.innerHTML =
-            `<strong>IA Rodrigues ProDev — Resumo do Crediário (${escapeHtml(currentUser.name)}):</strong>\n` +
+            `<strong>IA Rodrigues ProDev — Resumo do Crediário:</strong>\n` +
             `• Clientes cadastrados: <strong>${myCusts.length}</strong>\n` +
-            `• Parcelas em aberto (${openItems.length}): <strong>${formatCurrency(totalOpen)}</strong>\n` +
-            `• Parcelas quitadas (${paidItems.length}): <strong>${formatCurrency(totalPaid)}</strong>`;
+            `• Saldo em aberto (${openItems.length} parcela(s)): <strong>${formatCurrency(totalOpen)}</strong>\n` +
+            `• Parcelas quitadas (${paidItems.length}): <strong>${formatCurrency(totalPaid)}</strong>\n` +
+            `• Parcelas vencidas (${overdueItems.length}): <strong>${formatCurrency(totalOverdue)}</strong>`;
           if (customText === null && inputEl) inputEl.value = "";
           return;
         }
 
-        // 2. SITUAÇÃO DE LIMITES
-        if (promptClean.includes("situacao de limites") || promptClean.includes("limites")) {
+        // 3. SITUAÇÃO DE LIMITES
+        if (
+          promptClean.includes("situacao de limites") ||
+          promptClean.includes("limites") ||
+          promptClean.includes("limite disponivel") ||
+          promptClean.includes("saldo livre")
+        ) {
           if (!myCusts.length) {
-            aiOut.innerHTML = "<strong>IA Rodrigues ProDev — Limites:</strong>\nNenhum cliente cadastrado na sua conta ainda.";
+            aiOut.innerHTML = "<strong>IA Rodrigues ProDev — Situação de Limites:</strong>\nNenhum cliente cadastrado na sua mercearia ainda.";
             if (customText === null && inputEl) inputEl.value = "";
             return;
           }
@@ -2911,14 +3092,17 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
             return `• <strong>${escapeHtml(c.name)}</strong> — Limite: ${formatCurrency(lim)} | Usado: ${formatCurrency(used)} | <strong>Livre: ${formatCurrency(avail)}</strong>`;
           });
 
-          aiOut.innerHTML = `<strong>IA Rodrigues ProDev — Situação de Limites (${myCusts.length}):</strong>\n` + lines.join("\n");
+          aiOut.innerHTML =
+            `<strong>IA Rodrigues ProDev — Situação de Limites (${myCusts.length} cliente(s)):</strong>\n` +
+            lines.join("\n");
           if (customText === null && inputEl) inputEl.value = "";
           return;
         }
 
-        // 3. PARCELAS / CLIENTES QUITADOS OU PAGOS
+        // 4. PARCELAS QUITADAS / PAGAS
         if (
           promptClean.includes("quitad") ||
+          promptClean.includes("pagas") ||
           promptClean.includes("pago") ||
           promptClean.includes("pagou") ||
           promptClean.includes("recebid")
