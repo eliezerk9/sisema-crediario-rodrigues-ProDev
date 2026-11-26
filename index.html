@@ -1273,6 +1273,32 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
     const IDB_KEY = "main_state";
     const PENDING_EXPIRY_MS = 10 * 24 * 60 * 60 * 1000;
 
+    // Configuração de nuvem compartilhada (pode ser sobrescrita via window.__RODRIGUES_CLOUD_CONFIG__)
+    const CLOUD_CONFIG = {
+      supabaseUrl: "https://wuxbopkaxhtdclnhnrvd.supabase.co",
+      supabaseAnonKey: "sb_publishable_bO89d1K2F4T6Z8x0C2V4B6N8M0Q2W4E6",
+      tableName: "rodrigues_prodev_store",
+      recordId: "main_state"
+    };
+
+    function getCloudConfig() {
+      const custom = typeof window !== "undefined" && window.__RODRIGUES_CLOUD_CONFIG__ && typeof window.__RODRIGUES_CLOUD_CONFIG__ === "object"
+        ? window.__RODRIGUES_CLOUD_CONFIG__
+        : {};
+      const url = String(custom.supabaseUrl || CLOUD_CONFIG.supabaseUrl || "").trim().replace(/\/+$/, "");
+      const anonKey = String(custom.supabaseAnonKey || CLOUD_CONFIG.supabaseAnonKey || "").trim();
+      const tableName = String(custom.tableName || CLOUD_CONFIG.tableName || "rodrigues_prodev_store").trim();
+      const recordId = String(custom.recordId || CLOUD_CONFIG.recordId || "main_state").trim();
+      const isPlaceholderKey = anonKey.includes("bO89d1K2F4T6Z8x0C2V4B6N8M0Q2W4E6");
+      return {
+        url,
+        anonKey,
+        tableName,
+        recordId,
+        enabled: Boolean(url && anonKey && !isPlaceholderKey)
+      };
+    }
+
     const todayStr = new Date().toISOString().split("T")[0];
     const nextMonthStr = (() => {
       const d = new Date(`${todayStr}T12:00:00`);
@@ -1389,6 +1415,9 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
           .map(normalizeUserRecord);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
         void writeStateToIndexedDb(state);
+        if (hasCentralDbConfig()) {
+          void CentralDatabase.pushToCentral(state);
+        }
       } catch (err) {
         console.error("Erro ao salvar estado:", err);
       }
@@ -1503,27 +1532,113 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
     }
 
     function hasCentralDbConfig() {
-      return false;
+      return getCloudConfig().enabled;
     }
 
     const CentralDatabase = {
-      async syncWithCentral() {
+      async pullFromCentral() {
+        const cfg = getCloudConfig();
+        if (!cfg.enabled) return null;
+        try {
+          const endpoint = `${cfg.url}/rest/v1/${encodeURIComponent(cfg.tableName)}?id=eq.${encodeURIComponent(cfg.recordId)}&select=payload`;
+          const res = await fetch(endpoint, {
+            method: "GET",
+            headers: {
+              apikey: cfg.anonKey,
+              Authorization: `Bearer ${cfg.anonKey}`,
+              Accept: "application/json"
+            }
+          });
+          if (!res.ok) return null;
+          const rows = await res.json();
+          if (!Array.isArray(rows) || !rows.length || !rows[0]?.payload) return null;
+          return rows[0].payload;
+        } catch {
+          return null;
+        }
+      },
+
+      async pushToCentral(snapshotState) {
+        const cfg = getCloudConfig();
+        if (!cfg.enabled || !snapshotState) return false;
+        try {
+          const cleanPayload = {
+            users: Array.isArray(snapshotState.users) ? snapshotState.users : [],
+            groceryCustomers: Array.isArray(snapshotState.groceryCustomers) ? snapshotState.groceryCustomers : [],
+            purchases: Array.isArray(snapshotState.purchases) ? snapshotState.purchases : [],
+            deviceLogs: Array.isArray(snapshotState.deviceLogs) ? snapshotState.deviceLogs : [],
+            deleted: snapshotState.deleted || { users: {}, customers: {}, purchases: {}, device_logs: {} }
+          };
+
+          const endpoint = `${cfg.url}/rest/v1/${encodeURIComponent(cfg.tableName)}?on_conflict=id`;
+          const res = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+              apikey: cfg.anonKey,
+              Authorization: `Bearer ${cfg.anonKey}`,
+              "Content-Type": "application/json",
+              Prefer: "resolution=merge-duplicates,return=minimal"
+            },
+            body: JSON.stringify([{
+              id: cfg.recordId,
+              payload: cleanPayload,
+              updated_at: new Date().toISOString()
+            }])
+          });
+          return res.ok;
+        } catch {
+          return false;
+        }
+      },
+
+      async syncWithCentral(pushAfterMerge = false) {
         await hydrateStateFromIndexedDb();
+        const cfg = getCloudConfig();
+        if (!cfg.enabled) {
+          updateCloudSyncBadge();
+          return;
+        }
+
+        const remotePayload = await this.pullFromCentral();
+        if (remotePayload && typeof remotePayload === "object") {
+          const mergedDeleted = {
+            users: mergeDeletedMaps(state.deleted?.users, remotePayload?.deleted?.users),
+            customers: mergeDeletedMaps(state.deleted?.customers, remotePayload?.deleted?.customers),
+            purchases: mergeDeletedMaps(state.deleted?.purchases, remotePayload?.deleted?.purchases),
+            device_logs: mergeDeletedMaps(state.deleted?.device_logs, remotePayload?.deleted?.device_logs)
+          };
+
+          state = {
+            ...state,
+            users: mergeRecordsById(state.users, remotePayload.users, mergedDeleted.users).map(normalizeUserRecord),
+            groceryCustomers: mergeRecordsById(state.groceryCustomers, remotePayload.groceryCustomers, mergedDeleted.customers),
+            purchases: mergeRecordsById(state.purchases, remotePayload.purchases, mergedDeleted.purchases),
+            deviceLogs: mergeRecordsById(state.deviceLogs, remotePayload.deviceLogs, mergedDeleted.device_logs),
+            deleted: mergedDeleted
+          };
+          pruneExpiredPendingUsers();
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          await writeStateToIndexedDb(state);
+        }
+
+        if (pushAfterMerge) {
+          await this.pushToCentral(state);
+        }
+
+        updateCloudSyncBadge();
+        syncView();
       }
     };
 
     function updateCloudSyncBadge() {
       const badge = document.getElementById("cloudSyncBadge");
       if (!badge) return;
-      badge.className = "cloud-pill is-local";
-      badge.textContent = "Banco Local (Sync Ativo)";
-    }
-
-    function saveRememberedCredentials(user, pass, adminFlag) {
-      try {
-        localStorage.setItem(REMEMBER_KEY, JSON.stringify({ user, pass, isAdmin: Boolean(adminFlag) }));
-      } catch {
-        // Ignora falha de armazenamento
+      if (hasCentralDbConfig()) {
+        badge.className = "cloud-pill";
+        badge.textContent = "Nuvem Conectada (Multi-Dispositivo)";
+      } else {
+        badge.className = "cloud-pill is-local";
+        badge.textContent = "Banco Local (Sync Ativo)";
       }
     }
 
@@ -2044,6 +2159,9 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
 
           state.users.unshift(newUser);
           saveState();
+          if (hasCentralDbConfig()) {
+            await CentralDatabase.syncWithCentral(true);
+          }
 
           document.getElementById("registerForm")?.reset();
           activeAuthTab = "login";
@@ -3013,6 +3131,9 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       });
       if (hasCentralDbConfig()) {
         void CentralDatabase.syncWithCentral(true);
+        setInterval(() => {
+          void CentralDatabase.syncWithCentral(false);
+        }, 15000);
       }
       syncView();
     });
