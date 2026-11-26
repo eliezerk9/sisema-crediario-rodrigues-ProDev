@@ -48,7 +48,7 @@
       margin-bottom: 18px;
     }
 
-    .login-box { max-width: 400px; margin: 70px auto; }
+    .login-box { max-width: 400px; margin: 70px auto; position: relative; }
 
     h1, h2, h3 { color: var(--neon); letter-spacing: 0.4px; }
     p.muted { color: var(--muted); font-size: 0.92rem; margin-top: 6px; }
@@ -115,24 +115,54 @@
     .chat-box { max-height: 220px; overflow-y: auto; background: var(--bg-input); border-radius: 8px; padding: 10px; margin-bottom: 10px; }
     .chat-item { margin-bottom: 8px; font-size: 0.88rem; }
     .hidden { display: none; }
+
+    .admin-switch {
+      margin-top: 20px;
+      padding-top: 14px;
+      border-top: 1px dashed rgba(0, 255, 102, 0.2);
+      text-align: center;
+    }
+
+    .admin-btn-link {
+      background: transparent;
+      color: var(--muted);
+      border: none;
+      font-size: 0.82rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .admin-btn-link:hover { color: var(--neon); }
   </style>
 </head>
 <body>
+  <!-- TELA DE LOGIN DUPLA (CLIENTE / ADMIN VIA ÍCONE) -->
   <div id="loginView" class="card login-box">
-    <h2>Rodrigues ProDev</h2>
-    <p class="muted">Acesso ao sistema de crediário e administração.</p>
+    <h2 id="loginTitle">Área do Cliente</h2>
+    <p id="loginSubtitle" class="muted">Acesse suas compras, faturas e limites.</p>
+    
     <form id="loginForm">
-      <label for="loginUser">Usuário</label>
-      <input id="loginUser" type="text" autocomplete="username" required />
+      <label for="loginUser">Usuário / CPF</label>
+      <input id="loginUser" type="text" autocomplete="username" placeholder="Digite seu usuário" required />
 
       <label for="loginPass">Senha</label>
-      <input id="loginPass" type="password" autocomplete="current-password" required />
+      <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••" required />
 
       <div id="loginError" class="msg-error"></div>
-      <button type="submit" style="width: 100%; margin-top: 14px;">Entrar no Painel</button>
+      <button type="submit" id="submitLoginBtn" style="width: 100%; margin-top: 14px;">Entrar no Painel</button>
     </form>
+
+    <div class="admin-switch">
+      <button type="button" id="toggleAdminBtn" class="admin-btn-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span id="toggleAdminText">Acesso Restrito (Admin)</span>
+      </button>
+    </div>
   </div>
 
+  <!-- PAINEL PRINCIPAL DO SISTEMA -->
   <div id="appView" class="container hidden">
     <div class="topbar card">
       <div>
@@ -145,7 +175,8 @@
       </div>
     </div>
 
-    <div class="card">
+    <!-- SEÇÃO SUPER ADMIN: GESTÃO DE LOJISTAS -->
+    <div id="adminTenantSection" class="card">
       <h3>Lojistas / Tenants</h3>
       <form id="tenantForm" class="grid-3" style="align-items:end; margin-top:8px;">
         <div>
@@ -256,7 +287,7 @@
     <div class="card">
       <h3>Assistente IA Rodrigues ProDev</h3>
       <div id="chatBox" class="chat-box">
-        <div class="chat-item"><strong>IA:</strong> Olá! Pergunte sobre limites, compras registradas, vencimentos ou como publicar o sistema.</div>
+        <div class="chat-item"><strong>IA:</strong> Olá! Pergunte sobre limites, compras registradas ou datas de vencimento.</div>
       </div>
       <form id="chatForm" style="display:flex; gap:8px;">
         <input id="chatInput" type="text" placeholder="Digite sua dúvida..." required />
@@ -270,6 +301,8 @@
       const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
       return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
     }
+
+    let isAdminMode = false;
 
     const state = {
       session: null,
@@ -286,10 +319,32 @@
     const appView = document.getElementById("appView");
     const loginForm = document.getElementById("loginForm");
     const loginError = document.getElementById("loginError");
+    const toggleAdminBtn = document.getElementById("toggleAdminBtn");
+    const toggleAdminText = document.getElementById("toggleAdminText");
+    const loginTitle = document.getElementById("loginTitle");
+    const loginSubtitle = document.getElementById("loginSubtitle");
 
     const todayStr = new Date().toISOString().split("T")[0];
     document.getElementById("purchDate").value = todayStr;
     document.getElementById("purchDueDate").value = todayStr;
+
+    // Alterna entre tela de Login do Cliente e Login Admin pelo Ícone
+    toggleAdminBtn.addEventListener("click", () => {
+      isAdminMode = !isAdminMode;
+      loginError.textContent = "";
+      document.getElementById("loginUser").value = "";
+      document.getElementById("loginPass").value = "";
+
+      if (isAdminMode) {
+        loginTitle.textContent = "Acesso Administrativo";
+        loginSubtitle.textContent = "Entre com as credenciais de Super Admin.";
+        toggleAdminText.textContent = "Voltar para Login do Cliente";
+      } else {
+        loginTitle.textContent = "Área do Cliente";
+        loginSubtitle.textContent = "Acesse suas compras, faturas e limites.";
+        toggleAdminText.textContent = "Acesso Restrito (Admin)";
+      }
+    });
 
     loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -302,16 +357,35 @@
       const expectedUserHash = await sha256("rodrigues");
       const expectedPassHash = await sha256("Rodrigues84326810");
 
-      if (uHash === expectedUserHash && pHash === expectedPassHash) {
-        state.session = { role: "super_admin", user: "rodrigues" };
-        document.getElementById("loginPass").value = "";
-        loginView.classList.add("hidden");
-        appView.classList.remove("hidden");
-        renderAll();
+      if (isAdminMode) {
+        if (uHash === expectedUserHash && pHash === expectedPassHash) {
+          state.session = { role: "super_admin", user: "rodrigues" };
+          openAppView("Painel Super Admin", "SUPER_ADMIN");
+        } else {
+          loginError.textContent = "Credenciais de administrador inválidas.";
+        }
       } else {
-        loginError.textContent = "Usuário ou senha inválidos.";
+        // Simulação de login de cliente
+        state.session = { role: "customer", user: userVal };
+        openAppView("Painel do Cliente", "CLIENTE");
       }
     });
+
+    function openAppView(title, roleBadge) {
+      document.getElementById("panelTitle").textContent = title;
+      document.getElementById("roleBadge").textContent = roleBadge;
+
+      if (state.session.role === "super_admin") {
+        document.getElementById("adminTenantSection").classList.remove("hidden");
+      } else {
+        document.getElementById("adminTenantSection").classList.add("hidden");
+      }
+
+      document.getElementById("loginPass").value = "";
+      loginView.classList.add("hidden");
+      appView.classList.remove("hidden");
+      renderAll();
+    }
 
     document.getElementById("logoutBtn").addEventListener("click", () => {
       state.session = null;
@@ -431,7 +505,7 @@
 
       const totalClientes = state.customers.length;
       const totalCompras = state.purchases.length;
-      const reply = `Resumo atual: ${totalClientes} cliente(s) cadastrado(s) e ${totalCompras} compra(s) lançada(s). Para produção real com múltiplos lojistas e clientes, conecte este painel a um backend seguro e banco PostgreSQL/Supabase com RLS.`;
+      const reply = `Resumo atual: ${totalClientes} cliente(s) cadastrado(s) e ${totalCompras} compra(s) lançada(s).`;
 
       box.innerHTML += `<div class="chat-item"><strong>IA:</strong> ${escapeHtml(reply)}</div>`;
       box.scrollTop = box.scrollHeight;
