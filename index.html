@@ -1288,111 +1288,19 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       return d.toISOString().split("T")[0];
     })();
 
-    // Dados iniciais de prévia para teste rápido de ambos os painéis
     function createInitialPreviewState() {
       const now = Date.now();
       return {
-        users: [
-          {
-            id: "u_preview_1",
-            name: "Mercearia Bom Preço",
-            cpf: "123.456.789-00",
-            phone: "(67) 99126-7853",
-            address: "Av. Mato Grosso, 145 - Centro",
-            user: "mercearia123",
-            pass: "123456",
-            status: "Ativo",
-            adminApprovedAt: now,
-            createdAt: new Date(now).toISOString(),
-            createdAtTs: now,
-            updatedAt: now
-          },
-          {
-            id: "u_preview_2",
-            name: "Mercado Nova Esperança",
-            cpf: "98.765.432/0001-10",
-            phone: "(67) 99888-1122",
-            address: "Rua das Flores, 88 - Jardim",
-            user: "esperanca",
-            pass: "123456",
-            status: "Pendente",
-            adminApprovedAt: 0,
-            createdAt: new Date(now).toISOString(),
-            createdAtTs: now,
-            updatedAt: now
-          }
-        ],
-        groceryCustomers: [
-          {
-            id: "c_prev_1",
-            ownerUserId: "u_preview_1",
-            name: "Carlos Eduardo Silva",
-            cpf: "111.222.333-44",
-            street: "Rua Paraná",
-            propertyType: "Casa",
-            number: "310",
-            limit: 800,
-            used: 180,
-            updatedAt: now
-          },
-          {
-            id: "c_prev_2",
-            ownerUserId: "u_preview_1",
-            name: "Ana Paula Souza",
-            cpf: "555.666.777-88",
-            street: "Rua Bahia",
-            propertyType: "Ap",
-            number: "102",
-            limit: 600,
-            used: 0,
-            updatedAt: now
-          }
-        ],
-        purchases: [
-          {
-            id: "p_prev_1",
-            ownerUserId: "u_preview_1",
-            customerId: "c_prev_1",
-            customerName: "Carlos Eduardo Silva",
-            product: "Compras do mês (1/2)",
-            value: 90,
-            buyDate: todayStr,
-            dueDate: nextMonthStr,
-            status: "Em Aberto",
-            updatedAt: now
-          },
-          {
-            id: "p_prev_2",
-            ownerUserId: "u_preview_1",
-            customerId: "c_prev_1",
-            customerName: "Carlos Eduardo Silva",
-            product: "Compras do mês (2/2)",
-            value: 90,
-            buyDate: todayStr,
-            dueDate: nextMonthStr,
-            status: "Em Aberto",
-            updatedAt: now
-          },
-          {
-            id: "p_prev_3",
-            ownerUserId: "u_preview_1",
-            customerId: "c_prev_2",
-            customerName: "Ana Paula Souza",
-            product: "Cesta e padaria",
-            value: 120,
-            buyDate: todayStr,
-            dueDate: todayStr,
-            status: "Pago",
-            updatedAt: now
-          }
-        ],
+        users: [],
+        groceryCustomers: [],
+        purchases: [],
         deviceLogs: [
           {
             id: "dev_prev_1",
-            userLabel: "Mercearia Bom Preço (Usuário)",
+            userLabel: "Sistema Rodrigues ProDev (Sessão Inicial)",
             deviceType: "Computador / Desktop",
             platform: navigator.platform || "Web",
-            browserDetails: "Prévia do Editor • Sessão Demonstrativa",
+            browserDetails: "Preview Rodrigues ProDev",
             accessedAtText: new Date(now).toLocaleString("pt-BR"),
             updatedAt: now
           }
@@ -1408,6 +1316,7 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
     let activeAuthTab = "login";
     let isAuthenticating = false;
     let authQueue = Promise.resolve();
+    let cloudSyncInFlight = null;
 
     const calendarViewState = {
       purchDate: { year: new Date().getFullYear(), month: new Date().getMonth() },
@@ -1572,7 +1481,7 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
             "Content-Type": "application/json",
             "apikey": CLOUD_CONFIG.anonKey,
             "Authorization": `Bearer ${CLOUD_CONFIG.anonKey}`,
-            "Prefer": "resolution=merge-duplicates,return=minimal"
+            "Prefer": "resolution=merge-duplicates,return=representation"
           },
           body: JSON.stringify(bodyPayload)
         });
@@ -1602,7 +1511,8 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
           method: "GET",
           headers: {
             "apikey": CLOUD_CONFIG.anonKey,
-            "Authorization": `Bearer ${CLOUD_CONFIG.anonKey}`
+            "Authorization": `Bearer ${CLOUD_CONFIG.anonKey}`,
+            "Cache-Control": "no-cache"
           }
         });
 
@@ -1623,16 +1533,41 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
     }
 
     async function syncWithCloud(forcePushIfEmpty = false) {
-      const cloudPayload = await pullStateFromCloud();
-      state = mergeStates(state, cloudPayload);
+      if (cloudSyncInFlight) {
+        return cloudSyncInFlight;
+      }
+      cloudSyncInFlight = (async () => {
+        try {
+          const cloudPayload = await pullStateFromCloud();
+          state = mergeStates(state, cloudPayload);
+          pruneExpiredPendingUsers();
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          } catch (err) {
+            console.error("Erro ao salvar cache local:", err);
+          }
+          if (isCloudConfigured() && (!cloudPayload || forcePushIfEmpty)) {
+            await pushStateToCloud(state);
+          }
+        } finally {
+          cloudSyncInFlight = null;
+        }
+      })();
+      return cloudSyncInFlight;
+    }
+
+    async function saveStateAndSyncCloud() {
       pruneExpiredPendingUsers();
+      state.lastUpdatedAt = Date.now();
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       } catch (err) {
-        console.error("Erro ao salvar cache local:", err);
+        console.error("Erro ao salvar estado da prévia:", err);
       }
-      if (isCloudConfigured() && (!cloudPayload || forcePushIfEmpty)) {
+      if (isCloudConfigured()) {
         await pushStateToCloud(state);
+      } else {
+        updateCloudBadge("Modo Local (Configure Supabase)", true);
       }
     }
 
@@ -2015,6 +1950,10 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
             return;
           }
 
+          if (isCloudConfigured()) {
+            await syncWithCloud(false);
+          }
+
           if (isAdminMode) {
             if (rawUser.toLowerCase() === SUPER_ADMIN_USER.toLowerCase() && rawPass.trim() === SUPER_ADMIN_PASS) {
               const rememberChecked = Boolean(document.getElementById("rememberMeCheck")?.checked);
@@ -2089,14 +2028,22 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
             return;
           }
 
+          if (isCloudConfigured()) {
+            await syncWithCloud(false);
+          }
+
           if (state.users.some((u) => String(u.user || "").trim().toLowerCase() === user.toLowerCase())) {
             setAuthFeedback("Este nome de usuário já está em uso. Escolha outro usuário.", true);
             return;
           }
 
           const nowTs = Date.now();
+          state.deletedUsers = state.deletedUsers && typeof state.deletedUsers === "object" ? state.deletedUsers : {};
+          const newUserId = "u_" + nowTs;
+          delete state.deletedUsers[newUserId];
+
           state.users.unshift({
-            id: "u_" + nowTs,
+            id: newUserId,
             name,
             cpf,
             phone,
@@ -2109,7 +2056,7 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
             createdAtTs: nowTs,
             updatedAt: nowTs
           });
-          saveState();
+          await saveStateAndSyncCloud();
 
           document.getElementById("registerForm")?.reset();
           activeAuthTab = "login";
@@ -2175,21 +2122,23 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       });
 
       tbody.querySelectorAll("button[data-admin-action]").forEach((btn) => {
-        btn.addEventListener("click", () => {
+        btn.addEventListener("click", async () => {
           const uid = btn.getAttribute("data-user-id");
           const nextStatus = btn.getAttribute("data-admin-action");
           if (uid && nextStatus) {
             UserRepository.updateUserStatus(uid, nextStatus);
+            await saveStateAndSyncCloud();
             renderSuperAdmin();
           }
         });
       });
 
       tbody.querySelectorAll("button[data-admin-delete]").forEach((btn) => {
-        btn.addEventListener("click", () => {
+        btn.addEventListener("click", async () => {
           const uid = btn.getAttribute("data-admin-delete");
           if (uid) {
             UserRepository.deleteUser(uid);
+            await saveStateAndSyncCloud();
             renderSuperAdmin();
           }
         });
