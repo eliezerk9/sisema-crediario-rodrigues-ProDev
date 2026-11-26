@@ -1262,7 +1262,7 @@
     const AUTH_CHANNEL_NAME = "rodrigues_prodev_auth_sync_v1";
     let authBroadcastChannel = null;
 
-    // Trava de concorrência e debounce para evitar loop de requisições na rede
+    // Controle de concorrência e trava anti-looping de requisições na rede
     let isSyncingCentral = false;
     let syncDebounceTimer = null;
     let centralSyncIntervalTimer = null;
@@ -1807,7 +1807,7 @@
         UserRepository.readLatestLocalState();
         void hydrateStateFromIndexedDb();
         
-        // Debounce de 1.5s para evitar rajadas de GET/POST no Supabase ao alternar abas/foco
+        // Debounce de 1.5s para barrar requisições concorrentes ou em loop no Supabase ao trocar abas ou focar a página
         if (hasCentralDbConfig()) {
           clearTimeout(syncDebounceTimer);
           syncDebounceTimer = setTimeout(() => {
@@ -1843,7 +1843,7 @@
         }
       });
 
-      // Intervalo de backup espaçado para 30s e ativo somente se a aba estiver visível
+      // Intervalo estendido para 30s, controlado pela visibilidade da aba
       if (hasCentralDbConfig()) {
         if (centralSyncIntervalTimer) clearInterval(centralSyncIntervalTimer);
         centralSyncIntervalTimer = setInterval(() => {
