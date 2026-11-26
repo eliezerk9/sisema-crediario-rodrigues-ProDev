@@ -808,15 +808,29 @@
       text-decoration: underline;
     }
 
+    /* ESTILIZAÇÃO CYBER / PRODEV PARA A CAIXA DA IA (INSPIRADO NA IMAGEM RODRIGUES PRODEV) */
     .ai-box {
-      margin-top: 12px;
-      background: var(--bg-input);
-      border: 1px solid var(--neon-border);
+      margin-top: 14px;
+      background: linear-gradient(135deg, rgba(6, 12, 9, 0.95) 0%, rgba(10, 20, 15, 0.98) 100%),
+                  repeating-linear-gradient(45deg, rgba(0, 255, 102, 0.03) 0px, rgba(0, 255, 102, 0.03) 2px, transparent 2px, transparent 8px);
+      border: 1px solid var(--neon);
       border-radius: var(--radius-md);
-      padding: 14px;
-      font-size: 0.86rem;
-      color: #dff7e8;
+      padding: 16px 18px;
+      font-size: 0.94rem;
+      font-weight: 600;
+      color: #ffffff;
+      line-height: 1.6;
       white-space: pre-line;
+      box-shadow: 0 0 20px rgba(0, 255, 102, 0.25), inset 0 0 15px rgba(0, 255, 102, 0.08);
+      text-shadow: 0 0 2px rgba(0, 0, 0, 0.9);
+      letter-spacing: 0.01em;
+      min-height: 90px;
+    }
+
+    .ai-box strong {
+      color: var(--neon-strong);
+      font-weight: 800;
+      text-shadow: 0 0 10px rgba(0, 255, 102, 0.6);
     }
 
     @media (max-width: 520px) {
@@ -1031,7 +1045,7 @@
 
           <form id="groceryCustomerForm" novalidate>
             <label for="gcName">Nome do Cliente</label>
-            <input id="gcName" type="text" placeholder="Ex.: Maria Oliveira" required />
+            <input id="gcName" type="text" placeholder="Ex.: João Pereira" required />
 
             <div class="grid-2">
               <div>
@@ -1206,16 +1220,18 @@
 
       <div class="card">
         <h2>Assistente IA da Mercearia</h2>
-        <p class="card-desc">Consulte resumo rápido do crediário, clientes com saldo aberto ou próximos vencimentos.</p>
+        <p class="card-desc">Assistente inteligente do seu painel para consultar parcelas quitadas, vencidas, limites, dar baixa e abrir o seu perfil.</p>
         <div class="action-group">
           <button type="button" id="aiSummaryBtn" class="btn-secondary">Resumo do Crediário</button>
-          <button type="button" id="aiDueBtn" class="btn-secondary">Parcelas em Aberto</button>
+          <button type="button" id="aiPaidBtn" class="btn-secondary">Parcelas Quitadas</button>
+          <button type="button" id="aiOverdueBtn" class="btn-secondary">Vencidos</button>
           <button type="button" id="aiLimitsBtn" class="btn-secondary">Situação de Limites</button>
+          <button type="button" id="aiProfileBtn" class="btn-secondary">Meu Perfil</button>
         </div>
-        <div id="aiOutput" class="ai-box">Digite um comando no campo abaixo ou escolha um botão rápido.</div>
+        <div id="aiOutput" class="ai-box">Assistente IA Rodrigues ProDev pronto. Escolha uma opção acima ou digite o que precisa (ex.: 'parcelas quitadas', 'clientes vencidos', 'meu perfil', 'dar baixa em João').</div>
 
         <form id="aiCommandForm" style="margin-top: 14px; display: flex; gap: 8px;">
-          <input id="aiInput" type="text" placeholder="Ex.: 'quais clientes estão vencidos?', 'quem vence dia 15/12/2026?', 'dar baixa na parcela 2 de Maria'" style="flex: 1;" />
+          <input id="aiInput" type="text" placeholder="Ex.: 'parcelas quitadas', 'clientes vencidos', 'meu perfil', 'filtrar João', 'dar baixa em João'" style="flex: 1;" />
           <button type="submit" class="btn-primary" style="width: auto; margin-top: 0; padding: 10px 18px;">Enviar para IA</button>
         </form>
       </div>
@@ -2724,132 +2740,313 @@
           });
         }
 
-        const baseParcela = Math.floor((financedValue / installmentCount) * 100) / 100;
+        const financedCents = Math.round(financedValue * 100);
+        const baseInstCents = Math.floor(financedCents / installmentCount);
+        const remInstCents = financedCents - (baseInstCents * installmentCount);
 
-        for (let i = 1; i <= installmentCount; i++) {
-          const parcelaVal = i === installmentCount
-            ? Number((financedValue - baseParcela * (installmentCount - 1)).toFixed(2))
-            : baseParcela;
-          const parcelaDue = i === 1 ? dueDate : addMonthsToDateStr(dueDate, i - 1);
-          const labelProduto = installmentCount > 1
-            ? `${product} (${i}/${installmentCount})`
-            : product;
+        for (let idx = 1; idx <= installmentCount; idx++) {
+          const instCents = idx === installmentCount ? baseInstCents + remInstCents : baseInstCents;
+          const instValue = Number((instCents / 100).toFixed(2));
+          const instDueDate = addMonthsToDateStr(dueDate, idx - 1);
+          const parcelaLabel = installmentCount > 1 ? `${product} (${idx}/${installmentCount})` : product;
 
           state.purchases.unshift({
-            id: `${batchId}_${i}`,
+            id: `${batchId}_${idx}`,
             ownerUserId,
             customerId: cust.id,
             customerName: cust.name,
-            product: labelProduto,
-            value: parcelaVal,
+            product: parcelaLabel,
+            value: instValue,
             buyDate,
-            dueDate: parcelaDue,
+            dueDate: instDueDate,
             status: "Em Aberto",
-            updatedAt: nowTs
+            updatedAt: nowTs + idx
           });
         }
 
-        document.getElementById("purchProduct").value = "";
-        document.getElementById("purchValue").value = "";
+        saveState();
+        document.getElementById("purchaseForm")?.reset();
         setPickerDate("purchDate", todayStr);
         setPickerDate("purchDueDate", nextMonthStr);
-        if (document.getElementById("purchDownMode")) {
-          document.getElementById("purchDownMode").value = "none";
+        if (msgEl) {
+          msgEl.textContent = "Compra e parcelas registradas com sucesso.";
         }
-        if (document.getElementById("purchDownPayment")) {
-          document.getElementById("purchDownPayment").value = "0";
-        }
-        if (document.getElementById("purchInstallments")) {
-          document.getElementById("purchInstallments").value = "3";
-        }
-
-        saveState();
         renderMerchantPanel();
       });
 
-      document.getElementById("aiSummaryBtn")?.addEventListener("click", () => {
-        const ownerUserId = state.session?.userId;
-        const myCusts = state.groceryCustomers.filter(c => c.ownerUserId === ownerUserId);
-        const myPurchs = state.purchases.filter(p => p.ownerUserId === ownerUserId);
-        const openSum = myPurchs.filter(p => p.status === "Em Aberto").reduce((s, p) => s + (Number(p.value) || 0), 0);
-        const paidSum = myPurchs.filter(p => p.status === "Pago").reduce((s, p) => s + (Number(p.value) || 0), 0);
-        const aiOut = document.getElementById("aiOutput");
-        if (aiOut) {
-          aiOut.textContent =
-            `Resumo da Mercearia:\n` +
-            `• Clientes cadastrados: ${myCusts.length}\n` +
-            `• Total em aberto: ${formatCurrency(openSum)}\n` +
-            `• Total já pago/quitado: ${formatCurrency(paidSum)}`;
-        }
-      });
+      // MOTOR DE PROCESSAMENTO DE COMANDOS DA IA DA MERCEARIA
+      const normalizeText = (text) =>
+        String(text || "")
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .trim();
 
-      document.getElementById("aiDueBtn")?.addEventListener("click", () => {
-        const ownerUserId = state.session?.userId;
-        const openItems = state.purchases.filter(p => p.ownerUserId === ownerUserId && p.status === "Em Aberto");
-        const aiOut = document.getElementById("aiOutput");
-        if (!aiOut) return;
-        if (!openItems.length) {
-          aiOut.textContent = "Não há parcelas em aberto no momento.";
-          return;
-        }
-        const lines = openItems.slice(0, 8).map(item => `• ${item.customerName} — ${item.product}: ${formatCurrency(item.value)} (Venc.: ${item.dueDate})`);
-        aiOut.textContent = `Parcelas em aberto (${openItems.length}):\n` + lines.join("\n");
-      });
-
-      document.getElementById("aiLimitsBtn")?.addEventListener("click", () => {
-        const ownerUserId = state.session?.userId;
-        const myCusts = state.groceryCustomers.filter(c => c.ownerUserId === ownerUserId);
-        const aiOut = document.getElementById("aiOutput");
-        if (!aiOut) return;
-        if (!myCusts.length) {
-          aiOut.textContent = "Nenhum cliente cadastrado para verificar limites.";
-          return;
-        }
-        const lines = myCusts.map((c) => {
-          const avail = Math.max(0, (Number(c.limit) || 0) - (Number(c.used) || 0));
-          return `• ${c.name}: Limite ${formatCurrency(c.limit)} | Usado ${formatCurrency(c.used)} | Disponível ${formatCurrency(avail)}`;
-        });
-        aiOut.textContent = "Situação de limites dos clientes:\n" + lines.join("\n");
-      });
-
-      // NOVO MOTOR DE PROCESSAMENTO DE COMANDOS DA IA DA MERCEARIA
-      document.getElementById("aiCommandForm")?.addEventListener("submit", (e) => {
-        e.preventDefault();
+      const handleAiCommand = (customText = null) => {
         const inputEl = document.getElementById("aiInput");
         const aiOut = document.getElementById("aiOutput");
-        if (!inputEl || !aiOut) return;
+        if (!aiOut) return;
 
-        const rawPrompt = String(inputEl.value || "").trim();
+        const rawPrompt = String(customText !== null ? customText : (inputEl?.value || "")).trim();
         if (!rawPrompt) return;
 
-        const ownerUserId = state.session?.userId;
-        if (!ownerUserId) {
-          aiOut.textContent = "Erro de autorização: sessão do lojista inválida.";
+        if (!assertUserAuthorized("usar o assistente de IA")) {
           return;
         }
 
-        const promptLower = rawPrompt.toLowerCase();
+        const ownerUserId = state.session?.userId;
+        const currentUser = UserRepository.getUserById(ownerUserId);
+        if (!ownerUserId || !currentUser) {
+          aiOut.innerHTML = "<strong>IA Rodrigues ProDev:</strong>\nSessão do usuário não encontrada.";
+          return;
+        }
+
+        const promptClean = normalizeText(rawPrompt);
         const myCusts = state.groceryCustomers.filter(c => c.ownerUserId === ownerUserId);
         const myPurchs = state.purchases.filter(p => p.ownerUserId === ownerUserId);
         const todayIso = new Date().toISOString().split("T")[0];
 
-        // 1. COMANDO: CONSULTAR PARCELAS/CLIENTES VENCIDOS (Vencimento < Hoje e Status 'Em Aberto')
-        if (promptLower.includes("vencido") || promptLower.includes("atrasado") || promptLower.includes("em atraso")) {
-          const overdue = myPurchs.filter(p => p.status === "Em Aberto" && p.dueDate < todayIso);
-          if (!overdue.length) {
-            aiOut.textContent = "Nenhum cliente possui parcelas vencidas no momento! Todos os pagamentos estão em dia.";
-            inputEl.value = "";
-            return;
-          }
-          const lines = overdue.map(p => `• ${p.customerName} — ${p.product}: ${formatCurrency(p.value)} (Venceu em: ${formatDatePtBr(p.dueDate)})`);
-          aiOut.textContent = `Clientes e parcelas VENCIDAS (${overdue.length}):\n` + lines.join("\n");
-          inputEl.value = "";
+        // 0. PERFIL DO USUÁRIO LOGADO (RESTRITO À PRÓPRIA CONTA)
+        if (
+          promptClean.includes("meu perfil") ||
+          promptClean === "perfil" ||
+          promptClean.includes("minha conta") ||
+          promptClean.includes("meus dados")
+        ) {
+          aiOut.innerHTML =
+            `<strong>IA Rodrigues ProDev — Seu Perfil Profissional:</strong>\n` +
+            `• Nome / Estabelecimento: <strong>${escapeHtml(currentUser.name || "-")}</strong>\n` +
+            `• Usuário de Acesso: <strong>${escapeHtml(currentUser.user || "-")}</strong>\n` +
+            `• CPF / CNPJ: ${escapeHtml(currentUser.cpf || "-")}\n` +
+            `• Telefone / WhatsApp: ${escapeHtml(currentUser.phone || "-")}\n` +
+            `• Endereço: ${escapeHtml(currentUser.address || "-")}\n` +
+            `• Status da Conta: <strong>${escapeHtml(currentUser.status || "Ativo")}</strong>\n\n` +
+            `<em>Escopo protegido: exibe apenas os dados da sua conta logada.</em>`;
+          if (customText === null && inputEl) inputEl.value = "";
           return;
         }
 
-        // 2. COMANDO: CONSULTAR VENCIMENTOS EM DATA ESPECÍFICA (Ex: "dia 25/12/2026" ou "2026-12-25")
+        // 1. RESUMO DO CREDIÁRIO
+        if (promptClean.includes("resumo")) {
+          const openItems = myPurchs.filter(p => p.status === "Em Aberto");
+          const paidItems = myPurchs.filter(p => p.status === "Pago");
+          const totalOpen = openItems.reduce((acc, p) => acc + (Number(p.value) || 0), 0);
+          const totalPaid = paidItems.reduce((acc, p) => acc + (Number(p.value) || 0), 0);
+
+          aiOut.innerHTML =
+            `<strong>IA Rodrigues ProDev — Resumo do Crediário (${escapeHtml(currentUser.name)}):</strong>\n` +
+            `• Clientes cadastrados: <strong>${myCusts.length}</strong>\n` +
+            `• Parcelas em aberto (${openItems.length}): <strong>${formatCurrency(totalOpen)}</strong>\n` +
+            `• Parcelas quitadas (${paidItems.length}): <strong>${formatCurrency(totalPaid)}</strong>`;
+          if (customText === null && inputEl) inputEl.value = "";
+          return;
+        }
+
+        // 2. SITUAÇÃO DE LIMITES
+        if (promptClean.includes("situacao de limites") || promptClean.includes("limites")) {
+          if (!myCusts.length) {
+            aiOut.innerHTML = "<strong>IA Rodrigues ProDev — Limites:</strong>\nNenhum cliente cadastrado na sua conta ainda.";
+            if (customText === null && inputEl) inputEl.value = "";
+            return;
+          }
+
+          const lines = myCusts.map((c) => {
+            const lim = Number(c.limit) || 0;
+            const used = Number(c.used) || 0;
+            const avail = Math.max(0, lim - used);
+            return `• <strong>${escapeHtml(c.name)}</strong> — Limite: ${formatCurrency(lim)} | Usado: ${formatCurrency(used)} | <strong>Livre: ${formatCurrency(avail)}</strong>`;
+          });
+
+          aiOut.innerHTML = `<strong>IA Rodrigues ProDev — Situação de Limites (${myCusts.length}):</strong>\n` + lines.join("\n");
+          if (customText === null && inputEl) inputEl.value = "";
+          return;
+        }
+
+        // 3. PARCELAS / CLIENTES QUITADOS OU PAGOS
+        if (
+          promptClean.includes("quitad") ||
+          promptClean.includes("pago") ||
+          promptClean.includes("pagou") ||
+          promptClean.includes("recebid")
+        ) {
+          const paidPurchases = myPurchs.filter(p => p.status === "Pago");
+          if (!paidPurchases.length) {
+            aiOut.innerHTML =
+              `<strong>IA Rodrigues ProDev — Parcelas Quitadas:</strong>\n` +
+              `Nenhuma parcela quitada foi encontrada no seu painel até o momento.`;
+            if (customText === null && inputEl) inputEl.value = "";
+            return;
+          }
+
+          const totalPaidValue = paidPurchases.reduce((acc, p) => acc + (Number(p.value) || 0), 0);
+          const uniqueClients = Array.from(new Set(paidPurchases.map(p => p.customerName).filter(Boolean)));
+          const lines = paidPurchases.map(
+            p => `• <strong>${escapeHtml(p.customerName)}</strong> — ${escapeHtml(p.product)}: <strong>${formatCurrency(p.value)}</strong> (Venc.: ${formatDatePtBr(p.dueDate)})`
+          );
+
+          aiOut.innerHTML =
+            `<strong>IA Rodrigues ProDev — Parcelas Quitadas (${paidPurchases.length} parcela(s) • ${uniqueClients.length} cliente(s)):</strong>\n` +
+            `• Total quitado / recebido: <strong>${formatCurrency(totalPaidValue)}</strong>\n\n` +
+            lines.join("\n");
+          if (customText === null && inputEl) inputEl.value = "";
+          return;
+        }
+
+        // 4. PARCELAS EM ABERTO
+        if (promptClean.includes("parcelas em aberto") || promptClean.includes("em aberto")) {
+          const openPurchases = myPurchs.filter(p => p.status === "Em Aberto");
+          if (!openPurchases.length) {
+            aiOut.innerHTML = "<strong>IA Rodrigues ProDev — Parcelas em Aberto:</strong>\nNenhuma parcela em aberto no momento.";
+            if (customText === null && inputEl) inputEl.value = "";
+            return;
+          }
+
+          const totalOpenValue = openPurchases.reduce((acc, p) => acc + (Number(p.value) || 0), 0);
+          const lines = openPurchases.map(
+            p => `• <strong>${escapeHtml(p.customerName)}</strong> — ${escapeHtml(p.product)}: <strong>${formatCurrency(p.value)}</strong> (Vence: ${formatDatePtBr(p.dueDate)})`
+          );
+
+          aiOut.innerHTML =
+            `<strong>IA Rodrigues ProDev — Parcelas em Aberto (${openPurchases.length} • Total: ${formatCurrency(totalOpenValue)}):</strong>\n` +
+            lines.join("\n");
+          if (customText === null && inputEl) inputEl.value = "";
+          return;
+        }
+
+        // 5. APAGAR / EXCLUIR CLIENTE
+        if (
+          promptClean.includes("apagar cliente") ||
+          promptClean.includes("excluir cliente") ||
+          promptClean.includes("deletar cliente") ||
+          promptClean.startsWith("apagar ") ||
+          promptClean.startsWith("excluir ")
+        ) {
+          const targetCust = myCusts.find(
+            c => promptClean.includes(normalizeText(c.name)) || promptClean.includes(normalizeText(c.name.split(" ")[0]))
+          );
+
+          if (!targetCust) {
+            aiOut.innerHTML = "<strong>IA Rodrigues ProDev:</strong>\nInforme o nome do cliente cadastrado para excluir. Ex.: <em>'apagar cliente Carlos'</em>.";
+            if (customText === null && inputEl) inputEl.value = "";
+            return;
+          }
+
+          const deletedName = targetCust.name;
+          state.groceryCustomers = state.groceryCustomers.filter(c => c.id !== targetCust.id);
+          state.purchases = state.purchases.filter(p => p.customerId !== targetCust.id);
+
+          saveState();
+          renderMerchantPanel();
+
+          aiOut.innerHTML = `<strong>IA Rodrigues ProDev [CLIENTE EXCLUÍDO]:</strong>\n✔ Cliente <strong>${escapeHtml(deletedName)}</strong> e seus lançamentos foram removidos do seu painel.`;
+          if (customText === null && inputEl) inputEl.value = "";
+          return;
+        }
+
+        // 6. EDITAR / ALTERAR LIMITE DE CRÉDITO DO CLIENTE
+        if (
+          promptClean.includes("editar limite") ||
+          promptClean.includes("alterar limite") ||
+          promptClean.includes("mudar limite") ||
+          promptClean.includes("novo limite") ||
+          (promptClean.includes("limite") && (promptClean.includes("para") || promptClean.includes("valor")))
+        ) {
+          const targetCust = myCusts.find(
+            c => promptClean.includes(normalizeText(c.name)) || promptClean.includes(normalizeText(c.name.split(" ")[0]))
+          );
+          const numbersFound = rawPrompt.match(/(\d+[\.,]?\d*)/g);
+
+          if (!targetCust) {
+            aiOut.innerHTML = "<strong>IA Rodrigues ProDev:</strong>\nMencione o nome do cliente para alterar o limite. Ex.: <em>'editar limite de Carlos para 1500'</em>.";
+            if (customText === null && inputEl) inputEl.value = "";
+            return;
+          }
+
+          if (!numbersFound || !numbersFound.length) {
+            aiOut.innerHTML = `<strong>IA Rodrigues ProDev:</strong>\nInforme o novo valor do limite para <strong>${escapeHtml(targetCust.name)}</strong>. Ex.: <em>'mudar limite de ${escapeHtml(targetCust.name.split(" ")[0])} para 2000'</em>.`;
+            if (customText === null && inputEl) inputEl.value = "";
+            return;
+          }
+
+          const newLimit = parseFloat(numbersFound[numbersFound.length - 1].replace(",", "."));
+          if (isNaN(newLimit) || newLimit < 0) {
+            aiOut.innerHTML = "<strong>IA Rodrigues ProDev:</strong>\nInforme um valor numérico válido para o limite.";
+            if (customText === null && inputEl) inputEl.value = "";
+            return;
+          }
+
+          targetCust.limit = newLimit;
+          targetCust.updatedAt = Date.now();
+
+          saveState();
+          renderMerchantPanel();
+
+          const avail = Math.max(0, targetCust.limit - (targetCust.used || 0));
+          aiOut.innerHTML = `<strong>IA Rodrigues ProDev [LIMITE ATUALIZADO]:</strong>\n✔ Limite de <strong>${escapeHtml(targetCust.name)}</strong> alterado para <strong>${formatCurrency(newLimit)}</strong>.\n• Disponível agora: <strong>${formatCurrency(avail)}</strong>`;
+          if (customText === null && inputEl) inputEl.value = "";
+          return;
+        }
+
+        // 7. FILTRAR / BUSCAR CLIENTE
+        if (
+          promptClean.includes("filtrar") ||
+          promptClean.includes("buscar") ||
+          promptClean.includes("procurar") ||
+          promptClean.includes("ver cliente") ||
+          promptClean.includes("dados de")
+        ) {
+          const targetCust = myCusts.find(
+            c => promptClean.includes(normalizeText(c.name)) || promptClean.includes(normalizeText(c.name.split(" ")[0]))
+          );
+
+          if (!targetCust) {
+            aiOut.innerHTML = "<strong>IA Rodrigues ProDev:</strong>\nInforme o nome do cliente para filtrar. Ex.: <em>'filtrar cliente Carlos'</em>.";
+            if (customText === null && inputEl) inputEl.value = "";
+            return;
+          }
+
+          const custPurchases = myPurchs.filter(p => p.customerId === targetCust.id);
+          const openPurchases = custPurchases.filter(p => p.status === "Em Aberto");
+          const paidCustomerPurchases = custPurchases.filter(p => p.status === "Pago");
+          const avail = Math.max(0, targetCust.limit - (targetCust.used || 0));
+
+          let details = `<strong>Ficha do Cliente (${escapeHtml(targetCust.name)}):</strong>\n`;
+          details += `• CPF/Tel: ${escapeHtml(targetCust.cpf)}\n`;
+          details += `• Endereço: ${escapeHtml(targetCust.street || "Não informado")} (${escapeHtml(targetCust.propertyType)} Nº ${escapeHtml(targetCust.number)})\n`;
+          details += `• Limite Total: ${formatCurrency(targetCust.limit)} | Usado: ${formatCurrency(targetCust.used)} | <strong>Disponível: ${formatCurrency(avail)}</strong>\n`;
+          details += `• Parcelas Quitadas: <strong>${paidCustomerPurchases.length}</strong> | Em Aberto: <strong>${openPurchases.length}</strong>\n\n`;
+
+          if (openPurchases.length) {
+            details += `<strong>Parcelas em Aberto (${openPurchases.length}):</strong>\n`;
+            details += openPurchases.map(p => `• ${escapeHtml(p.product)}: ${formatCurrency(p.value)} (Vence: ${formatDatePtBr(p.dueDate)})`).join("\n");
+          } else {
+            details += `✔ Cliente sem nenhuma parcela em aberto.`;
+          }
+
+          aiOut.innerHTML = details;
+          if (customText === null && inputEl) inputEl.value = "";
+          return;
+        }
+
+        // 8. CONSULTAR PARCELAS / CLIENTES VENCIDOS
+        if (promptClean.includes("vencid") || promptClean.includes("atrasad") || promptClean.includes("em atraso")) {
+          const overdue = myPurchs.filter(p => p.status === "Em Aberto" && p.dueDate < todayIso);
+          if (!overdue.length) {
+            aiOut.innerHTML = "<strong>IA Rodrigues ProDev — Vencidos:</strong>\nNenhuma parcela vencida no momento. ✔";
+            if (customText === null && inputEl) inputEl.value = "";
+            return;
+          }
+          const lines = overdue.map(
+            p => `• <strong>${escapeHtml(p.customerName)}</strong> — ${escapeHtml(p.product)}: ${formatCurrency(p.value)} (Venceu em: ${formatDatePtBr(p.dueDate)})`
+          );
+          aiOut.innerHTML = `<strong>IA Rodrigues ProDev — Parcelas Vencidas (${overdue.length}):</strong>\n` + lines.join("\n");
+          if (customText === null && inputEl) inputEl.value = "";
+          return;
+        }
+
+        // 9. CONSULTAR VENCIMENTOS EM DATA ESPECÍFICA
         const dateMatch = rawPrompt.match(/(\d{1,2}\/\d{1,2}\/\d{4})|(\d{4}-\d{2}-\d{2})/);
-        if (dateMatch && (promptLower.includes("vence") || promptLower.includes("dia") || promptLower.includes("data"))) {
+        if (dateMatch && (promptClean.includes("vence") || promptClean.includes("dia") || promptClean.includes("data"))) {
           let searchIso = dateMatch[0];
           if (searchIso.includes("/")) {
             const [d, m, y] = searchIso.split("/");
@@ -2858,55 +3055,92 @@
 
           const onDate = myPurchs.filter(p => p.dueDate === searchIso && p.status === "Em Aberto");
           if (!onDate.length) {
-            aiOut.textContent = `Nenhum boleto a vencer encontrado para a data ${formatDatePtBr(searchIso)}.`;
-            inputEl.value = "";
+            aiOut.innerHTML = `<strong>IA Rodrigues ProDev:</strong>\nNenhuma parcela a vencer encontrada para <strong>${formatDatePtBr(searchIso)}</strong>.`;
+            if (customText === null && inputEl) inputEl.value = "";
             return;
           }
 
-          const lines = onDate.map(p => `• ${p.customerName} — ${p.product}: ${formatCurrency(p.value)}`);
-          aiOut.textContent = `Parcelas a vencer em ${formatDatePtBr(searchIso)} (${onDate.length}):\n` + lines.join("\n");
-          inputEl.value = "";
+          const lines = onDate.map(p => `• <strong>${escapeHtml(p.customerName)}</strong> — ${escapeHtml(p.product)}: ${formatCurrency(p.value)}`);
+          aiOut.innerHTML = `<strong>IA Rodrigues ProDev — Vencimentos em ${formatDatePtBr(searchIso)} (${onDate.length}):</strong>\n` + lines.join("\n");
+          if (customText === null && inputEl) inputEl.value = "";
           return;
         }
 
-        // 3. COMANDO DE AÇÃO EXECUTÁVEL: DAR BAIXA EM PARCELAS DE CLIENTE
-        if (promptLower.includes("dar baixa") || promptLower.includes("quitar") || promptLower.includes("pagar")) {
-          // Localiza o cliente citado na frase
-          const targetCust = myCusts.find(c => promptLower.includes(c.name.toLowerCase()) || promptLower.includes(c.name.split(" ")[0].toLowerCase()));
-          
+        // 10. DAR BAIXA EM PARCELA DE CLIENTE
+        if (promptClean.includes("dar baixa") || promptClean.includes("quitar") || promptClean.includes("pagar")) {
+          const targetCust = myCusts.find(
+            c => promptClean.includes(normalizeText(c.name)) || promptClean.includes(normalizeText(c.name.split(" ")[0]))
+          );
+
           if (!targetCust) {
-            aiOut.textContent = "IA: Para dar baixa, por favor mencione o nome do cliente cadastrado exatamente como na lista (Ex.: 'dar baixa na parcela de Maria').";
+            aiOut.innerHTML = "<strong>IA Rodrigues ProDev:</strong>\nMencione o nome do cliente cadastrado para dar baixa. Ex.: <em>'dar baixa em Carlos'</em>.";
+            if (customText === null && inputEl) inputEl.value = "";
             return;
           }
 
           const custPurchases = myPurchs.filter(p => p.customerId === targetCust.id && p.status === "Em Aberto");
           if (!custPurchases.length) {
-            aiOut.textContent = `IA: O cliente ${targetCust.name} não possui parcelas em aberto para dar baixa.`;
-            inputEl.value = "";
+            aiOut.innerHTML = `<strong>IA Rodrigues ProDev:</strong>\n<strong>${escapeHtml(targetCust.name)}</strong> não possui parcelas em aberto para dar baixa.`;
+            if (customText === null && inputEl) inputEl.value = "";
             return;
           }
 
-          // Executa a baixa na parcela mais antiga em aberto ou na parcela solicitada
           const targetPurchase = custPurchases[0];
           targetPurchase.status = "Pago";
+          targetPurchase.updatedAt = Date.now();
           targetCust.used = Math.max(0, Number(((Number(targetCust.used) || 0) - (Number(targetPurchase.value) || 0)).toFixed(2)));
+          targetCust.updatedAt = Date.now();
 
           saveState();
           renderMerchantPanel();
 
-          aiOut.textContent = `IA [AÇÃO EXECUTADA COM SUCESSO]:\n✔ Baixa efetuada para ${targetCust.name}\n• Parcela: ${targetPurchase.product}\n• Valor: ${formatCurrency(targetPurchase.value)}\n• Novo limite livre: ${formatCurrency(Math.max(0, targetCust.limit - targetCust.used))}`;
-          inputEl.value = "";
+          aiOut.innerHTML =
+            `<strong>IA Rodrigues ProDev [BAIXA CONCLUÍDA]:</strong>\n` +
+            `✔ Parcela quitada para <strong>${escapeHtml(targetCust.name)}</strong>\n` +
+            `• Descrição: ${escapeHtml(targetPurchase.product)}\n` +
+            `• Valor quitado: <strong>${formatCurrency(targetPurchase.value)}</strong>\n` +
+            `• Limite livre atualizado: <strong>${formatCurrency(Math.max(0, targetCust.limit - targetCust.used))}</strong>`;
+          if (customText === null && inputEl) inputEl.value = "";
           return;
         }
 
-        // RESPONSAS DE ESCOPO FECHADO (Segurança: responde apenas sobre os dados da mercearia logada)
-        aiOut.textContent =
-          `IA Rodrigues ProDev (Modo Mercearia):\n` +
-          `Entendi sua mensagem, mas só posso executar comandos relacionados às suas vendas e clientes. Dica de uso:\n` +
-          `• "quais clientes estão vencidos?"\n` +
-          `• "quem vence no dia 20/12/2026?"\n` +
-          `• "dar baixa em [Nome do Cliente]"`;
-        inputEl.value = "";
+        // RESPOSTA PADRÃO DO ASSISTENTE PROFISSIONAL
+        aiOut.innerHTML =
+          `<strong>IA Rodrigues ProDev — Assistente do Seu Painel:</strong>\n` +
+          `Comando: "${escapeHtml(rawPrompt)}"\n\n` +
+          `• <strong>Parcelas Quitadas:</strong> <em>"parcelas quitadas"</em> ou clique no botão <strong>Parcelas Quitadas</strong>\n` +
+          `• <strong>Vencidos:</strong> <em>"clientes vencidos"</em> ou clique em <strong>Vencidos</strong>\n` +
+          `• <strong>Seu Perfil:</strong> <em>"meu perfil"</em> ou clique em <strong>Meu Perfil</strong>\n` +
+          `• <strong>Filtrar Cliente:</strong> <em>"filtrar cliente [Nome]"</em>\n` +
+          `• <strong>Editar Limite:</strong> <em>"editar limite de [Nome] para 1500"</em>\n` +
+          `• <strong>Dar Baixa:</strong> <em>"dar baixa em [Nome]"</em>\n` +
+          `• <strong>Apagar Cliente:</strong> <em>"apagar cliente [Nome]"</em>`;
+        if (customText === null && inputEl) inputEl.value = "";
+      };
+
+      document.getElementById("aiSummaryBtn")?.addEventListener("click", () => {
+        handleAiCommand("resumo do crediario");
+      });
+
+      document.getElementById("aiPaidBtn")?.addEventListener("click", () => {
+        handleAiCommand("parcelas quitadas");
+      });
+
+      document.getElementById("aiOverdueBtn")?.addEventListener("click", () => {
+        handleAiCommand("vencidos");
+      });
+
+      document.getElementById("aiLimitsBtn")?.addEventListener("click", () => {
+        handleAiCommand("situacao de limites");
+      });
+
+      document.getElementById("aiProfileBtn")?.addEventListener("click", () => {
+        handleAiCommand("meu perfil");
+      });
+
+      document.getElementById("aiCommandForm")?.addEventListener("submit", (e) => {
+        e.preventDefault();
+        handleAiCommand();
       });
     }
 
