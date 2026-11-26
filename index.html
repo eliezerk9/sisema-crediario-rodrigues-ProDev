@@ -1920,10 +1920,10 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
           }
 
           if (isAdminMode) {
-            if (rawUser.toLowerCase() === SUPER_ADMIN_USER && rawPass === SUPER_ADMIN_PASS) {
+            if (rawUser.trim().toLowerCase() === SUPER_ADMIN_USER.toLowerCase() && rawPass.trim() === SUPER_ADMIN_PASS.trim()) {
               const rememberChecked = Boolean(document.getElementById("rememberMeCheck")?.checked);
               if (rememberChecked) {
-                saveRememberedCredentials(rawUser, rawPass, true);
+                saveRememberedCredentials(rawUser.trim(), rawPass.trim(), true);
               } else {
                 clearRememberedCredentials();
               }
@@ -1960,7 +1960,7 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
 
           const rememberChecked = Boolean(document.getElementById("rememberMeCheck")?.checked);
           if (rememberChecked) {
-            saveRememberedCredentials(rawUser, rawPass, false);
+            saveRememberedCredentials(rawUser.trim(), rawPass.trim(), false);
           } else {
             clearRememberedCredentials();
           }
