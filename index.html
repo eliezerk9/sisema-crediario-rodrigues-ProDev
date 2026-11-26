@@ -2555,9 +2555,9 @@
       }
 
       if (!previewEl) return;
-      const totalVal = parseFloat(document.getElementById("purchValue")?.value) || 0;
-      const rawDown = hasDownPayment ? (parseFloat(document.getElementById("purchDownPayment")?.value) || 0) : 0;
-      const downVal = Math.min(Math.max(0, rawDown), totalVal);
+      const totalVal = Math.max(0, Number((parseFloat(document.getElementById("purchValue")?.value) || 0).toFixed(2)));
+      const rawDown = hasDownPayment ? Math.max(0, Number((parseFloat(document.getElementById("purchDownPayment")?.value) || 0).toFixed(2))) : 0;
+      const downVal = Math.min(rawDown, totalVal);
       const financedVal = Math.max(0, Number((totalVal - downVal).toFixed(2)));
       const count = Math.min(24, Math.max(1, parseInt(document.getElementById("purchInstallments")?.value, 10) || 1));
 
@@ -2569,18 +2569,30 @@
       }
 
       if (hasDownPayment && rawDown > totalVal) {
-        previewEl.textContent = `Atenção: entrada de ${formatCurrency(rawDown)} maior que o total de ${formatCurrency(totalVal)}.`;
+        previewEl.textContent = `Atenção: entrada de ${formatCurrency(rawDown)} maior que o valor total de ${formatCurrency(totalVal)}.`;
         return;
       }
 
-      const baseParcela = Math.floor((financedVal / count) * 100) / 100;
-      const ultimaParcela = Number((financedVal - baseParcela * (count - 1)).toFixed(2));
+      // Cálculo preciso dividindo em centavos sem dízimas ou arredondamentos incorretos
+      const totalCents = Math.round(financedVal * 100);
+      const baseCents = Math.floor(totalCents / count);
+      const remainderCents = totalCents - (baseCents * count);
+
+      const baseParcela = baseCents / 100;
+      const ultimaParcela = (baseCents + remainderCents) / 100;
+
+      // Soma das parcelas + entrada para conferência exata
+      const somaParcelas = Number(((baseParcela * (count - 1)) + ultimaParcela).toFixed(2));
+      const somaConferencia = Number((downVal + somaParcelas).toFixed(2));
+
       const entradaPrefix = hasDownPayment ? `Entrada de ${formatCurrency(downVal)} + ` : "";
 
       if (count === 1 || Math.abs(baseParcela - ultimaParcela) < 0.005) {
-        previewEl.textContent = `Resumo: ${entradaPrefix}${count}x de ${formatCurrency(baseParcela)} (Saldo parcelado: ${formatCurrency(financedVal)} • Total: ${formatCurrency(totalVal)}).`;
+        previewEl.textContent = `Resumo: ${entradaPrefix}${count}x de ${formatCurrency(baseParcela)} (Parcelado: ${formatCurrency(somaParcelas)} | Total da Compra: ${formatCurrency(somaConferencia)})`;
+      } else if (count === 2) {
+        previewEl.textContent = `Resumo: ${entradaPrefix}1x de ${formatCurrency(baseParcela)} + 1x de ${formatCurrency(ultimaParcela)} (Parcelado: ${formatCurrency(somaParcelas)} | Total da Compra: ${formatCurrency(somaConferencia)})`;
       } else {
-        previewEl.textContent = `Resumo: ${entradaPrefix}${count - 1}x de ${formatCurrency(baseParcela)} + 1x de ${formatCurrency(ultimaParcela)} (Saldo parcelado: ${formatCurrency(financedVal)} • Total: ${formatCurrency(totalVal)}).`;
+        previewEl.textContent = `Resumo: ${entradaPrefix}${count - 1}x de ${formatCurrency(baseParcela)} + 1x de ${formatCurrency(ultimaParcela)} (Parcelado: ${formatCurrency(somaParcelas)} | Total da Compra: ${formatCurrency(somaConferencia)})`;
       }
     }
 
