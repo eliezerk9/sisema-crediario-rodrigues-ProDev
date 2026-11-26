@@ -1,0 +1,9 @@
+.vercel.jason
+{
+  "rewrites": [
+    {
+      "source": "(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
