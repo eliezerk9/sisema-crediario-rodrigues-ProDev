@@ -1020,6 +1020,31 @@
           </table>
         </div>
       </div>
+
+      <div class="card" style="margin-top: 20px;">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;">
+          <div>
+            <h2>Relatório de Dispositivos que Acessaram o Sistema</h2>
+            <p class="card-desc" style="margin-bottom: 0;">Controle de aparelhos, sistema operacional, navegador, usuário e data/hora de acesso.</p>
+          </div>
+          <button type="button" id="clearDevicesLogBtn" class="btn-danger">Limpar Histórico de Dispositivos</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Usuário / Perfil</th>
+                <th>Tipo de Dispositivo</th>
+                <th>Sistema / Plataforma</th>
+                <th>Navegador / Detalhes</th>
+                <th>Data e Hora</th>
+              </tr>
+            </thead>
+            <tbody id="adminDevicesTableBody"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <div id="merchantPanel" class="hidden">
@@ -1144,121 +1169,56 @@
                         <line x1="16" y1="2" x2="16" y2="6"></line>
                         <line x1="8" y1="2" x2="8" y2="6"></line>
                         <line x1="3" y1="10" x2="21" y2="10"></line>
-                      </svg>
-                    </span>
-                  </button>
-                  <div id="purchDatePopover" class="mini-calendar-popover hidden" role="dialog" aria-label="Calendário da Data da Compra"></div>
-                </div>
-              </div>
-              <div>
-                <label for="purchDueDateTrigger">1º Vencimento</label>
-                <div class="date-picker-box" data-calendar-picker="purchDueDate">
-                  <input id="purchDueDate" type="hidden" required />
-                  <button type="button" id="purchDueDateTrigger" class="date-trigger-btn" aria-haspopup="dialog" aria-expanded="false">
-                    <span id="purchDueDateDisplay" class="date-trigger-val">Selecionar vencimento</span>
-                    <span class="date-trigger-icon" aria-hidden="true">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                      </svg>
-                    </span>
-                  </button>
-                  <div id="purchDueDatePopover" class="mini-calendar-popover hidden" role="dialog" aria-label="Calendário do 1º Vencimento"></div>
-                </div>
-              </div>
-            </div>
-
-            <div id="purchaseMsg" class="feedback-msg"></div>
-            <button type="submit" class="btn-primary">Registrar Compra e Parcelas</button>
-          </form>
-        </div>
-      </div>
-
-      <div class="card" style="margin-bottom: 20px;">
-        <h2>Clientes Cadastrados na Mercearia</h2>
-        <p class="card-desc">Acompanhe endereço, limite total, saldo utilizado e limite disponível de cada cliente.</p>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Cliente</th>
-                <th>Endereço (Rua / Tipo / Nº)</th>
-                <th>CPF / Contato</th>
-                <th>Limite Total</th>
-                <th>Utilizado</th>
-                <th>Disponível</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="merchantCustomersBody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="card" style="margin-bottom: 20px;">
-        <h2>Lançamentos, Parcelas e Vencimentos</h2>
-        <p class="card-desc">Dê baixa nas parcelas pagas e acompanhe as datas de vencimento.</p>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Cliente</th>
-                <th>Descrição / Parcela</th>
-                <th>Valor</th>
-                <th>Compra</th>
-                <th>Vencimento</th>
-                <th>Status</th>
-                <th>Ação</th>
-              </tr>
-            </thead>
-            <tbody id="purchasesBody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Assistente IA da Mercearia</h2>
-        <p class="card-desc">Assistente inteligente do seu painel para consultar parcelas quitadas, vencidas, limites, dar baixa e abrir o seu perfil.</p>
-        <div class="action-group">
-          <button type="button" id="aiSummaryBtn" class="btn-secondary">Resumo do Crediário</button>
-          <button type="button" id="aiPaidBtn" class="btn-secondary">Parcelas Quitadas</button>
-          <button type="button" id="aiOverdueBtn" class="btn-secondary">Vencidos</button>
-          <button type="button" id="aiLimitsBtn" class="btn-secondary">Situação de Limites</button>
-          <button type="button" id="aiProfileBtn" class="btn-secondary">Meu Perfil</button>
-        </div>
-        <div id="aiOutput" class="ai-box">Assistente IA Rodrigues ProDev pronto. Escolha uma opção acima ou digite o que precisa (ex.: 'parcelas quitadas', 'clientes vencidos', 'meu perfil', 'dar baixa em João').</div>
-
-        <form id="aiCommandForm" style="margin-top: 14px; display: flex; gap: 8px;">
-          <input id="aiInput" type="text" placeholder="Ex.: 'parcelas quitadas', 'clientes vencidos', 'meu perfil', 'filtrar João', 'dar baixa em João'" style="flex: 1;" />
-          <button type="submit" class="btn-primary" style="width: auto; margin-top: 0; padding: 10px 18px;">Enviar para IA</button>
-        </form>
-      </div>
+        <tbody>
+          <!-- Linhas renderizadas dinamicamente via JS -->
+        </tbody>
+      </table>
     </div>
-  </section>
+  </div>
 
-  <script>
-    const STORAGE_KEY = "rodrigues_prodev_state_v2026_11_closed_test";
-    const BACKUP_STORAGE_KEY = "rodrigues_prodev_backup_db_v1";
-    const REMEMBER_CREDS_KEY = "rodrigues_prodev_remember_creds_v1";
-    const IDB_DB_NAME = "RodriguesProDevDB";
-    const IDB_STORE_NAME = "system_state";
-    const IDB_RECORD_KEY = "main_database";
+  <div class="card" style="margin-top: 20px;">
+    <h2>Assistente IA da Mercearia — Rodrigues ProDev</h2>
+    <p class="card-desc">Consulte parcelas quitadas ou vencidas, veja seu perfil, filtre clientes, edite limites, dê baixa ou exclua clientes do seu painel.</p>
 
-    const CENTRAL_DB_CONFIG = {
-      projectId: "pdflqzmgenavxwnuuysr",
-      supabaseUrl: "https://pdflqzmgenavxwnuuysr.supabase.co",
-      supabasePublishableKey: "sb_publishable_g54X9rHMG2DUdRUTniOHZg_NymkAzG_",
-      tableName: "rodrigues_prodev_store",
-      recordId: "rodrigues_prodev_main"
-    };
+    <div class="action-group" style="margin-bottom: 10px;">
+      <button type="button" id="aiSummaryBtn" class="btn-secondary">Resumo do Crediário</button>
+      <button type="button" id="aiPaidBtn" class="btn-secondary">Parcelas Quitadas</button>
+      <button type="button" id="aiOverdueBtn" class="btn-secondary">Vencidos</button>
+      <button type="button" id="aiLimitsBtn" class="btn-secondary">Situação de Limites</button>
+      <button type="button" id="aiProfileBtn" class="btn-secondary">Meu Perfil</button>
+    </div>
 
-    const SUPER_ADMIN_USER = "rodrigues";
-    const SUPER_ADMIN_PASS = "Rodrigues84326810";
+    <form id="aiCommandForm" style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <input id="aiInput" type="text" placeholder="Ex.: parcelas quitadas, filtrar cliente João, editar limite de João para 1500, dar baixa em João..." style="flex: 1; min-width: 220px;" />
+      <button type="submit" class="btn-secondary" style="background: var(--neon); color: #041008; font-weight: 800;">Enviar Comando</button>
+    </form>
 
-    // Removido o mock data de teste para garantir banco limpo desde o início
-    const defaultUsers = [];
+    <div id="aiOutput" class="ai-box"><strong>IA Rodrigues ProDev pronta:</strong>
+Digite um comando ou clique em uma das opções acima para consultar ou gerenciar os dados da sua mercearia.</div>
+  </div>
+</div>
+</section>
+
+<script>
+  const STORAGE_KEY = "rodrigues_prodev_state_v2026_11_closed_test";
+  const BACKUP_STORAGE_KEY = "rodrigues_prodev_state_backup_v1";
+  const REMEMBER_CREDS_KEY = "rodrigues_prodev_remember_creds_v1";
+  const IDB_DB_NAME = "rodrigues_prodev_db";
+  const IDB_STORE_NAME = "app_state";
+  const IDB_RECORD_KEY = "main_state";
+
+  const SUPER_ADMIN_USER = "rodrigues";
+  const SUPER_ADMIN_PASS = "Rodrigues84326810";
+
+  const CENTRAL_DB_CONFIG = {
+    supabaseUrl: "",
+    supabasePublishableKey: "",
+    tableName: "rodrigues_prodev_store",
+    recordId: "main_state"
+  };
+
+  // Removido o mock data de teste para garantir banco limpo desde o início e exibir apenas cadastros reais
+  const defaultUsers = [];
 
     const todayStr = new Date().toISOString().split("T")[0];
     const nextMonthStr = addMonthsToDateStr(todayStr, 1);
@@ -1305,18 +1265,73 @@
       return base.toISOString().split("T")[0];
     }
 
+    function isSyntheticOrTestRecord(item) {
+      if (!item || typeof item !== "object") return false;
+      const id = String(item.id || "").toLowerCase();
+      const user = String(item.user || "").toLowerCase();
+      return id === "u_test_123" || user === "teste_ativo" || user === "usuario_teste";
+    }
+
+    function normalizeTombstones(rawMap) {
+      const map = {};
+      if (!rawMap || typeof rawMap !== "object") return map;
+      Object.entries(rawMap).forEach(([key, ts]) => {
+        const cleanKey = String(key || "").trim().toLowerCase();
+        const numTs = Number(ts) || 0;
+        if (cleanKey && numTs > 0) {
+          map[cleanKey] = Math.max(map[cleanKey] || 0, numTs);
+        }
+      });
+      return map;
+    }
+
+    function mergeTombstones(mapA, mapB) {
+      const merged = normalizeTombstones(mapA);
+      const other = normalizeTombstones(mapB);
+      Object.entries(other).forEach(([key, ts]) => {
+        merged[key] = Math.max(merged[key] || 0, ts);
+      });
+      return merged;
+    }
+
+    function recordDeletion(bucketName, keys, timestamp = Date.now()) {
+      const ts = Number(timestamp) || Date.now();
+      state.deleted = normalizeTombstones(state.deleted);
+      const list = Array.isArray(keys) ? keys : [keys];
+      list.forEach((k) => {
+        const clean = String(k || "").trim().toLowerCase();
+        if (clean) {
+          const fullKey = `${bucketName}:${clean}`;
+          state.deleted[fullKey] = Math.max(state.deleted[fullKey] || 0, ts);
+        }
+      });
+    }
+
+    function isDeletedAtOrBefore(deletedMap, bucketName, key, itemUpdatedAt = 0) {
+      const clean = String(key || "").trim().toLowerCase();
+      if (!clean) return false;
+      const deletedTs = Number(deletedMap?.[`${bucketName}:${clean}`]) || 0;
+      if (!deletedTs) return false;
+      const itemTs = Number(itemUpdatedAt) || 0;
+      return deletedTs >= itemTs;
+    }
+
     function normalizeUserRecord(u) {
       if (!u || typeof u !== "object") return null;
+      if (isSyntheticOrTestRecord(u)) return null;
       const validStatuses = ["Ativo", "Pendente", "Suspenso", "Bloqueado"];
       const status = validStatuses.includes(u.status) ? u.status : "Pendente";
       const parsedUpdatedAt = Number(u.updatedAt) || Date.parse(u.createdAt || "") || 0;
+      const cleanUser = String(u.user || "").trim();
+      const cleanName = String(u.name || "").trim();
+      if (!cleanUser || !cleanName) return null;
       return {
         id: String(u.id || ("u_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6))),
-        name: String(u.name || "").trim(),
+        name: cleanName,
         cpf: String(u.cpf || "").trim(),
         phone: String(u.phone || "").trim(),
         address: String(u.address || "").trim(),
-        user: String(u.user || "").trim(),
+        user: cleanUser,
         pass: String(u.pass || ""),
         status,
         createdAt: String(u.createdAt || new Date().toISOString()),
@@ -1327,8 +1342,6 @@
     function pickNewerUser(a, b) {
       if (!a) return b;
       if (!b) return a;
-      if (a.id === "u_test_123" && b.id !== "u_test_123") return b;
-      if (b.id === "u_test_123" && a.id !== "u_test_123") return a;
       const timeA = Number(a.updatedAt) || 0;
       const timeB = Number(b.updatedAt) || 0;
       if (timeB > timeA) return b;
@@ -1337,11 +1350,17 @@
       return a;
     }
 
-    function mergeUsersList(primaryUsers, secondaryUsers) {
+    function mergeUsersList(primaryUsers, secondaryUsers, deletedMap = {}) {
       const map = new Map();
       const ingest = (raw) => {
         const norm = normalizeUserRecord(raw);
         if (!norm || !norm.user) return;
+        if (
+          isDeletedAtOrBefore(deletedMap, "user_login", norm.user, norm.updatedAt) ||
+          isDeletedAtOrBefore(deletedMap, "user_id", norm.id, norm.updatedAt)
+        ) {
+          return;
+        }
         const key = norm.user.toLowerCase();
         const existing = map.get(key);
         map.set(key, pickNewerUser(existing, norm));
@@ -1353,21 +1372,23 @@
       return Array.from(map.values());
     }
 
-    function mergeById(primaryList, secondaryList) {
+    function mergeById(primaryList, secondaryList, bucketName = "item", deletedMap = {}) {
       const map = new Map();
       [primaryList, secondaryList].forEach((list) => {
         if (!Array.isArray(list)) return;
         list.forEach((item) => {
-          if (item && item.id) {
-            const prev = map.get(item.id);
-            if (!prev) {
+          if (!item || !item.id || isSyntheticOrTestRecord(item)) return;
+          const itemTs = Number(item.updatedAt) || 0;
+          if (isDeletedAtOrBefore(deletedMap, bucketName, item.id, itemTs)) {
+            return;
+          }
+          const prev = map.get(item.id);
+          if (!prev) {
+            map.set(item.id, item);
+          } else {
+            const prevTs = Number(prev.updatedAt) || 0;
+            if (itemTs > prevTs) {
               map.set(item.id, item);
-            } else {
-              const prevTs = Number(prev.updatedAt) || 0;
-              const nextTs = Number(item.updatedAt) || 0;
-              if (nextTs > prevTs) {
-                map.set(item.id, item);
-              }
             }
           }
         });
@@ -1381,8 +1402,10 @@
       if (!parsed || typeof parsed !== "object") return null;
       return {
         users: Array.isArray(parsed.users) ? parsed.users.map(normalizeUserRecord).filter(Boolean) : [],
-        groceryCustomers: Array.isArray(parsed.groceryCustomers) ? parsed.groceryCustomers : [],
-        purchases: Array.isArray(parsed.purchases) ? parsed.purchases : [],
+        groceryCustomers: Array.isArray(parsed.groceryCustomers) ? parsed.groceryCustomers.filter(c => !isSyntheticOrTestRecord(c)) : [],
+        purchases: Array.isArray(parsed.purchases) ? parsed.purchases.filter(p => !isSyntheticOrTestRecord(p)) : [],
+        deviceLogs: Array.isArray(parsed.deviceLogs) ? parsed.deviceLogs : [],
+        deleted: normalizeTombstones(parsed.deleted),
         session: parsed.session || null,
         updatedAt: Number(parsed.updatedAt) || 0
       };
@@ -1400,6 +1423,8 @@
             users: cloneData(defaultUsers),
             groceryCustomers: [],
             purchases: [],
+            deviceLogs: [],
+            deleted: {},
             session: null,
             updatedAt: Date.now()
           };
@@ -1409,11 +1434,14 @@
 
         const base = primaryData || backupData;
         const secondary = primaryData && backupData ? backupData : null;
+        const mergedDeleted = mergeTombstones(base.deleted, secondary?.deleted);
 
         const restored = {
-          users: mergeUsersList(base.users, secondary?.users),
-          groceryCustomers: mergeById(base.groceryCustomers, secondary?.groceryCustomers),
-          purchases: mergeById(base.purchases, secondary?.purchases),
+          users: mergeUsersList(base.users, secondary?.users, mergedDeleted),
+          groceryCustomers: mergeById(base.groceryCustomers, secondary?.groceryCustomers, "customer", mergedDeleted),
+          purchases: mergeById(base.purchases, secondary?.purchases, "purchase", mergedDeleted),
+          deviceLogs: mergeById(base.deviceLogs, secondary?.deviceLogs, "device_log", mergedDeleted),
+          deleted: mergedDeleted,
           session: base.session ?? secondary?.session ?? null,
           updatedAt: Math.max(Number(base.updatedAt) || 0, Number(secondary?.updatedAt) || 0)
         };
@@ -1425,6 +1453,8 @@
           users: cloneData(defaultUsers),
           groceryCustomers: [],
           purchases: [],
+          deviceLogs: [],
+          deleted: {},
           session: null,
           updatedAt: Date.now()
         };
@@ -1510,6 +1540,8 @@
             users: snapshot.users || [],
             groceryCustomers: snapshot.groceryCustomers || [],
             purchases: snapshot.purchases || [],
+            deviceLogs: snapshot.deviceLogs || [],
+            deleted: normalizeTombstones(snapshot.deleted),
             updatedAt: Number(snapshot.updatedAt) || Date.now()
           };
 
@@ -1554,18 +1586,24 @@
             return;
           }
 
-          const mergedUsers = mergeUsersList(remoteState.users, state.users);
-          const mergedCustomers = mergeById(remoteState.groceryCustomers, state.groceryCustomers);
-          const mergedPurchases = mergeById(remoteState.purchases, state.purchases);
+          const mergedDeleted = mergeTombstones(state.deleted, remoteState.deleted);
+          const mergedUsers = mergeUsersList(remoteState.users, state.users, mergedDeleted);
+          const mergedCustomers = mergeById(remoteState.groceryCustomers, state.groceryCustomers, "customer", mergedDeleted);
+          const mergedPurchases = mergeById(remoteState.purchases, state.purchases, "purchase", mergedDeleted);
+          const mergedLogs = mergeById(remoteState.deviceLogs, state.deviceLogs, "device_log", mergedDeleted);
 
           const changed =
             JSON.stringify(mergedUsers) !== JSON.stringify(state.users) ||
             JSON.stringify(mergedCustomers) !== JSON.stringify(state.groceryCustomers) ||
-            JSON.stringify(mergedPurchases) !== JSON.stringify(state.purchases);
+            JSON.stringify(mergedPurchases) !== JSON.stringify(state.purchases) ||
+            JSON.stringify(mergedLogs) !== JSON.stringify(state.deviceLogs || []) ||
+            JSON.stringify(mergedDeleted) !== JSON.stringify(state.deleted || {});
 
+          state.deleted = mergedDeleted;
           state.users = mergedUsers;
           state.groceryCustomers = mergedCustomers;
           state.purchases = mergedPurchases;
+          state.deviceLogs = mergedLogs;
           state.updatedAt = Math.max(Number(state.updatedAt) || 0, Number(remoteState.updatedAt) || 0);
 
           persistStateToStorage(state, false);
@@ -1643,18 +1681,24 @@
 
         if (!idbRecord || typeof idbRecord !== "object") return;
 
-        const mergedUsers = mergeUsersList(state.users, idbRecord.users);
-        const mergedCustomers = mergeById(state.groceryCustomers, idbRecord.groceryCustomers);
-        const mergedPurchases = mergeById(state.purchases, idbRecord.purchases);
+        const mergedDeleted = mergeTombstones(state.deleted, idbRecord.deleted);
+        const mergedUsers = mergeUsersList(state.users, idbRecord.users, mergedDeleted);
+        const mergedCustomers = mergeById(state.groceryCustomers, idbRecord.groceryCustomers, "customer", mergedDeleted);
+        const mergedPurchases = mergeById(state.purchases, idbRecord.purchases, "purchase", mergedDeleted);
+        const mergedLogs = mergeById(state.deviceLogs, idbRecord.deviceLogs, "device_log", mergedDeleted);
 
         const usersChanged = JSON.stringify(mergedUsers) !== JSON.stringify(state.users);
         const custsChanged = JSON.stringify(mergedCustomers) !== JSON.stringify(state.groceryCustomers);
         const purchsChanged = JSON.stringify(mergedPurchases) !== JSON.stringify(state.purchases);
+        const logsChanged = JSON.stringify(mergedLogs) !== JSON.stringify(state.deviceLogs || []);
+        const delChanged = JSON.stringify(mergedDeleted) !== JSON.stringify(state.deleted || {});
 
-        if (usersChanged || custsChanged || purchsChanged) {
+        if (usersChanged || custsChanged || purchsChanged || logsChanged || delChanged) {
+          state.deleted = mergedDeleted;
           state.users = mergedUsers;
           state.groceryCustomers = mergedCustomers;
           state.purchases = mergedPurchases;
+          state.deviceLogs = mergedLogs;
           persistStateToStorage(state, false);
           syncView();
         }
@@ -1679,7 +1723,11 @@
 
     function saveState() {
       try {
-        state.users = mergeUsersList(state.users, []);
+        state.deleted = normalizeTombstones(state.deleted);
+        state.users = mergeUsersList(state.users, [], state.deleted);
+        state.groceryCustomers = mergeById(state.groceryCustomers, [], "customer", state.deleted);
+        state.purchases = mergeById(state.purchases, [], "purchase", state.deleted);
+        state.deviceLogs = mergeById(state.deviceLogs, [], "device_log", state.deleted);
         state.updatedAt = Date.now();
         const serialized = JSON.stringify(state);
         localStorage.setItem(STORAGE_KEY, serialized);
@@ -1710,10 +1758,13 @@
 
           const base = primaryData || backupData;
           const secondary = primaryData && backupData ? backupData : null;
+          const mergedDeleted = mergeTombstones(mergeTombstones(state.deleted, base.deleted), secondary?.deleted);
 
-          state.users = mergeUsersList(base.users, secondary?.users);
-          state.groceryCustomers = mergeById(base.groceryCustomers, secondary?.groceryCustomers);
-          state.purchases = mergeById(base.purchases, secondary?.purchases);
+          state.deleted = mergedDeleted;
+          state.users = mergeUsersList(base.users, secondary?.users, mergedDeleted);
+          state.groceryCustomers = mergeById(base.groceryCustomers, secondary?.groceryCustomers, "customer", mergedDeleted);
+          state.purchases = mergeById(base.purchases, secondary?.purchases, "purchase", mergedDeleted);
+          state.deviceLogs = mergeById(base.deviceLogs, secondary?.deviceLogs, "device_log", mergedDeleted);
 
           if (base && Object.prototype.hasOwnProperty.call(base, "session")) {
             state.session = base.session;
@@ -1759,6 +1810,17 @@
 
       deleteUser(userId) {
         this.readLatestLocalState();
+        const nowTs = Date.now();
+        const targetUser = state.users.find((u) => u.id === userId);
+        recordDeletion("user_id", userId, nowTs);
+        if (targetUser?.user) {
+          recordDeletion("user_login", targetUser.user, nowTs);
+        }
+        const removedCustomers = state.groceryCustomers.filter((c) => c.ownerUserId === userId);
+        recordDeletion("customer", removedCustomers.map((c) => c.id), nowTs);
+        const removedPurchases = state.purchases.filter((p) => p.ownerUserId === userId);
+        recordDeletion("purchase", removedPurchases.map((p) => p.id), nowTs);
+
         state.users = state.users.filter((u) => u.id !== userId);
         state.groceryCustomers = state.groceryCustomers.filter((c) => c.ownerUserId !== userId);
         state.purchases = state.purchases.filter((p) => p.ownerUserId !== userId);
@@ -1956,6 +2018,70 @@
 
     function normalizeDigits(value) {
       return String(value || "").replace(/\D+/g, "");
+    }
+
+    function detectDeviceInfo() {
+      const ua = navigator.userAgent || "";
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+      const isTablet = /iPad|Tablet|PlayBook/i.test(ua) || (isMobile && Math.min(window.screen?.width || 0, window.screen?.height || 0) >= 600);
+      const deviceType = isTablet ? "Tablet" : (isMobile ? "Celular / Mobile" : "Computador / Desktop");
+
+      let platform = navigator.platform || "Desconhecida";
+      if (/Android/i.test(ua)) platform = "Android";
+      else if (/iPhone|iPad|iPod/i.test(ua)) platform = "iOS";
+      else if (/Windows/i.test(ua)) platform = "Windows";
+      else if (/Mac OS X|Macintosh/i.test(ua)) platform = "macOS";
+      else if (/Linux/i.test(ua)) platform = "Linux";
+
+      let browser = "Navegador Web";
+      if (/Edg\//i.test(ua)) browser = "Microsoft Edge";
+      else if (/OPR\//i.test(ua) || /Opera/i.test(ua)) browser = "Opera";
+      else if (/Chrome\//i.test(ua) && !/Chromium/i.test(ua)) browser = "Google Chrome";
+      else if (/Safari\//i.test(ua) && !/Chrome/i.test(ua)) browser = "Safari";
+      else if (/Firefox\//i.test(ua)) browser = "Firefox";
+
+      const screenRes = (window.screen && window.screen.width && window.screen.height)
+        ? `${window.screen.width}x${window.screen.height}`
+        : "";
+
+      return {
+        deviceType,
+        platform,
+        browserDetails: screenRes ? `${browser} (${screenRes})` : browser
+      };
+    }
+
+    function recordDeviceAccess(sessionInfo) {
+      if (!sessionInfo) return;
+      try {
+        UserRepository.readLatestLocalState();
+        if (!Array.isArray(state.deviceLogs)) state.deviceLogs = [];
+        const info = detectDeviceInfo();
+        const nowTs = Date.now();
+        const formattedDate = new Date(nowTs).toLocaleString("pt-BR");
+
+        state.deviceLogs.unshift({
+          id: "dev_" + nowTs + "_" + Math.random().toString(36).slice(2, 6),
+          userLabel: sessionInfo.name ? `${sessionInfo.name} (${sessionInfo.user})` : (sessionInfo.user || "Usuário"),
+          role: sessionInfo.role || "merchant_user",
+          deviceType: info.deviceType,
+          platform: info.platform,
+          browserDetails: info.browserDetails,
+          accessedAtText: formattedDate,
+          updatedAt: nowTs
+        });
+
+        // Mantém os últimos 200 registros de acesso para desempenho ideal
+        if (state.deviceLogs.length > 200) {
+          const extra = state.deviceLogs.slice(200);
+          recordDeletion("device_log", extra.map(d => d.id), nowTs);
+          state.deviceLogs = state.deviceLogs.slice(0, 200);
+        }
+
+        saveState();
+      } catch (_err) {
+        // Não bloqueia o fluxo de login caso o registro de log falhe
+      }
     }
 
     function formatCurrency(val) {
@@ -2227,6 +2353,7 @@
                 user: SUPER_ADMIN_USER
               };
               saveState();
+              recordDeviceAccess(state.session);
               syncView();
               return;
             }
@@ -2264,6 +2391,7 @@
             user: matchedUser.user
           };
           saveState();
+          recordDeviceAccess(state.session);
           syncView();
         } finally {
           setLoginFormBusy(false);
@@ -2341,10 +2469,13 @@
       const blockedEl = document.getElementById("statBlockedUsers");
       const tbody = document.getElementById("adminUsersTableBody");
 
-      const total = state.users.length;
-      const active = state.users.filter(u => u.status === "Ativo").length;
-      const pending = state.users.filter(u => u.status === "Pendente").length;
-      const blocked = state.users.filter(u => u.status === "Suspenso" || u.status === "Bloqueado").length;
+      // Filtra rigorosamente apenas usuários reais cadastrados na plataforma (nunca dados sintéticos)
+      const realUsers = state.users.filter(u => !isSyntheticOrTestRecord(u) && u.user);
+
+      const total = realUsers.length;
+      const active = realUsers.filter(u => u.status === "Ativo").length;
+      const pending = realUsers.filter(u => u.status === "Pendente").length;
+      const blocked = realUsers.filter(u => u.status === "Suspenso" || u.status === "Bloqueado").length;
 
       if (totalEl) totalEl.textContent = String(total);
       if (activeEl) activeEl.textContent = String(active);
@@ -2354,16 +2485,16 @@
       if (!tbody) return;
       tbody.innerHTML = "";
 
-      if (state.users.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="muted">Nenhum usuário cadastrado no momento.</td></tr>`;
+      if (realUsers.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="muted">Nenhum usuário cadastrado na plataforma no momento.</td></tr>`;
         return;
       }
 
-      state.users.forEach((u) => {
+      realUsers.forEach((u) => {
         const tr = document.createElement("tr");
         let badgeClass = "badge-pending";
         if (u.status === "Ativo") badgeClass = "badge-active";
-        if (u.status === "Suspenso" || u.status === "Bloqueado") badgeClass = "badge-blocked";
+        else if (u.status === "Suspenso" || u.status === "Bloqueado") badgeClass = "badge-blocked";
 
         tr.innerHTML = `
           <td>
@@ -2409,109 +2540,32 @@
           renderSuperAdmin();
         });
       });
+
+      renderAdminDevicesLog();
     }
 
-    function renderMerchantPanel() {
-      if (!assertUserAuthorized("abrir o painel da mercearia")) return;
-      const ownerUserId = state.session.userId;
+    function renderAdminDevicesLog() {
+      const devTbody = document.getElementById("adminDevicesTableBody");
+      if (!devTbody) return;
 
-      const myCustomers = state.groceryCustomers.filter(c => c.ownerUserId === ownerUserId);
-      const myPurchases = state.purchases.filter(p => p.ownerUserId === ownerUserId);
+      const logs = Array.isArray(state.deviceLogs) ? state.deviceLogs : [];
+      devTbody.innerHTML = "";
 
-      const openTotal = myPurchases
-        .filter(p => p.status === "Em Aberto")
-        .reduce((acc, p) => acc + (Number(p.value) || 0), 0);
-
-      const paidTotal = myPurchases
-        .filter(p => p.status === "Pago")
-        .reduce((acc, p) => acc + (Number(p.value) || 0), 0);
-
-      const custCountEl = document.getElementById("statMerchantCustomers");
-      const openEl = document.getElementById("statMerchantOpen");
-      const paidEl = document.getElementById("statMerchantPaid");
-
-      if (custCountEl) custCountEl.textContent = String(myCustomers.length);
-      if (openEl) openEl.textContent = formatCurrency(openTotal);
-      if (paidEl) paidEl.textContent = formatCurrency(paidTotal);
-
-      renderPurchaseCustomerSelect(myCustomers);
-      renderMerchantCustomers(myCustomers);
-      renderPurchases(myPurchases);
-      updateInstallmentPreview();
-    }
-
-    function renderPurchaseCustomerSelect(myCustomers) {
-      const selectEl = document.getElementById("purchCustomer");
-      if (!selectEl) return;
-
-      const previousValue = selectEl.value;
-      selectEl.innerHTML = "";
-
-      if (!myCustomers.length) {
-        const opt = document.createElement("option");
-        opt.value = "";
-        opt.textContent = "Cadastre um cliente primeiro";
-        selectEl.appendChild(opt);
+      if (!logs.length) {
+        devTbody.innerHTML = `<tr><td colspan="5" class="muted">Nenhum acesso por dispositivo registrado até o momento.</td></tr>`;
         return;
       }
 
-      myCustomers.forEach((c) => {
-        const available = Math.max(0, (Number(c.limit) || 0) - (Number(c.used) || 0));
-        const opt = document.createElement("option");
-        opt.value = c.id;
-        opt.textContent = `${c.name} — Disponível: ${formatCurrency(available)}`;
-        selectEl.appendChild(opt);
-      });
-
-      if (previousValue && myCustomers.some(c => c.id === previousValue)) {
-        selectEl.value = previousValue;
-      }
-    }
-
-    function renderMerchantCustomers(myCustomers) {
-      const tbody = document.getElementById("merchantCustomersBody");
-      if (!tbody) return;
-      tbody.innerHTML = "";
-
-      if (!myCustomers.length) {
-        tbody.innerHTML = `<tr><td colspan="7" class="muted">Nenhum cliente cadastrado na sua mercearia ainda.</td></tr>`;
-        return;
-      }
-
-      myCustomers.forEach((c) => {
-        const limitVal = Number(c.limit) || 0;
-        const usedVal = Number(c.used) || 0;
-        const availableVal = Math.max(0, limitVal - usedVal);
-        const streetText = c.street ? escapeHtml(c.street) : `<span class="muted">Rua não informada</span>`;
-        const typeText = c.propertyType ? escapeHtml(c.propertyType) : "Casa";
-        const numText = c.number ? escapeHtml(c.number) : "-";
-
+      logs.forEach((entry) => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td><strong>${escapeHtml(c.name)}</strong></td>
-          <td>
-            ${streetText}<br />
-            <span class="muted">${typeText} • Nº ${numText}</span>
-          </td>
-          <td>${escapeHtml(c.cpf)}</td>
-          <td>${formatCurrency(limitVal)}</td>
-          <td>${formatCurrency(usedVal)}</td>
-          <td><strong class="brand-highlight">${formatCurrency(availableVal)}</strong></td>
-          <td>
-            <button type="button" class="btn-danger" data-del-cust="${escapeHtml(c.id)}">Excluir</button>
-          </td>
+          <td><strong>${escapeHtml(entry.userLabel || "-")}</strong></td>
+          <td>${escapeHtml(entry.deviceType || "-")}</td>
+          <td>${escapeHtml(entry.platform || "-")}</td>
+          <td><span class="muted">${escapeHtml(entry.browserDetails || "-")}</span></td>
+          <td>${escapeHtml(entry.accessedAtText || "-")}</td>
         `;
-        tbody.appendChild(tr);
-      });
-
-      tbody.querySelectorAll("button[data-del-cust]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const cid = btn.getAttribute("data-del-cust");
-          state.groceryCustomers = state.groceryCustomers.filter(c => c.id !== cid);
-          state.purchases = state.purchases.filter(p => p.customerId !== cid);
-          saveState();
-          renderMerchantPanel();
-        });
+        devTbody.appendChild(tr);
       });
     }
 
@@ -2932,6 +2986,11 @@
           }
 
           const deletedName = targetCust.name;
+          const nowTs = Date.now();
+          recordDeletion("customer", targetCust.id, nowTs);
+          const relatedPurchases = state.purchases.filter((p) => p.customerId === targetCust.id);
+          recordDeletion("purchase", relatedPurchases.map((p) => p.id), nowTs);
+
           state.groceryCustomers = state.groceryCustomers.filter(c => c.id !== targetCust.id);
           state.purchases = state.purchases.filter(p => p.customerId !== targetCust.id);
 
@@ -3231,6 +3290,17 @@
         isAdminMode = false;
         activeAuthTab = "login";
         AuthStore.revokeSession("", false);
+      });
+
+      document.getElementById("clearDevicesLogBtn")?.addEventListener("click", () => {
+        if (!assertUserAuthorized("limpar o histórico de dispositivos")) return;
+        UserRepository.readLatestLocalState();
+        const nowTs = Date.now();
+        const currentLogs = Array.isArray(state.deviceLogs) ? state.deviceLogs : [];
+        recordDeletion("device_log", currentLogs.map(d => d.id), nowTs);
+        state.deviceLogs = [];
+        saveState();
+        renderAdminDevicesLog();
       });
 
       initCrossTabSync();
