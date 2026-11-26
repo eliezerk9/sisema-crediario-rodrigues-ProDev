@@ -118,6 +118,25 @@
       text-shadow: 0 0 16px rgba(0, 255, 102, 0.55);
     }
 
+    .cloud-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      border: 1px solid var(--neon-border);
+      background: rgba(0, 255, 102, 0.1);
+      color: var(--neon);
+    }
+
+    .cloud-pill.is-local {
+      border-color: rgba(255, 190, 46, 0.4);
+      background: rgba(255, 190, 46, 0.12);
+      color: var(--warning);
+    }
+
     label {
       display: block;
       font-size: 0.82rem;
@@ -949,6 +968,8 @@
         </div>
       </div>
       <div class="topbar-actions">
+        <span id="cloudSyncBadge" class="cloud-pill is-local">Banco Local (Sync Ativo)</span>
+        <button type="button" id="refreshCloudBtn" class="btn-secondary">Sincronizar Agora</button>
         <button type="button" id="logoutBtn" class="btn-secondary">Sair da Conta</button>
       </div>
     </header>
@@ -1211,7 +1232,7 @@
 
   <script>
     /* =======================================================================
-       ESTADO INICIAL E PERSISTÊNCIA SEGURA EM LOCALSTORAGE + INDEXEDDB
+       ESTADO INICIAL E PERSISTÊNCIA CENTRALIZADA (BANCO REMOTO + LOCAL)
        ======================================================================= */
     const STORAGE_KEY = "rodrigues_prodev_state_v2026_11_closed_test";
     const BACKUP_STORAGE_KEY = "rodrigues_prodev_backup_db_v1";
@@ -1219,6 +1240,14 @@
     const IDB_DB_NAME = "RodriguesProDevDB";
     const IDB_STORE_NAME = "system_state";
     const IDB_RECORD_KEY = "main_database";
+
+    const CENTRAL_DB_CONFIG = {
+      projectId: "pdflqzmgenavxwnuuysr",
+      supabaseUrl: "https://pdflqzmgenavxwnuuysr.supabase.co",
+      supabasePublishableKey: "sb_publishable_g54X9rHMG2DUdRUTniOHZg_NymkAzG_",
+      tableName: "rodrigues_prodev_store",
+      recordId: "rodrigues_prodev_main"
+    };
 
     const SUPER_ADMIN_USER = "rodrigues";
     const SUPER_ADMIN_PASS = "Rodrigues84326810";
@@ -1232,7 +1261,8 @@
         address: "Rua Principal, 123 - Centro",
         user: "123",
         pass: "123",
-        status: "Pendente"
+        status: "Pendente",
+        updatedAt: 0
       }
     ];
 
@@ -1244,11 +1274,21 @@
     let activeAuthTab = "login";
     let isAuthenticating = false;
     let authQueue = Promise.resolve();
+    let isCentralDbConnected = false;
     const AUTH_CHANNEL_NAME = "rodrigues_prodev_auth_sync_v1";
     let authBroadcastChannel = null;
 
     function cloneData(value) {
       return JSON.parse(JSON.stringify(value));
+    }
+
+    function hasCentralDbConfig() {
+      return Boolean(
+        CENTRAL_DB_CONFIG.supabaseUrl &&
+        CENTRAL_DB_CONFIG.supabasePublishableKey &&
+        CENTRAL_DB_CONFIG.tableName &&
+        CENTRAL_DB_CONFIG.recordId
+      );
     }
 
     function addMonthsToDateStr(dateStr, monthsToAdd) {
@@ -1270,6 +1310,7 @@
       if (!u || typeof u !== "object") return null;
       const validStatuses = ["Ativo", "Pendente", "Suspenso", "Bloqueado"];
       const status = validStatuses.includes(u.status) ? u.status : "Pendente";
+      const parsedUpdatedAt = Number(u.updatedAt) || Date.parse(u.createdAt || "") || 0;
       return {
         id: String(u.id || ("u_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6))),
         name: String(u.name || "").trim(),
@@ -1279,35 +1320,39 @@
         user: String(u.user || "").trim(),
         pass: String(u.pass || ""),
         status,
-        createdAt: String(u.createdAt || new Date().toISOString())
+        createdAt: String(u.createdAt || new Date().toISOString()),
+        updatedAt: parsedUpdatedAt
       };
+    }
+
+    function pickNewerUser(a, b) {
+      if (!a) return b;
+      if (!b) return a;
+      if (a.id === "u_test_123" && b.id !== "u_test_123") return b;
+      if (b.id === "u_test_123" && a.id !== "u_test_123") return a;
+      const timeA = Number(a.updatedAt) || 0;
+      const timeB = Number(b.updatedAt) || 0;
+      if (timeB > timeA) return b;
+      if (timeA > timeB) return a;
+      if (a.status === "Pendente" && b.status !== "Pendente") return b;
+      return a;
     }
 
     function mergeUsersList(primaryUsers, secondaryUsers) {
       const map = new Map();
-      const addList = (list) => {
-        if (!Array.isArray(list)) return;
-        list.forEach((raw) => {
-          const norm = normalizeUserRecord(raw);
-          if (!norm || !norm.user) return;
-          const key = norm.user.toLowerCase();
-          const prev = map.get(key);
-          if (!prev) {
-            map.set(key, norm);
-          } else {
-            // Prioriza o cadastro real em relação ao registro padrão "u_test_123"
-            // e mantém o registro da fonte primária quando ambos existem
-            if (prev.id === "u_test_123" && norm.id !== "u_test_123") {
-              map.set(key, norm);
-            }
-          }
-        });
+      const ingest = (raw) => {
+        const norm = normalizeUserRecord(raw);
+        if (!norm || !norm.user) return;
+        const key = norm.user.toLowerCase();
+        const existing = map.get(key);
+        map.set(key, pickNewerUser(existing, norm));
       };
-      // Ordem: fonte primária primeiro para preservar liberações/edições mais recentes
-      addList(primaryUsers);
-      addList(secondaryUsers);
+
+      if (Array.isArray(primaryUsers)) primaryUsers.forEach(ingest);
+      if (Array.isArray(secondaryUsers)) secondaryUsers.forEach(ingest);
+
       if (!map.has("123")) {
-        addList(defaultUsers);
+        defaultUsers.forEach(ingest);
       }
       return Array.from(map.values());
     }
@@ -1317,8 +1362,17 @@
       [primaryList, secondaryList].forEach((list) => {
         if (!Array.isArray(list)) return;
         list.forEach((item) => {
-          if (item && item.id && !map.has(item.id)) {
-            map.set(item.id, item);
+          if (item && item.id) {
+            const prev = map.get(item.id);
+            if (!prev) {
+              map.set(item.id, item);
+            } else {
+              const prevTs = Number(prev.updatedAt) || 0;
+              const nextTs = Number(item.updatedAt) || 0;
+              if (nextTs > prevTs) {
+                map.set(item.id, item);
+              }
+            }
           }
         });
       });
@@ -1327,13 +1381,14 @@
 
     function parseStoredState(raw) {
       if (!raw) return null;
-      const parsed = JSON.parse(raw);
+      const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
       if (!parsed || typeof parsed !== "object") return null;
       return {
         users: Array.isArray(parsed.users) ? parsed.users.map(normalizeUserRecord).filter(Boolean) : [],
         groceryCustomers: Array.isArray(parsed.groceryCustomers) ? parsed.groceryCustomers : [],
         purchases: Array.isArray(parsed.purchases) ? parsed.purchases : [],
-        session: parsed.session || null
+        session: parsed.session || null,
+        updatedAt: Number(parsed.updatedAt) || 0
       };
     }
 
@@ -1349,13 +1404,13 @@
             users: cloneData(defaultUsers),
             groceryCustomers: [],
             purchases: [],
-            session: null
+            session: null,
+            updatedAt: Date.now()
           };
-          persistStateToStorage(initial);
+          persistStateToStorage(initial, false);
           return initial;
         }
 
-        // Usa a fonte principal como base quando disponível, complementando com o backup
         const base = primaryData || backupData;
         const secondary = primaryData && backupData ? backupData : null;
 
@@ -1367,18 +1422,184 @@
           users: mergedUsers,
           groceryCustomers: mergedCustomers,
           purchases: mergedPurchases,
-          session: base.session ?? secondary?.session ?? null
+          session: base.session ?? secondary?.session ?? null,
+          updatedAt: Math.max(Number(base.updatedAt) || 0, Number(secondary?.updatedAt) || 0)
         };
 
-        persistStateToStorage(restored);
+        persistStateToStorage(restored, false);
         return restored;
       } catch (_err) {
         return {
           users: cloneData(defaultUsers),
           groceryCustomers: [],
           purchases: [],
-          session: null
+          session: null,
+          updatedAt: Date.now()
         };
+      }
+    }
+
+    /* =======================================================================
+       BANCO CENTRALIZADO EM NUVEM (SUPABASE REST API + SINCRONIZAÇÃO)
+       ======================================================================= */
+    let warnedPublishableRestFormat = false;
+
+    const CentralDatabase = {
+      getRestUrl() {
+        const baseUrl = String(CENTRAL_DB_CONFIG.supabaseUrl || "").replace(/\/+$/, "");
+        return `${baseUrl}/rest/v1/${CENTRAL_DB_CONFIG.tableName}`;
+      },
+
+      getHeaders() {
+        const apiKey = String(CENTRAL_DB_CONFIG.supabasePublishableKey || "").trim();
+        return {
+          "Content-Type": "application/json",
+          "apikey": apiKey,
+          "Authorization": `Bearer ${apiKey}`,
+          "Prefer": "resolution=merge-duplicates,return=representation"
+        };
+      },
+
+      logRestAuthHintIfNeeded(status) {
+        const key = String(CENTRAL_DB_CONFIG.supabasePublishableKey || "");
+        if ((status === 401 || status === 403) && key.startsWith("sb_publishable_") && !warnedPublishableRestFormat) {
+          warnedPublishableRestFormat = true;
+          console.warn(
+            "Supabase REST API retornou " + status + " com a chave sb_publishable_. " +
+            "Verifique as políticas (RLS) da tabela no Supabase para permitir acesso com a chave pública configurada no front-end (nunca coloque chave secreta no código do navegador)."
+          );
+        }
+      },
+
+      async pullCentralState() {
+        if (!hasCentralDbConfig()) {
+          isCentralDbConnected = false;
+          updateCloudSyncBadge();
+          return null;
+        }
+
+        try {
+          const url = `${this.getRestUrl()}?id=eq.${encodeURIComponent(CENTRAL_DB_CONFIG.recordId)}&select=payload,updated_at`;
+          const res = await fetch(url, {
+            method: "GET",
+            headers: this.getHeaders(),
+            cache: "no-store"
+          });
+
+          if (!res.ok) {
+            this.logRestAuthHintIfNeeded(res.status);
+            isCentralDbConnected = false;
+            updateCloudSyncBadge();
+            return null;
+          }
+
+          const rows = await res.json();
+          isCentralDbConnected = true;
+          updateCloudSyncBadge();
+
+          if (!Array.isArray(rows) || rows.length === 0 || !rows[0]?.payload) {
+            return null;
+          }
+
+          return parseStoredState(rows[0].payload);
+        } catch (_err) {
+          isCentralDbConnected = false;
+          updateCloudSyncBadge();
+          return null;
+        }
+      },
+
+      async pushCentralState(snapshot) {
+        if (!hasCentralDbConfig()) {
+          isCentralDbConnected = false;
+          updateCloudSyncBadge();
+          return false;
+        }
+
+        try {
+          const payloadToSave = {
+            users: snapshot.users || [],
+            groceryCustomers: snapshot.groceryCustomers || [],
+            purchases: snapshot.purchases || [],
+            updatedAt: Number(snapshot.updatedAt) || Date.now()
+          };
+
+          const res = await fetch(`${this.getRestUrl()}?on_conflict=id`, {
+            method: "POST",
+            headers: this.getHeaders(),
+            body: JSON.stringify([
+              {
+                id: CENTRAL_DB_CONFIG.recordId,
+                payload: payloadToSave,
+                updated_at: new Date().toISOString()
+              }
+            ])
+          });
+
+          if (!res.ok) {
+            this.logRestAuthHintIfNeeded(res.status);
+          }
+
+          isCentralDbConnected = res.ok;
+          updateCloudSyncBadge();
+          return res.ok;
+        } catch (_err) {
+          isCentralDbConnected = false;
+          updateCloudSyncBadge();
+          return false;
+        }
+      },
+
+      async syncWithCentral(forcePushIfEmpty = false) {
+        if (!hasCentralDbConfig()) {
+          isCentralDbConnected = false;
+          updateCloudSyncBadge();
+          return;
+        }
+
+        const remoteState = await this.pullCentralState();
+        if (!remoteState) {
+          if (forcePushIfEmpty) {
+            await this.pushCentralState(state);
+          }
+          return;
+        }
+
+        const mergedUsers = mergeUsersList(remoteState.users, state.users);
+        const mergedCustomers = mergeById(remoteState.groceryCustomers, state.groceryCustomers);
+        const mergedPurchases = mergeById(remoteState.purchases, state.purchases);
+
+        const changed =
+          JSON.stringify(mergedUsers) !== JSON.stringify(state.users) ||
+          JSON.stringify(mergedCustomers) !== JSON.stringify(state.groceryCustomers) ||
+          JSON.stringify(mergedPurchases) !== JSON.stringify(state.purchases);
+
+        state.users = mergedUsers;
+        state.groceryCustomers = mergedCustomers;
+        state.purchases = mergedPurchases;
+        state.updatedAt = Math.max(Number(state.updatedAt) || 0, Number(remoteState.updatedAt) || 0);
+
+        persistStateToStorage(state, false);
+
+        if (changed) {
+          await this.pushCentralState(state);
+          syncView();
+        }
+      }
+    };
+
+    function updateCloudSyncBadge() {
+      const badge = document.getElementById("cloudSyncBadge");
+      if (!badge) return;
+      if (hasCentralDbConfig() && isCentralDbConnected) {
+        badge.textContent = "Banco Central Online";
+        badge.className = "cloud-pill";
+      } else if (hasCentralDbConfig()) {
+        badge.textContent = "Reconectando Banco...";
+        badge.className = "cloud-pill is-local";
+      } else {
+        badge.textContent = "Banco Local (Sync Ativo)";
+        badge.className = "cloud-pill is-local";
       }
     }
 
@@ -1430,7 +1651,6 @@
 
         if (!idbRecord || typeof idbRecord !== "object") return;
 
-        // Mantém os dados atuais do estado/localStorage como prioridade e recupera apenas itens faltantes do IDB
         const mergedUsers = mergeUsersList(state.users, idbRecord.users);
         const mergedCustomers = mergeById(state.groceryCustomers, idbRecord.groceryCustomers);
         const mergedPurchases = mergeById(state.purchases, idbRecord.purchases);
@@ -1447,28 +1667,35 @@
           syncView();
         }
       } catch (_err) {
-        // Mantém o estado carregado no localStorage
+        // Mantém o estado carregado
       }
     }
 
-    function persistStateToStorage(targetState, syncIdb = true) {
+    function persistStateToStorage(targetState, syncIdb = true, pushRemote = false) {
       const serialized = JSON.stringify(targetState);
       localStorage.setItem(STORAGE_KEY, serialized);
       localStorage.setItem(BACKUP_STORAGE_KEY, serialized);
+      const tasks = [];
       if (syncIdb) {
-        return persistStateToIndexedDb(targetState);
+        tasks.push(persistStateToIndexedDb(targetState));
       }
-      return Promise.resolve();
+      if (pushRemote && hasCentralDbConfig()) {
+        tasks.push(CentralDatabase.pushCentralState(targetState));
+      }
+      return Promise.all(tasks);
     }
 
     function saveState() {
       try {
         state.users = mergeUsersList(state.users, []);
-        // Grava de forma síncrona no localStorage (chave principal + backup) e dispara gravação no IndexedDB
+        state.updatedAt = Date.now();
         const serialized = JSON.stringify(state);
         localStorage.setItem(STORAGE_KEY, serialized);
         localStorage.setItem(BACKUP_STORAGE_KEY, serialized);
         void persistStateToIndexedDb(state);
+        if (hasCentralDbConfig()) {
+          void CentralDatabase.pushCentralState(state);
+        }
         broadcastAuthSync("STATE_UPDATED");
       } catch (_err) {
         setAuthFeedback("Não foi possível salvar no navegador (armazenamento cheio ou bloqueado).", true);
@@ -1476,10 +1703,9 @@
     }
 
     /* =======================================================================
-       CAMADA DE REPOSITÓRIO / SERVIÇO DE AUTENTICAÇÃO (PRONTO PARA API/NUVEM)
+       CAMADA DE REPOSITÓRIO / SERVIÇO DE AUTENTICAÇÃO
        ======================================================================= */
     const UserRepository = {
-      // Ponto de extensão para conectar API/banco remoto (ex.: GET /api/auth/me ou Supabase)
       remoteEndpoint: "",
 
       readLatestLocalState() {
@@ -1540,6 +1766,7 @@
         const target = state.users.find((u) => u.id === userId);
         if (!target) return null;
         target.status = nextStatus;
+        target.updatedAt = Date.now();
         saveState();
         broadcastAuthSync("USER_STATUS_CHANGED", { userId, status: nextStatus });
         return target;
@@ -1552,28 +1779,6 @@
         state.purchases = state.purchases.filter((p) => p.ownerUserId !== userId);
         saveState();
         broadcastAuthSync("USER_DELETED", { userId });
-      },
-
-      // Estrutura pronta para consultar backend real (ex.: GET /api/auth/me com Bearer token)
-      async fetchRemoteSessionStatus(sessionToken) {
-        if (!this.remoteEndpoint || !sessionToken) return null;
-        try {
-          const res = await fetch(`${this.remoteEndpoint}/api/auth/me`, {
-            method: "GET",
-            headers: {
-              "Authorization": `Bearer ${sessionToken}`,
-              "Cache-Control": "no-store"
-            }
-          });
-          if (!res.ok) return { authorized: false, status: "Não autorizado" };
-          const data = await res.json();
-          return {
-            authorized: Boolean(data?.authorized && data?.status === "Ativo"),
-            status: String(data?.status || "Pendente")
-          };
-        } catch (_err) {
-          return null;
-        }
       }
     };
 
@@ -1585,7 +1790,7 @@
 
       revokeSession(reasonMessage, isError = true) {
         state.session = null;
-        persistStateToStorage(state, true);
+        persistStateToStorage(state, true, false);
         broadcastAuthSync("SESSION_REVOKED");
 
         const loginView = document.getElementById("loginView");
@@ -1622,7 +1827,10 @@
     function initCrossTabSync() {
       const handleExternalUpdate = () => {
         UserRepository.readLatestLocalState();
-        hydrateStateFromIndexedDb();
+        void hydrateStateFromIndexedDb();
+        if (hasCentralDbConfig()) {
+          void CentralDatabase.syncWithCentral(false);
+        }
         syncView();
       };
 
@@ -1649,6 +1857,12 @@
           handleExternalUpdate();
         }
       });
+
+      if (hasCentralDbConfig()) {
+        window.setInterval(() => {
+          void CentralDatabase.syncWithCentral(false);
+        }, 8000);
+      }
     }
 
     /* =======================================================================
@@ -1993,6 +2207,10 @@
         setAuthFeedback("");
 
         try {
+          if (hasCentralDbConfig()) {
+            await CentralDatabase.syncWithCentral(false);
+          }
+
           const rawUser = String(document.getElementById("loginUser")?.value || "").trim();
           const rawPass = String(document.getElementById("loginPass")?.value || "");
 
@@ -2069,6 +2287,10 @@
         setAuthFeedback("");
 
         try {
+          if (hasCentralDbConfig()) {
+            await CentralDatabase.syncWithCentral(false);
+          }
+
           const name = String(document.getElementById("regName")?.value || "").trim();
           const cpf = String(document.getElementById("regCpf")?.value || "").trim();
           const phone = String(document.getElementById("regPhone")?.value || "").trim();
@@ -2089,8 +2311,9 @@
             return;
           }
 
+          const nowTs = Date.now();
           const newUser = normalizeUserRecord({
-            id: "u_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+            id: "u_" + nowTs + "_" + Math.random().toString(36).slice(2, 6),
             name,
             cpf,
             phone,
@@ -2098,7 +2321,8 @@
             user,
             pass,
             status: "Pendente",
-            createdAt: new Date().toISOString()
+            createdAt: new Date(nowTs).toISOString(),
+            updatedAt: nowTs
           });
           newUser.status = "Pendente";
 
@@ -2414,8 +2638,9 @@
 
         if (!name || !cpf) return;
 
+        const nowTs = Date.now();
         state.groceryCustomers.unshift({
-          id: "gc_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+          id: "gc_" + nowTs + "_" + Math.random().toString(36).slice(2, 6),
           ownerUserId,
           name,
           cpf,
@@ -2423,7 +2648,8 @@
           propertyType,
           number,
           limit: Math.max(0, limit),
-          used: 0
+          used: 0,
+          updatedAt: nowTs
         });
 
         saveState();
@@ -2489,8 +2715,10 @@
           return;
         }
 
+        const nowTs = Date.now();
         cust.used = Number(((Number(cust.used) || 0) + financedValue).toFixed(2));
-        const batchId = "p_" + Date.now();
+        cust.updatedAt = nowTs;
+        const batchId = "p_" + nowTs;
 
         if (hasDownPayment && downPayment > 0) {
           state.purchases.unshift({
@@ -2502,7 +2730,8 @@
             value: downPayment,
             buyDate,
             dueDate: buyDate,
-            status: "Pago"
+            status: "Pago",
+            updatedAt: nowTs
           });
         }
 
@@ -2526,7 +2755,8 @@
             value: parcelaVal,
             buyDate,
             dueDate: parcelaDue,
-            status: "Em Aberto"
+            status: "Em Aberto",
+            updatedAt: nowTs
           });
         }
 
@@ -2595,6 +2825,7 @@
     }
 
     function syncView() {
+      updateCloudSyncBadge();
       const loginView = document.getElementById("loginView");
       const appView = document.getElementById("appView");
       const superAdminPanel = document.getElementById("superAdminPanel");
@@ -2667,6 +2898,15 @@
       document.getElementById("loginForm")?.addEventListener("submit", processLoginSubmit);
       document.getElementById("registerForm")?.addEventListener("submit", processRegisterSubmit);
 
+      document.getElementById("refreshCloudBtn")?.addEventListener("click", async () => {
+        if (hasCentralDbConfig()) {
+          await CentralDatabase.syncWithCentral(true);
+        } else {
+          await hydrateStateFromIndexedDb();
+        }
+        syncView();
+      });
+
       document.getElementById("logoutBtn")?.addEventListener("click", () => {
         isAdminMode = false;
         activeAuthTab = "login";
@@ -2690,7 +2930,11 @@
 
       bindMerchantEvents();
       applyRememberedCredentialsToForm();
+      updateCloudSyncBadge();
       void hydrateStateFromIndexedDb();
+      if (hasCentralDbConfig()) {
+        void CentralDatabase.syncWithCentral(true);
+      }
       syncView();
     });
   </script>
