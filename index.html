@@ -976,7 +976,7 @@
         </div>
       </div>
       <div class="topbar-actions">
-        <span id="cloudSyncBadge" class="cloud-pill is-local">Prévia Interativa (Local)</span>
+        <span id="cloudSyncBadge" class="cloud-pill is-local">Verificando Nuvem...</span>
         <button type="button" id="refreshCloudBtn" class="btn-secondary">Sincronizar Agora</button>
         <button type="button" id="logoutBtn" class="btn-secondary">Sair da Conta</button>
       </div>
@@ -1273,6 +1273,14 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
     const REMEMBER_KEY = "rodrigues_prodev_preview_remember_v1";
     const PENDING_EXPIRY_MS = 10 * 24 * 60 * 60 * 1000;
 
+    // Configuração da nuvem (Supabase) — substitua pela URL e Anon Key do seu projeto
+    const CLOUD_CONFIG = {
+      url: "https://SEU-PROJETO.supabase.co",
+      anonKey: "SUA-ANON-KEY-AQUI",
+      table: "rodrigues_prodev_store",
+      recordId: "main_state"
+    };
+
     const todayStr = new Date().toISOString().split("T")[0];
     const nextMonthStr = (() => {
       const d = new Date(`${todayStr}T12:00:00`);
@@ -1389,6 +1397,8 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
             updatedAt: now
           }
         ],
+        deletedUsers: {},
+        lastUpdatedAt: now,
         session: null
       };
     }
@@ -1403,6 +1413,24 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       purchDate: { year: new Date().getFullYear(), month: new Date().getMonth() },
       purchDueDate: { year: new Date().getFullYear(), month: new Date().getMonth() }
     };
+
+    function isCloudConfigured() {
+      return (
+        typeof CLOUD_CONFIG.url === "string" &&
+        CLOUD_CONFIG.url.startsWith("https://") &&
+        !CLOUD_CONFIG.url.includes("SEU-PROJETO") &&
+        typeof CLOUD_CONFIG.anonKey === "string" &&
+        CLOUD_CONFIG.anonKey.length > 20 &&
+        !CLOUD_CONFIG.anonKey.includes("SUA-ANON-KEY")
+      );
+    }
+
+    function updateCloudBadge(statusText, isLocal = false) {
+      const badge = document.getElementById("cloudSyncBadge");
+      if (!badge) return;
+      badge.textContent = statusText;
+      badge.classList.toggle("is-local", isLocal);
+    }
 
     function escapeHtml(str) {
       return String(str ?? "")
@@ -1431,20 +1459,193 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       return base.toISOString().split("T")[0];
     }
 
+    // Remove automaticamente contas que ficaram "Pendente" por mais de 10 dias
     function pruneExpiredPendingUsers() {
-      const cutoff = Date.now() - PENDING_EXPIRY_MS;
+      const now = Date.now();
+      const cutoff = now - PENDING_EXPIRY_MS;
+      state.deletedUsers = state.deletedUsers && typeof state.deletedUsers === "object" ? state.deletedUsers : {};
+
       state.users = (state.users || []).filter((u) => {
-        if (u.status === "Pendente" && (Number(u.createdAtTs) || 0) < cutoff) {
+        if (u.status !== "Ativo") {
+          const createdTs = Number(u.createdAtTs) || Number(new Date(u.createdAt || 0).getTime()) || 0;
+          if (createdTs > 0 && createdTs < cutoff) {
+            state.deletedUsers[u.id] = now;
+            return false;
+          }
+        }
+        if (state.deletedUsers[u.id]) {
           return false;
         }
         return true;
       });
     }
 
+    function mergeStates(localState, cloudPayload) {
+      const base = createInitialPreviewState();
+      const loc = localState && typeof localState === "object" ? localState : base;
+      const cld = cloudPayload && typeof cloudPayload === "object" ? cloudPayload : null;
+
+      const mergedDeletedUsers = {
+        ...(loc.deletedUsers || {}),
+        ...((cld && cld.deletedUsers) || {})
+      };
+
+      const byUserId = new Map();
+      const ingestUsers = (arr) => {
+        (arr || []).forEach((u) => {
+          if (!u || !u.id || mergedDeletedUsers[u.id]) return;
+          const prev = byUserId.get(u.id);
+          const uTs = Number(u.updatedAt) || Number(u.createdAtTs) || 0;
+          const pTs = prev ? (Number(prev.updatedAt) || Number(prev.createdAtTs) || 0) : -1;
+          if (!prev || uTs >= pTs) {
+            byUserId.set(u.id, {
+              ...u,
+              createdAtTs: Number(u.createdAtTs) || Number(new Date(u.createdAt || Date.now()).getTime()) || Date.now(),
+              updatedAt: uTs || Date.now()
+            });
+          }
+        });
+      };
+
+      ingestUsers(loc.users);
+      if (cld) ingestUsers(cld.users);
+
+      const mergeById = (arrA, arrB) => {
+        const map = new Map();
+        [...(arrA || []), ...(arrB || [])].forEach((item) => {
+          if (!item || !item.id) return;
+          const prev = map.get(item.id);
+          const aTs = Number(item.updatedAt) || 0;
+          const pTs = prev ? (Number(prev.updatedAt) || 0) : -1;
+          if (!prev || aTs >= pTs) map.set(item.id, item);
+        });
+        return Array.from(map.values());
+      };
+
+      const merged = {
+        users: Array.from(byUserId.values()),
+        groceryCustomers: mergeById(loc.groceryCustomers, cld && cld.groceryCustomers),
+        purchases: mergeById(loc.purchases, cld && cld.purchases),
+        deviceLogs: mergeById(loc.deviceLogs, cld && cld.deviceLogs).sort((a, b) => (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0)).slice(0, 80),
+        deletedUsers: mergedDeletedUsers,
+        lastUpdatedAt: Math.max(Number(loc.lastUpdatedAt) || 0, Number(cld && cld.lastUpdatedAt) || 0, Date.now()),
+        session: loc.session || null
+      };
+
+      const cutoff = Date.now() - PENDING_EXPIRY_MS;
+      merged.users = merged.users.filter((u) => {
+        if (u.status !== "Ativo" && (Number(u.createdAtTs) || 0) > 0 && (Number(u.createdAtTs) || 0) < cutoff) {
+          merged.deletedUsers[u.id] = Date.now();
+          return false;
+        }
+        return true;
+      });
+
+      return merged;
+    }
+
+    async function pushStateToCloud(currentState) {
+      if (!isCloudConfigured()) {
+        updateCloudBadge("Modo Local (Configure Supabase)", true);
+        return false;
+      }
+
+      try {
+        updateCloudBadge("Salvando na Nuvem...", false);
+        const endpoint = `${CLOUD_CONFIG.url}/rest/v1/${CLOUD_CONFIG.table}?on_conflict=id`;
+        const bodyPayload = [{
+          id: CLOUD_CONFIG.recordId,
+          payload: {
+            users: currentState.users,
+            groceryCustomers: currentState.groceryCustomers,
+            purchases: currentState.purchases,
+            deviceLogs: currentState.deviceLogs,
+            deletedUsers: currentState.deletedUsers,
+            lastUpdatedAt: currentState.lastUpdatedAt || Date.now()
+          },
+          updated_at: new Date().toISOString()
+        }];
+
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": CLOUD_CONFIG.anonKey,
+            "Authorization": `Bearer ${CLOUD_CONFIG.anonKey}`,
+            "Prefer": "resolution=merge-duplicates,return=minimal"
+          },
+          body: JSON.stringify(bodyPayload)
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        updateCloudBadge("Sincronizado na Nuvem", false);
+        return true;
+      } catch (err) {
+        console.warn("Falha ao enviar para a nuvem:", err);
+        updateCloudBadge("Offline / Falha Nuvem", true);
+        return false;
+      }
+    }
+
+    async function pullStateFromCloud() {
+      if (!isCloudConfigured()) {
+        updateCloudBadge("Modo Local (Configure Supabase)", true);
+        return null;
+      }
+
+      try {
+        updateCloudBadge("Sincronizando...", false);
+        const endpoint = `${CLOUD_CONFIG.url}/rest/v1/${CLOUD_CONFIG.table}?id=eq.${encodeURIComponent(CLOUD_CONFIG.recordId)}&select=payload,updated_at`;
+        const res = await fetch(endpoint, {
+          method: "GET",
+          headers: {
+            "apikey": CLOUD_CONFIG.anonKey,
+            "Authorization": `Bearer ${CLOUD_CONFIG.anonKey}`
+          }
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        const rows = await res.json();
+        updateCloudBadge("Sincronizado na Nuvem", false);
+        if (Array.isArray(rows) && rows.length > 0 && rows[0].payload) {
+          return rows[0].payload;
+        }
+        return null;
+      } catch (err) {
+        console.warn("Falha ao buscar da nuvem:", err);
+        updateCloudBadge("Offline / Falha Nuvem", true);
+        return null;
+      }
+    }
+
+    async function syncWithCloud(forcePushIfEmpty = false) {
+      const cloudPayload = await pullStateFromCloud();
+      state = mergeStates(state, cloudPayload);
+      pruneExpiredPendingUsers();
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (err) {
+        console.error("Erro ao salvar cache local:", err);
+      }
+      if (isCloudConfigured() && (!cloudPayload || forcePushIfEmpty)) {
+        await pushStateToCloud(state);
+      }
+    }
+
     function saveState() {
       try {
         pruneExpiredPendingUsers();
+        state.lastUpdatedAt = Date.now();
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        if (isCloudConfigured()) {
+          void pushStateToCloud(state);
+        } else {
+          updateCloudBadge("Modo Local (Configure Supabase)", true);
+        }
       } catch (err) {
         console.error("Erro ao salvar estado da prévia:", err);
       }
@@ -1465,6 +1666,8 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
             groceryCustomers: Array.isArray(parsed.groceryCustomers) ? parsed.groceryCustomers : [],
             purchases: Array.isArray(parsed.purchases) ? parsed.purchases : [],
             deviceLogs: Array.isArray(parsed.deviceLogs) ? parsed.deviceLogs : [],
+            deletedUsers: parsed.deletedUsers && typeof parsed.deletedUsers === "object" ? parsed.deletedUsers : {},
+            lastUpdatedAt: Number(parsed.lastUpdatedAt) || Date.now(),
             session: parsed.session || null
           };
           pruneExpiredPendingUsers();
@@ -1472,6 +1675,7 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       } catch {
         state = createInitialPreviewState();
       }
+      updateCloudBadge(isCloudConfigured() ? "Conectando Nuvem..." : "Modo Local (Configure Supabase)", !isCloudConfigured());
     }
 
     function saveRememberedCredentials(user, pass, adminFlag) {
@@ -1560,6 +1764,8 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
         }
       },
       deleteUser(userId) {
+        state.deletedUsers = state.deletedUsers && typeof state.deletedUsers === "object" ? state.deletedUsers : {};
+        state.deletedUsers[userId] = Date.now();
         state.users = state.users.filter((u) => u.id !== userId);
         state.groceryCustomers = state.groceryCustomers.filter((c) => c.ownerUserId !== userId);
         state.purchases = state.purchases.filter((p) => p.ownerUserId !== userId);
@@ -2392,9 +2598,9 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
 
       document.getElementById("loginForm")?.addEventListener("submit", processLoginSubmit);
       document.getElementById("registerForm")?.addEventListener("submit", processRegisterSubmit);
-
-      document.getElementById("refreshCloudBtn")?.addEventListener("click", () => {
+      document.getElementById("refreshCloudBtn")?.addEventListener("click", async () => {
         loadState();
+        await syncWithCloud(false);
         syncView();
       });
 
@@ -2422,6 +2628,10 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
 
       bindMerchantEvents();
       syncView();
+      void (async () => {
+        await syncWithCloud(false);
+        syncView();
+      })();
     });
   </script>
 </body>
