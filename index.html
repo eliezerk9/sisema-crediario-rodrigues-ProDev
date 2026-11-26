@@ -3,579 +3,2340 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Rodrigues ProDev — Crediário Multitenant</title>
+  <title>Rodrigues ProDev — Sistema de Crediário e Mercearia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
+    /* =========================================================================
+       TOKENS VISUAIS E TEMA PROFISSIONAL PRODEV (HEXÁGONOS + NEON VERDE)
+       ========================================================================= */
     :root {
-      --bg-dark: #060a08;
-      --bg-card: #0c1410;
-      --bg-input: #111c16;
+      --bg-base: #040806;
+      --bg-surface: rgba(9, 16, 12, 0.88);
+      --bg-card: rgba(12, 21, 16, 0.9);
+      --bg-input: rgba(6, 11, 8, 0.94);
       --neon: #00ff66;
-      --neon-dim: rgba(0, 255, 102, 0.16);
-      --border: rgba(0, 255, 102, 0.25);
-      --text: #e9f5ee;
-      --muted: #8fa899;
-      --danger: #ff4d4d;
+      --neon-strong: #39ff88;
+      --neon-soft: rgba(0, 255, 102, 0.14);
+      --neon-border: rgba(0, 255, 102, 0.38);
+      --neon-glow: 0 0 26px rgba(0, 255, 102, 0.22), 0 18px 42px rgba(0, 0, 0, 0.78);
+      --text-main: #f4fbf7;
+      --text-muted: #9eb7a8;
+      --danger: #ff5263;
+      --warning: #ffbe2e;
+      --success: #00ff66;
+      --border-subtle: rgba(0, 255, 102, 0.14);
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 9px;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-    body {
-      min-height: 100vh;
-      background-color: var(--bg-dark);
+    html, body {
+      min-height: 100%;
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      overflow-x: hidden;
+      line-height: 1.45;
+    }
+
+    /* Cenário profissional inspirado no PRODEV.jpg: favos hexagonais 3D, energia verde e linhas digitais */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      background-color: #040806;
       background-image:
-        radial-gradient(circle at 15% 15%, rgba(0, 255, 102, 0.08), transparent 35%),
-        radial-gradient(circle at 85% 80%, rgba(0, 255, 102, 0.06), transparent 40%),
-        linear-gradient(30deg, #09100c 12%, transparent 12.5%, transparent 87%, #09100c 87.5%, #09100c),
-        linear-gradient(150deg, #09100c 12%, transparent 12.5%, transparent 87%, #09100c 87.5%, #09100c),
-        linear-gradient(30deg, #09100c 12%, transparent 12.5%, transparent 87%, #09100c 87.5%, #09100c),
-        linear-gradient(150deg, #09100c 12%, transparent 12.5%, transparent 87%, #09100c 87.5%, #09100c),
-        linear-gradient(60deg, rgba(0,255,102,0.03) 25%, transparent 25.5%, transparent 75%, rgba(0,255,102,0.03) 75%, rgba(0,255,102,0.03)),
-        linear-gradient(60deg, rgba(0,255,102,0.03) 25%, transparent 25.5%, transparent 75%, rgba(0,255,102,0.03) 75%, rgba(0,255,102,0.03));
-      background-size: 100% 100%, 100% 100%, 80px 140px, 80px 140px, 80px 140px, 80px 140px, 80px 140px, 80px 140px;
-      background-position: 0 0, 0 0, 0 0, 0 0, 40px 70px, 40px 70px, 0 0, 40px 70px;
-      color: var(--text);
-      padding: 20px;
+        radial-gradient(ellipse 72% 48% at 50% 24%, rgba(0, 255, 102, 0.22), rgba(0, 180, 72, 0.06) 48%, transparent 75%),
+        linear-gradient(28deg, transparent 49.4%, rgba(0, 255, 102, 0.16) 49.8%, rgba(0, 255, 102, 0.16) 50.2%, transparent 50.6%),
+        linear-gradient(-28deg, transparent 49.4%, rgba(0, 255, 102, 0.14) 49.8%, rgba(0, 255, 102, 0.14) 50.2%, transparent 50.6%),
+        repeating-linear-gradient(
+          90deg,
+          rgba(0, 255, 102, 0.055) 0px,
+          rgba(0, 255, 102, 0.055) 1px,
+          transparent 1px,
+          transparent 26px
+        ),
+        linear-gradient(30deg, rgba(0, 255, 102, 0.11) 12%, transparent 12.5%, transparent 87%, rgba(0, 255, 102, 0.11) 87.5%, rgba(0, 255, 102, 0.11)),
+        linear-gradient(150deg, rgba(0, 255, 102, 0.11) 12%, transparent 12.5%, transparent 87%, rgba(0, 255, 102, 0.11) 87.5%, rgba(0, 255, 102, 0.11)),
+        linear-gradient(30deg, rgba(0, 255, 102, 0.11) 12%, transparent 12.5%, transparent 87%, rgba(0, 255, 102, 0.11) 87.5%, rgba(0, 255, 102, 0.11)),
+        linear-gradient(150deg, rgba(0, 255, 102, 0.11) 12%, transparent 12.5%, transparent 87%, rgba(0, 255, 102, 0.11) 87.5%, rgba(0, 255, 102, 0.11)),
+        linear-gradient(60deg, rgba(0, 255, 102, 0.18) 25%, transparent 25.5%, transparent 75%, rgba(0, 255, 102, 0.18) 75%, rgba(0, 255, 102, 0.18)),
+        linear-gradient(60deg, rgba(0, 255, 102, 0.18) 25%, transparent 25.5%, transparent 75%, rgba(0, 255, 102, 0.18) 75%, rgba(0, 255, 102, 0.18));
+      background-size:
+        100% 100%,
+        100% 100%,
+        100% 100%,
+        26px 100%,
+        88px 152px,
+        88px 152px,
+        88px 152px,
+        88px 152px,
+        88px 152px,
+        88px 152px;
+      background-position:
+        0 0,
+        0 0,
+        0 0,
+        0 0,
+        0 0,
+        0 0,
+        44px 76px,
+        44px 76px,
+        0 0,
+        44px 76px;
     }
 
-    .container { max-width: 1180px; margin: 0 auto; }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(0, 255, 102, 0.09), transparent 45%),
+        linear-gradient(180deg, rgba(3, 7, 5, 0.35) 0%, rgba(3, 7, 5, 0.78) 55%, rgba(3, 7, 5, 0.92) 100%);
+      pointer-events: none;
+    }
 
-    .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 20px;
-      box-shadow: 0 0 25px rgba(0, 255, 102, 0.05);
+    .hidden {
+      display: none !important;
+    }
+
+    .muted {
+      color: var(--text-muted);
+    }
+
+    .brand-highlight {
+      color: var(--neon);
+      text-shadow: 0 0 16px rgba(0, 255, 102, 0.55);
+    }
+
+    /* =========================================================================
+       TELA DE ENTRADA (LOGIN / CADASTRO / SUPER ADMIN)
+       ========================================================================= */
+    .auth-shell {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 470px;
+      background: var(--bg-surface);
+      border: 1px solid var(--neon-border);
+      border-radius: var(--radius-lg);
+      padding: 26px 24px;
+      box-shadow: var(--neon-glow);
+      backdrop-filter: blur(14px);
+    }
+
+    .auth-brand {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .prodev-emblem {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      background: rgba(0, 255, 102, 0.09);
+      border: 1px solid var(--neon-border);
+      box-shadow: 0 0 18px rgba(0, 255, 102, 0.16);
+      margin-bottom: 12px;
+    }
+
+    .prodev-emblem-mark {
+      width: 24px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--neon);
+      filter: drop-shadow(0 0 6px rgba(0, 255, 102, 0.65));
+    }
+
+    .prodev-emblem-text {
+      color: var(--neon);
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .auth-brand h1 {
+      font-size: 1.55rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .auth-brand p {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      margin-top: 4px;
+    }
+
+    .tab-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      background: var(--bg-input);
+      padding: 5px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
       margin-bottom: 18px;
     }
 
-    .login-box { max-width: 400px; margin: 70px auto; position: relative; }
+    .tab-btn {
+      padding: 10px 12px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--text-muted);
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
 
-    h1, h2, h3 { color: var(--neon); letter-spacing: 0.4px; }
-    p.muted { color: var(--muted); font-size: 0.92rem; margin-top: 6px; }
+    .tab-btn.active {
+      background: var(--neon);
+      color: #041008;
+      box-shadow: 0 0 14px rgba(0, 255, 102, 0.35);
+    }
 
-    label { display: block; font-size: 0.85rem; color: var(--muted); margin-top: 12px; margin-bottom: 5px; }
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #cfe0d6;
+      margin-top: 12px;
+      margin-bottom: 5px;
+    }
 
     input, select, textarea {
       width: 100%;
+      padding: 11px 13px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255, 255, 255, 0.14);
       background: var(--bg-input);
-      border: 1px solid rgba(0, 255, 102, 0.2);
-      color: var(--text);
-      padding: 10px 12px;
-      border-radius: 8px;
-      outline: none;
+      color: var(--text-main);
+      font-size: 0.92rem;
+      font-family: inherit;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
-    input:focus, select:focus, textarea:focus { border-color: var(--neon); }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--neon);
+      box-shadow: 0 0 0 3px rgba(0, 255, 102, 0.15);
+    }
 
-    button {
+    .password-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .password-wrap input {
+      padding-right: 44px;
+    }
+
+    .eye-btn {
+      position: absolute;
+      right: 8px;
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: color 0.2s ease, background 0.2s ease;
+    }
+
+    .eye-btn:hover {
+      color: var(--neon);
+      background: rgba(0, 255, 102, 0.08);
+    }
+
+    .btn-primary {
+      width: 100%;
+      margin-top: 18px;
+      padding: 12px 16px;
+      border: none;
+      border-radius: var(--radius-sm);
       background: var(--neon);
       color: #041008;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 8px;
-      font-weight: 700;
+      font-weight: 800;
+      font-size: 0.94rem;
       cursor: pointer;
-      transition: 0.15s;
+      box-shadow: 0 0 18px rgba(0, 255, 102, 0.28);
+      transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
     }
 
-    button:hover { filter: brightness(1.08); }
-    button.secondary { background: transparent; color: var(--neon); border: 1px solid var(--border); }
-    button.danger { background: var(--danger); color: #fff; }
-    button.small { padding: 6px 10px; font-size: 0.82rem; }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--neon-strong);
+      transform: translateY(-1px);
+      box-shadow: 0 0 24px rgba(0, 255, 102, 0.42);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      padding: 9px 13px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--neon-border);
+      background: rgba(0, 255, 102, 0.08);
+      color: var(--text-main);
+      font-weight: 600;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(0, 255, 102, 0.16);
+      border-color: var(--neon);
+    }
+
+    .btn-danger {
+      padding: 7px 11px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 82, 99, 0.4);
+      background: rgba(255, 82, 99, 0.12);
+      color: #ff8a95;
+      font-weight: 700;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-danger:hover {
+      background: rgba(255, 82, 99, 0.24);
+    }
+
+    .btn-approve {
+      padding: 7px 11px;
+      border-radius: 8px;
+      border: 1px solid rgba(0, 255, 102, 0.45);
+      background: rgba(0, 255, 102, 0.15);
+      color: var(--neon);
+      font-weight: 700;
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+
+    .btn-approve:hover {
+      background: rgba(0, 255, 102, 0.26);
+    }
+
+    .btn-warn {
+      padding: 7px 11px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 190, 46, 0.45);
+      background: rgba(255, 190, 46, 0.14);
+      color: var(--warning);
+      font-weight: 700;
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+
+    .btn-warn:hover {
+      background: rgba(255, 190, 46, 0.25);
+    }
+
+    .feedback-msg {
+      margin-top: 12px;
+      font-size: 0.84rem;
+      line-height: 1.45;
+      min-height: 18px;
+    }
+
+    .feedback-error {
+      color: #ff7b87;
+      background: rgba(255, 82, 99, 0.12);
+      border: 1px solid rgba(255, 82, 99, 0.35);
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+    }
+
+    .contact-notice {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      background: rgba(0, 255, 102, 0.08);
+      border: 1px solid var(--neon-border);
+      color: #d9f9e6;
+      font-size: 0.83rem;
+    }
+
+    .whatsapp-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      color: var(--neon);
+      font-weight: 700;
+      text-decoration: none;
+      font-size: 0.84rem;
+    }
+
+    .whatsapp-link:hover {
+      text-decoration: underline;
+    }
+
+    .admin-toggle-footer {
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .admin-icon-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: var(--text-muted);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .admin-icon-btn:hover {
+      color: var(--neon);
+      border-color: var(--neon-border);
+      background: rgba(0, 255, 102, 0.08);
+    }
+
+    /* =========================================================================
+       APLICAÇÃO PRINCIPAL (PAINEL SUPER ADMIN & PAINEL DA MERCEARIA)
+       ========================================================================= */
+    .app-shell {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 20px 16px 48px;
+    }
 
     .topbar {
       display: flex;
       flex-wrap: wrap;
-      justify-content: space-between;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 18px;
+      justify-content: space-between;
+      gap: 14px;
+      background: var(--bg-surface);
+      border: 1px solid var(--neon-border);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      box-shadow: var(--neon-glow);
+      margin-bottom: 20px;
     }
 
-    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
-    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+    .topbar-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+    }
+
+    .topbar-sub {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .topbar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+
+    .stat-label {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 700;
+    }
+
+    .stat-value {
+      font-size: 1.45rem;
+      font-weight: 800;
+      margin-top: 6px;
+      color: var(--neon);
+    }
+
+    .panel-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(0, 255, 102, 0.08);
+      backdrop-filter: blur(12px);
+    }
+
+    .card h2 {
+      font-size: 1.05rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .card .card-desc {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+    }
 
     .badge {
       display: inline-block;
       padding: 3px 9px;
       border-radius: 999px;
-      font-size: 0.78rem;
+      font-size: 0.74rem;
       font-weight: 700;
-      background: var(--neon-dim);
+    }
+
+    .badge-active {
+      background: rgba(0, 255, 102, 0.16);
       color: var(--neon);
+      border: 1px solid rgba(0, 255, 102, 0.35);
     }
 
-    .badge.blocked { background: rgba(255, 77, 77, 0.18); color: #ff8585; }
-
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
-    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.07); }
-    th { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; }
-
-    .msg-error { color: #ff7b7b; font-size: 0.88rem; margin-top: 10px; min-height: 20px; }
-    .chat-box { max-height: 220px; overflow-y: auto; background: var(--bg-input); border-radius: 8px; padding: 10px; margin-bottom: 10px; }
-    .chat-item { margin-bottom: 8px; font-size: 0.88rem; }
-    .hidden { display: none; }
-
-    .admin-switch {
-      margin-top: 20px;
-      padding-top: 14px;
-      border-top: 1px dashed rgba(0, 255, 102, 0.2);
-      text-align: center;
+    .badge-pending {
+      background: rgba(255, 190, 46, 0.16);
+      color: var(--warning);
+      border: 1px solid rgba(255, 190, 46, 0.35);
     }
 
-    .admin-btn-link {
-      background: transparent;
-      color: var(--muted);
-      border: none;
-      font-size: 0.82rem;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
+    .badge-blocked {
+      background: rgba(255, 82, 99, 0.16);
+      color: #ff8a95;
+      border: 1px solid rgba(255, 82, 99, 0.35);
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+      min-width: 640px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 10px 10px;
+      border-bottom: 1px solid var(--border-subtle);
+      vertical-align: middle;
+    }
+
+    th {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .action-group {
+      display: flex;
+      flex-wrap: wrap;
       gap: 6px;
     }
 
-    .admin-btn-link:hover { color: var(--neon); }
+    /* Mini Calendário Acoplado para Data da Compra e 1º Vencimento */
+    .date-picker-box {
+      position: relative;
+    }
+
+    .date-trigger-btn {
+      width: 100%;
+      padding: 11px 13px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: var(--bg-input);
+      color: var(--text-main);
+      font-size: 0.9rem;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      cursor: pointer;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .date-trigger-btn:hover,
+    .date-trigger-btn:focus {
+      outline: none;
+      border-color: var(--neon);
+      box-shadow: 0 0 0 3px rgba(0, 255, 102, 0.15);
+    }
+
+    .date-trigger-val {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .date-trigger-icon {
+      color: var(--neon);
+      display: inline-flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .mini-calendar-popover {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      width: 276px;
+      max-width: calc(100vw - 48px);
+      background: #09110e;
+      border: 1px solid var(--neon-border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      box-shadow: var(--neon-glow);
+      z-index: 60;
+    }
+
+    .mini-cal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .mini-cal-title {
+      font-size: 0.84rem;
+      font-weight: 800;
+      color: var(--text-main);
+      text-transform: capitalize;
+    }
+
+    .mini-cal-nav {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: var(--bg-input);
+      color: var(--text-main);
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mini-cal-nav:hover {
+      border-color: var(--neon);
+      color: var(--neon);
+    }
+
+    .mini-cal-weekdays,
+    .mini-cal-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+      text-align: center;
+    }
+
+    .mini-cal-weekdays span {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      padding: 3px 0;
+    }
+
+    .mini-cal-day {
+      height: 30px;
+      border: none;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--text-main);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .mini-cal-day:hover:not(:disabled) {
+      background: rgba(0, 255, 102, 0.16);
+      color: var(--neon);
+    }
+
+    .mini-cal-day.is-selected {
+      background: var(--neon);
+      color: #041008;
+      font-weight: 800;
+    }
+
+    .mini-cal-day.is-today:not(.is-selected) {
+      border: 1px solid var(--neon-border);
+      color: var(--neon);
+    }
+
+    .mini-cal-day:disabled {
+      opacity: 0.25;
+      cursor: default;
+    }
+
+    .mini-cal-footer {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .mini-cal-action {
+      border: none;
+      background: transparent;
+      color: var(--neon);
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 2px 4px;
+    }
+
+    .mini-cal-action:hover {
+      text-decoration: underline;
+    }
+
+    /* Assistente IA da Mercearia */
+    .ai-box {
+      margin-top: 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--neon-border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      font-size: 0.86rem;
+      color: #dff7e8;
+      white-space: pre-line;
+    }
+
+    @media (max-width: 520px) {
+      .auth-card {
+        padding: 20px 16px;
+      }
+      .card {
+        padding: 16px;
+      }
+    }
   </style>
 </head>
 <body>
-  <!-- TELA DE LOGIN DUPLA (CLIENTE / ADMIN VIA ÍCONE) -->
-  <div id="loginView" class="card login-box">
-    <h2 id="loginTitle">Área do Cliente</h2>
-    <p id="loginSubtitle" class="muted">Acesse suas compras, faturas e limites.</p>
-    
-    <form id="loginForm">
-      <label for="loginUser">Usuário / CPF</label>
-      <input id="loginUser" type="text" autocomplete="username" placeholder="Digite seu usuário" required />
-
-      <label for="loginPass">Senha</label>
-      <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••" required />
-
-      <div id="loginError" class="msg-error"></div>
-      <button type="submit" id="submitLoginBtn" style="width: 100%; margin-top: 14px;">Entrar no Painel</button>
-    </form>
-
-    <div class="admin-switch">
-      <button type="button" id="toggleAdminBtn" class="admin-btn-link">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        <span id="toggleAdminText">Acesso Restrito (Admin)</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- PAINEL PRINCIPAL DO SISTEMA -->
-  <div id="appView" class="container hidden">
-    <div class="topbar card">
-      <div>
-        <h2 id="panelTitle">Painel Super Admin</h2>
-        <p class="muted" id="panelSubtitle">Sessão ativa • Rodrigues ProDev</p>
+  <!-- =====================================================================
+       TELA DE AUTENTICAÇÃO (LOGIN / CADASTRO DE USUÁRIO / SUPER ADMIN)
+       ===================================================================== -->
+  <section id="loginView" class="auth-shell">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <div class="prodev-emblem">
+          <span class="prodev-emblem-mark" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 21 7 21 17 12 22 3 17 3 7"></polygon>
+              <path d="M9 16V8h4.5a2.5 2.5 0 0 1 0 5H9"></path>
+              <path d="M12.5 13 16 17"></path>
+            </svg>
+          </span>
+          <span class="prodev-emblem-text">Rodrigues ProDev</span>
+        </div>
+        <h1>Crediário &amp; <span class="brand-highlight">Mercearia</span></h1>
+        <p id="authSubtitle">Acesse seu painel da mercearia ou cadastre sua conta para liberação.</p>
       </div>
-      <div style="display:flex; gap:10px; align-items:center;">
-        <span id="roleBadge" class="badge">SUPER_ADMIN</span>
-        <button id="logoutBtn" class="secondary small">Sair</button>
-      </div>
-    </div>
 
-    <!-- SEÇÃO SUPER ADMIN: GESTÃO DE LOJISTAS -->
-    <div id="adminTenantSection" class="card">
-      <h3>Lojistas / Tenants</h3>
-      <form id="tenantForm" class="grid-3" style="align-items:end; margin-top:8px;">
-        <div>
-          <label for="tenantName">Nome da Loja</label>
-          <input id="tenantName" type="text" placeholder="Ex.: Loja Central" required />
+      <!-- Abas Cliente / Cadastro (visíveis apenas fora do modo Super Admin) -->
+      <div id="userTabs" class="tab-row">
+        <button type="button" id="tabLoginBtn" class="tab-btn active">Entrar</button>
+        <button type="button" id="tabRegisterBtn" class="tab-btn">Cadastrar Conta</button>
+      </div>
+
+      <!-- Formulário de Login (Usuário da Mercearia ou Super Admin) -->
+      <form id="loginForm" novalidate>
+        <label id="loginUserLabel" for="loginUser">Usuário ou CPF</label>
+        <input id="loginUser" type="text" placeholder="Digite seu usuário ou CPF" autocomplete="username" required />
+
+        <label for="loginPass">Senha</label>
+        <div class="password-wrap">
+          <input id="loginPass" type="password" placeholder="Digite sua senha" autocomplete="current-password" required />
+          <button type="button" id="toggleLoginPassBtn" class="eye-btn" aria-label="Mostrar ou ocultar senha">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </button>
         </div>
-        <div>
-          <label for="tenantPlan">Plano</label>
-          <select id="tenantPlan">
-            <option value="Essencial">Essencial</option>
-            <option value="Profissional">Profissional</option>
-            <option value="ProDev IA">ProDev IA</option>
-          </select>
-        </div>
-        <div>
-          <button type="submit" style="width:100%;">Cadastrar Lojista</button>
-        </div>
+
+        <button type="submit" id="loginSubmitBtn" class="btn-primary">Entrar no Sistema</button>
       </form>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Loja</th>
-            <th>Plano</th>
-            <th>Status</th>
-            <th>Ação</th>
-          </tr>
-        </thead>
-        <tbody id="tenantsTableBody"></tbody>
-      </table>
-    </div>
+      <!-- Formulário de Cadastro Completo do Usuário (sem limite solicitado) -->
+      <form id="registerForm" class="hidden" novalidate>
+        <label for="regName">Nome Completo / Nome da Mercearia</label>
+        <input id="regName" type="text" placeholder="Ex.: Mercearia Central" required />
 
-    <div class="grid-2">
-      <div class="card">
-        <h3>Ficha e Edição de Cliente</h3>
-        <form id="customerForm">
-          <input type="hidden" id="editingCustomerId" />
-          <label for="custName">Nome do Cliente</label>
-          <input id="custName" type="text" placeholder="Nome completo" required />
-
-          <label for="custPhone">Telefone / WhatsApp</label>
-          <input id="custPhone" type="text" placeholder="(00) 00000-0000" />
-
-          <label for="custLimit">Limite de Crédito (R$)</label>
-          <input id="custLimit" type="number" step="0.01" min="0" value="1000" required />
-
-          <div style="display:flex; gap:8px; margin-top:14px;">
-            <button type="submit" id="saveCustomerBtn">Salvar Cliente</button>
-            <button type="button" id="cancelEditBtn" class="secondary hidden">Cancelar Edição</button>
+        <div class="grid-2">
+          <div>
+            <label for="regCpf">CPF ou CNPJ</label>
+            <input id="regCpf" type="text" placeholder="000.000.000-00" required />
           </div>
-        </form>
+          <div>
+            <label for="regPhone">Telefone / WhatsApp</label>
+            <input id="regPhone" type="text" placeholder="(67) 99999-9999" required />
+          </div>
+        </div>
 
-        <table>
-          <thead>
-            <tr>
-              <th>Cliente</th>
-              <th>Limite</th>
-              <th>Usado</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody id="customersTableBody"></tbody>
-        </table>
-      </div>
+        <label for="regAddress">Endereço Completo</label>
+        <input id="regAddress" type="text" placeholder="Rua, número, bairro, cidade" required />
 
-      <div class="card">
-        <h3>Registrar Compra e Vencimento</h3>
-        <form id="purchaseForm">
-          <label for="purchCustomer">Cliente</label>
-          <select id="purchCustomer" required></select>
-
-          <label for="purchProduct">Produto / Descrição</label>
-          <input id="purchProduct" type="text" placeholder="Ex.: Tênis / Kit camisa" required />
-
-          <label for="purchValue">Valor da Compra (R$)</label>
-          <input id="purchValue" type="number" step="0.01" min="0.01" required />
-
-          <div class="grid-2">
-            <div>
-              <label for="purchDate">Dia da Compra</label>
-              <input id="purchDate" type="date" required />
-            </div>
-            <div>
-              <label for="purchDueDate">Vencimento da Parcela</label>
-              <input id="purchDueDate" type="date" required />
+        <div class="grid-2">
+          <div>
+            <label for="regUser">Criar Usuário de Acesso</label>
+            <input id="regUser" type="text" placeholder="Ex.: mercearia_nova" required />
+          </div>
+          <div>
+            <label for="regPass">Criar Senha</label>
+            <div class="password-wrap">
+              <input id="regPass" type="password" placeholder="Crie uma senha" required />
+              <button type="button" id="toggleRegPassBtn" class="eye-btn" aria-label="Mostrar ou ocultar senha do cadastro">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
             </div>
           </div>
+        </div>
 
-          <div id="purchaseMsg" class="msg-error"></div>
-          <button type="submit" style="margin-top:12px;">Lançar Compra</button>
-        </form>
-
-        <h3 style="margin-top:20px;">Calendário de Compras e Vencimentos</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Cliente / Item</th>
-              <th>Compra</th>
-              <th>Vencimento</th>
-              <th>Valor</th>
-            </tr>
-          </thead>
-          <tbody id="purchasesTableBody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>Assistente IA Rodrigues ProDev</h3>
-      <div id="chatBox" class="chat-box">
-        <div class="chat-item"><strong>IA:</strong> Olá! Pergunte sobre limites, compras registradas ou datas de vencimento.</div>
-      </div>
-      <form id="chatForm" style="display:flex; gap:8px;">
-        <input id="chatInput" type="text" placeholder="Digite sua dúvida..." required />
-        <button type="submit">Enviar</button>
+        <button type="submit" id="registerSubmitBtn" class="btn-primary">Enviar Cadastro para Liberação</button>
       </form>
+
+      <!-- Mensagens de feedback e contato único do Rodrigues ProDev -->
+      <div id="authFeedback" class="feedback-msg"></div>
+
+      <div class="contact-notice">
+        Acesso sujeito à liberação do administrador. Para ter acesso ao painel, entre em contato com <strong>Rodrigues ProDev</strong> pelo telefone/WhatsApp <strong>67 991267853</strong>.
+        <div>
+          <a
+            class="whatsapp-link"
+            href="https://wa.me/5567991267853?text=Ol%C3%A1%20Rodrigues%20ProDev%2C%20preciso%20de%20libera%C3%A7%C3%A3o%20de%20acesso%20ao%20sistema."
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Falar no WhatsApp (67 991267853)
+          </a>
+        </div>
+      </div>
+
+      <!-- Botão discreto para alternar para Acesso Restrito (Super Admin) -->
+      <div class="admin-toggle-footer">
+        <button type="button" id="toggleAdminBtn" class="admin-icon-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span id="toggleAdminText">Acesso Restrito (Admin)</span>
+        </button>
+      </div>
     </div>
-  </div>
+  </section>
+
+  <!-- =====================================================================
+       APLICAÇÃO LOGADA (#appView)
+       ===================================================================== -->
+  <section id="appView" class="app-shell hidden">
+    <header class="topbar">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span class="prodev-emblem-mark" style="width: 36px; height: 36px; border-radius: 10px; background: rgba(0, 255, 102, 0.09); border: 1px solid var(--neon-border);" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 21 7 21 17 12 22 3 17 3 7"></polygon>
+            <path d="M9 16V8h4.5a2.5 2.5 0 0 1 0 5H9"></path>
+            <path d="M12.5 13 16 17"></path>
+          </svg>
+        </span>
+        <div>
+          <div id="sessionTitle" class="topbar-title">Rodrigues ProDev</div>
+          <div id="sessionSubtitle" class="topbar-sub">Sessão ativa</div>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button type="button" id="logoutBtn" class="btn-secondary">Sair da Conta</button>
+      </div>
+    </header>
+
+    <!-- ===================================================================
+         PAINEL DO SUPER ADMIN: CONTROLE DE USUÁRIOS CADASTRADOS
+         =================================================================== -->
+    <div id="superAdminPanel" class="hidden">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Usuários Cadastrados</div>
+          <div id="statTotalUsers" class="stat-value">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Login Liberado (Ativos)</div>
+          <div id="statActiveUsers" class="stat-value">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Aguardando Liberação</div>
+          <div id="statPendingUsers" class="stat-value">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Suspensos / Bloqueados</div>
+          <div id="statBlockedUsers" class="stat-value">0</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Controle de Usuários Cadastrados</h2>
+        <p class="card-desc">Libere o login, suspenda, bloqueie ou exclua o cadastro de qualquer usuário do sistema.</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Usuário / Mercearia</th>
+                <th>CPF/CNPJ &amp; Contato</th>
+                <th>Login / Senha</th>
+                <th>Status</th>
+                <th>Ações do Admin</th>
+              </tr>
+            </thead>
+            <tbody id="adminUsersTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================
+         PAINEL DO USUÁRIO (MERCEARIA): CLIENTES, COMPRAS E PARCELAS
+         =================================================================== -->
+    <div id="merchantPanel" class="hidden">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Clientes da Mercearia</div>
+          <div id="statMerchantCustomers" class="stat-value">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Saldo em Aberto (Crediário)</div>
+          <div id="statMerchantOpen" class="stat-value">R$ 0,00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Recebido / Pago</div>
+          <div id="statMerchantPaid" class="stat-value">R$ 0,00</div>
+        </div>
+      </div>
+
+      <div class="panel-grid">
+        <!-- Cadastrar Cliente da Mercearia -->
+        <div class="card">
+          <h2>Cadastrar Cliente da Mercearia</h2>
+          <p class="card-desc">Adicione o cliente, seu endereço completo e o limite de crédito no crediário da sua loja.</p>
+
+          <form id="groceryCustomerForm" novalidate>
+            <label for="gcName">Nome do Cliente</label>
+            <input id="gcName" type="text" placeholder="Ex.: Maria Oliveira" required />
+
+            <div class="grid-2">
+              <div>
+                <label for="gcCpf">CPF ou Telefone</label>
+                <input id="gcCpf" type="text" placeholder="000.000.000-00" required />
+              </div>
+              <div>
+                <label for="gcLimit">Limite de Crédito (R$)</label>
+                <input id="gcLimit" type="number" step="0.01" min="0" placeholder="500.00" required />
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div>
+                <label for="gcStreet">Rua</label>
+                <input id="gcStreet" type="text" placeholder="Ex.: Rua das Palmeiras" required />
+              </div>
+              <div>
+                <label for="gcPropertyType">Tipo (Casa / Ap / Comércio)</label>
+                <select id="gcPropertyType" required>
+                  <option value="Casa" selected>Casa</option>
+                  <option value="Ap">Ap</option>
+                  <option value="Comércio">Comércio</option>
+                </select>
+              </div>
+            </div>
+
+            <label for="gcNumber">Número do Estabelecimento / Imóvel</label>
+            <input id="gcNumber" type="text" placeholder="Ex.: 420 ou Sala 02" required />
+
+            <button type="submit" class="btn-primary">Salvar Cliente</button>
+          </form>
+        </div>
+
+        <!-- Registrar Compra Parcelada (Com Entrada / Sem Entrada até 24x) -->
+        <div class="card">
+          <h2>Registrar Compra na Mercearia</h2>
+          <p class="card-desc">Escolha com ou sem entrada, defina as parcelas de 1x até 24x e gere os vencimentos.</p>
+
+          <form id="purchaseForm" novalidate>
+            <label for="purchCustomer">Cliente da Mercearia</label>
+            <select id="purchCustomer" required></select>
+
+            <label for="purchProduct">Itens / Compra da Mercearia</label>
+            <input id="purchProduct" type="text" placeholder="Ex.: Cesta básica / Açougue e padaria" required />
+
+            <div class="grid-2">
+              <div>
+                <label for="purchValue">Valor Total da Compra (R$)</label>
+                <input id="purchValue" type="number" step="0.01" min="0.01" required />
+              </div>
+              <div>
+                <label for="purchDownMode">Modalidade de Entrada</label>
+                <select id="purchDownMode">
+                  <option value="none" selected>Sem entrada</option>
+                  <option value="with">Com entrada</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="downPaymentGroup" class="hidden">
+              <label for="purchDownPayment">Valor da Entrada (R$)</label>
+              <input id="purchDownPayment" type="number" step="0.01" min="0" value="0" />
+            </div>
+
+            <div>
+              <label for="purchInstallments">Parcelamento (até 24x)</label>
+              <select id="purchInstallments">
+                <option value="1">1x (Parcela única)</option>
+                <option value="2">2x parcelas</option>
+                <option value="3" selected>3x parcelas</option>
+                <option value="4">4x parcelas</option>
+                <option value="5">5x parcelas</option>
+                <option value="6">6x parcelas</option>
+                <option value="8">8x parcelas</option>
+                <option value="10">10x parcelas</option>
+                <option value="12">12x parcelas</option>
+                <option value="15">15x parcelas</option>
+                <option value="18">18x parcelas</option>
+                <option value="20">20x parcelas</option>
+                <option value="24">24x parcelas</option>
+              </select>
+            </div>
+
+            <div id="installmentPreview" class="muted" style="margin-top: 8px; font-size: 0.84rem;"></div>
+
+            <div class="grid-2">
+              <div>
+                <label for="purchDateTrigger">Data da Compra</label>
+                <div class="date-picker-box" data-calendar-picker="purchDate">
+                  <input id="purchDate" type="hidden" required />
+                  <button type="button" id="purchDateTrigger" class="date-trigger-btn" aria-haspopup="dialog" aria-expanded="false">
+                    <span id="purchDateDisplay" class="date-trigger-val">Selecionar data</span>
+                    <span class="date-trigger-icon" aria-hidden="true">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                      </svg>
+                    </span>
+                  </button>
+                  <div id="purchDatePopover" class="mini-calendar-popover hidden" role="dialog" aria-label="Calendário da Data da Compra"></div>
+                </div>
+              </div>
+              <div>
+                <label for="purchDueDateTrigger">1º Vencimento</label>
+                <div class="date-picker-box" data-calendar-picker="purchDueDate">
+                  <input id="purchDueDate" type="hidden" required />
+                  <button type="button" id="purchDueDateTrigger" class="date-trigger-btn" aria-haspopup="dialog" aria-expanded="false">
+                    <span id="purchDueDateDisplay" class="date-trigger-val">Selecionar vencimento</span>
+                    <span class="date-trigger-icon" aria-hidden="true">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                      </svg>
+                    </span>
+                  </button>
+                  <div id="purchDueDatePopover" class="mini-calendar-popover hidden" role="dialog" aria-label="Calendário do 1º Vencimento"></div>
+                </div>
+              </div>
+            </div>
+
+            <div id="purchaseMsg" class="feedback-msg"></div>
+            <button type="submit" class="btn-primary">Registrar Compra e Parcelas</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Lista de Clientes da Mercearia -->
+      <div class="card" style="margin-bottom: 20px;">
+        <h2>Clientes Cadastrados na Mercearia</h2>
+        <p class="card-desc">Acompanhe endereço, limite total, saldo utilizado e limite disponível de cada cliente.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Endereço (Rua / Tipo / Nº)</th>
+                <th>CPF / Contato</th>
+                <th>Limite Total</th>
+                <th>Utilizado</th>
+                <th>Disponível</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="merchantCustomersBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Lançamentos e Parcelas / Calendário -->
+      <div class="card" style="margin-bottom: 20px;">
+        <h2>Lançamentos, Parcelas e Vencimentos</h2>
+        <p class="card-desc">Dê baixa nas parcelas pagas e acompanhe as datas de vencimento.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Descrição / Parcela</th>
+                <th>Valor</th>
+                <th>Compra</th>
+                <th>Vencimento</th>
+                <th>Status</th>
+                <th>Ação</th>
+              </tr>
+            </thead>
+            <tbody id="purchasesBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Assistente IA Rápido da Mercearia -->
+      <div class="card">
+        <h2>Assistente IA da Mercearia</h2>
+        <p class="card-desc">Consulte resumo rápido do crediário, clientes com saldo aberto ou próximos vencimentos.</p>
+        <div class="action-group">
+          <button type="button" id="aiSummaryBtn" class="btn-secondary">Resumo do Crediário</button>
+          <button type="button" id="aiDueBtn" class="btn-secondary">Parcelas em Aberto</button>
+          <button type="button" id="aiLimitsBtn" class="btn-secondary">Situação de Limites</button>
+        </div>
+        <div id="aiOutput" class="ai-box">Clique em uma opção acima para gerar o resumo inteligente da sua mercearia.</div>
+      </div>
+    </div>
+  </section>
 
   <script>
-    async function sha256(text) {
-      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
-      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+    /* =======================================================================
+       FUNÇÕES AUXILIARES DE DATA E CLONE SEGURO
+       ======================================================================= */
+    function cloneData(value) {
+      if (typeof structuredClone === "function") {
+        return structuredClone(value);
+      }
+      return JSON.parse(JSON.stringify(value));
     }
 
-    let isAdminMode = false;
+    function addMonthsToDateStr(dateStr, monthsToAdd) {
+      const base = dateStr ? new Date(dateStr + "T12:00:00") : new Date();
+      if (Number.isNaN(base.getTime())) {
+        const fallback = new Date();
+        fallback.setMonth(fallback.getMonth() + monthsToAdd);
+        return fallback.toISOString().split("T")[0];
+      }
+      const targetDay = base.getDate();
+      base.setDate(1);
+      base.setMonth(base.getMonth() + monthsToAdd);
+      const daysInTargetMonth = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate();
+      base.setDate(Math.min(targetDay, daysInTargetMonth));
+      return base.toISOString().split("T")[0];
+    }
 
-    const state = {
-      session: null,
-      tenants: [
-        { id: "t1", name: "Comercial Naviraí", plan: "ProDev IA", status: "Ativo" }
-      ],
-      customers: [
-        { id: "c1", name: "Cliente Exemplo", phone: "(67) 99999-0000", limit: 1500, used: 0 }
-      ],
-      purchases: []
-    };
+    /* =======================================================================
+       ESTADO INICIAL E PERSISTÊNCIA SEGURA EM LOCALSTORAGE
+       ======================================================================= */
+    const STORAGE_KEY = "rodrigues_prodev_state_v2026_11_closed_test";
 
-    const loginView = document.getElementById("loginView");
-    const appView = document.getElementById("appView");
-    const loginForm = document.getElementById("loginForm");
-    const loginError = document.getElementById("loginError");
-    const toggleAdminBtn = document.getElementById("toggleAdminBtn");
-    const toggleAdminText = document.getElementById("toggleAdminText");
-    const loginTitle = document.getElementById("loginTitle");
-    const loginSubtitle = document.getElementById("loginSubtitle");
+    const SUPER_ADMIN_USER = "rodrigues";
+    const SUPER_ADMIN_PASS = "Rodrigues84326810";
+
+    const defaultUsers = [
+      {
+        id: "u_demo_1",
+        name: "Mercearia Bom Preço",
+        cpf: "111.222.333-44",
+        phone: "(67) 99999-1111",
+        address: "Av. Iguatemi, 500 - Centro",
+        user: "mercearia1",
+        pass: "123456",
+        status: "Ativo"
+      },
+      {
+        id: "u_demo_2",
+        name: "Mercearia do Bairro",
+        cpf: "555.666.777-88",
+        phone: "(67) 98888-2222",
+        address: "Rua das Flores, 120 - Jardim",
+        user: "mercearia2",
+        pass: "123456",
+        status: "Pendente"
+      },
+      {
+        id: "u_test_123",
+        name: "Mercearia Teste 123",
+        cpf: "123.123.123-12",
+        phone: "(67) 99123-0123",
+        address: "Rua Principal, 123 - Centro",
+        user: "123",
+        pass: "123",
+        status: "Pendente"
+      }
+    ];
+
+    const defaultGroceryCustomers = [
+      {
+        id: "gc_demo_1",
+        ownerUserId: "u_demo_1",
+        name: "João da Silva",
+        cpf: "(67) 99111-0001",
+        street: "Rua Mato Grosso",
+        propertyType: "Casa",
+        number: "145",
+        limit: 1000,
+        used: 240
+      },
+      {
+        id: "gc_demo_2",
+        ownerUserId: "u_demo_1",
+        name: "Ana Paula",
+        cpf: "(67) 99222-0002",
+        street: "Av. Weimar Gonçalves Torres",
+        propertyType: "Comércio",
+        number: "890",
+        limit: 750,
+        used: 0
+      },
+      {
+        id: "gc_test_123_1",
+        ownerUserId: "u_test_123",
+        name: "Cliente Teste Crediário",
+        cpf: "(67) 99126-7853",
+        street: "Rua Principal",
+        propertyType: "Ap",
+        number: "302",
+        limit: 5000,
+        used: 0
+      }
+    ];
 
     const todayStr = new Date().toISOString().split("T")[0];
-    document.getElementById("purchDate").value = todayStr;
-    document.getElementById("purchDueDate").value = todayStr;
+    const nextMonthStr = addMonthsToDateStr(todayStr, 1);
 
-    // Alterna entre tela de Login do Cliente e Login Admin pelo Ícone
-    toggleAdminBtn.addEventListener("click", () => {
-      isAdminMode = !isAdminMode;
-      loginError.textContent = "";
-      document.getElementById("loginUser").value = "";
-      document.getElementById("loginPass").value = "";
-
-      if (isAdminMode) {
-        loginTitle.textContent = "Acesso Administrativo";
-        loginSubtitle.textContent = "Entre com as credenciais de Super Admin.";
-        toggleAdminText.textContent = "Voltar para Login do Cliente";
-      } else {
-        loginTitle.textContent = "Área do Cliente";
-        loginSubtitle.textContent = "Acesse suas compras, faturas e limites.";
-        toggleAdminText.textContent = "Acesso Restrito (Admin)";
+    const defaultPurchases = [
+      {
+        id: "p_demo_1",
+        ownerUserId: "u_demo_1",
+        customerId: "gc_demo_1",
+        customerName: "João da Silva",
+        product: "Compras da semana (1/2)",
+        value: 120,
+        buyDate: todayStr,
+        dueDate: nextMonthStr,
+        status: "Em Aberto"
+      },
+      {
+        id: "p_demo_2",
+        ownerUserId: "u_demo_1",
+        customerId: "gc_demo_1",
+        customerName: "João da Silva",
+        product: "Compras da semana (2/2)",
+        value: 120,
+        buyDate: todayStr,
+        dueDate: addMonthsToDateStr(todayStr, 2),
+        status: "Em Aberto"
       }
-    });
+    ];
 
-    loginForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      loginError.textContent = "";
-      const userVal = document.getElementById("loginUser").value.trim();
-      const passVal = document.getElementById("loginPass").value;
+    let state = loadInitialState();
+    let isAdminMode = false;
+    let activeAuthTab = "login";
+    let isAuthenticating = false;
+    let authQueue = Promise.resolve();
 
-      const uHash = await sha256(userVal);
-      const pHash = await sha256(passVal);
-      const expectedUserHash = await sha256("rodrigues");
-      const expectedPassHash = await sha256("Rodrigues84326810");
+    function loadInitialState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          return {
+            users: cloneData(defaultUsers),
+            groceryCustomers: cloneData(defaultGroceryCustomers),
+            purchases: cloneData(defaultPurchases),
+            session: null
+          };
+        }
+        const parsed = JSON.parse(raw);
+        const users = Array.isArray(parsed.users) && parsed.users.length
+          ? parsed.users
+          : cloneData(defaultUsers);
 
-      if (isAdminMode) {
-        if (uHash === expectedUserHash && pHash === expectedPassHash) {
-          state.session = { role: "super_admin", user: "rodrigues" };
-          openAppView("Painel Super Admin", "SUPER_ADMIN");
+        const testUser = users.find(u => String(u.user) === "123");
+        if (!testUser) {
+          users.push(cloneData(defaultUsers[2]));
         } else {
-          loginError.textContent = "Credenciais de administrador inválidas.";
+          testUser.pass = "123";
+          testUser.status = "Pendente";
         }
-      } else {
-        // Simulação de login de cliente
-        state.session = { role: "customer", user: userVal };
-        openAppView("Painel do Cliente", "CLIENTE");
-      }
-    });
 
-    function openAppView(title, roleBadge) {
-      document.getElementById("panelTitle").textContent = title;
-      document.getElementById("roleBadge").textContent = roleBadge;
+        const groceryCustomers = Array.isArray(parsed.groceryCustomers)
+          ? parsed.groceryCustomers
+          : cloneData(defaultGroceryCustomers);
 
-      if (state.session.role === "super_admin") {
-        document.getElementById("adminTenantSection").classList.remove("hidden");
-      } else {
-        document.getElementById("adminTenantSection").classList.add("hidden");
-      }
-
-      document.getElementById("loginPass").value = "";
-      loginView.classList.add("hidden");
-      appView.classList.remove("hidden");
-      renderAll();
-    }
-
-    document.getElementById("logoutBtn").addEventListener("click", () => {
-      state.session = null;
-      appView.classList.add("hidden");
-      loginView.classList.remove("hidden");
-      document.getElementById("loginUser").value = "";
-      document.getElementById("loginPass").value = "";
-    });
-
-    document.getElementById("tenantForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      if (state.session?.role !== "super_admin") return;
-      const name = document.getElementById("tenantName").value.trim();
-      const plan = document.getElementById("tenantPlan").value;
-      if (!name) return;
-      state.tenants.push({ id: "t_" + Date.now(), name, plan, status: "Ativo" });
-      document.getElementById("tenantName").value = "";
-      renderTenants();
-    });
-
-    function toggleTenantStatus(id) {
-      if (state.session?.role !== "super_admin") return;
-      const t = state.tenants.find(item => item.id === id);
-      if (t) {
-        t.status = t.status === "Ativo" ? "Bloqueado" : "Ativo";
-        renderTenants();
-      }
-    }
-
-    document.getElementById("customerForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const id = document.getElementById("editingCustomerId").value;
-      const name = document.getElementById("custName").value.trim();
-      const phone = document.getElementById("custPhone").value.trim();
-      const limit = parseFloat(document.getElementById("custLimit").value) || 0;
-
-      if (id) {
-        const cust = state.customers.find(c => c.id === id);
-        if (cust) {
-          cust.name = name;
-          cust.phone = phone;
-          cust.limit = limit;
+        if (!groceryCustomers.some(c => c.ownerUserId === "u_test_123")) {
+          groceryCustomers.push(cloneData(defaultGroceryCustomers[2]));
         }
-      } else {
-        state.customers.push({ id: "c_" + Date.now(), name, phone, limit, used: 0 });
+
+        return {
+          users,
+          groceryCustomers,
+          purchases: Array.isArray(parsed.purchases) ? parsed.purchases : cloneData(defaultPurchases),
+          session: parsed.session || null
+        };
+      } catch (_err) {
+        return {
+          users: cloneData(defaultUsers),
+          groceryCustomers: cloneData(defaultGroceryCustomers),
+          purchases: cloneData(defaultPurchases),
+          session: null
+        };
       }
-      resetCustomerForm();
-      renderCustomers();
-    });
-
-    function editCustomer(id) {
-      const cust = state.customers.find(c => c.id === id);
-      if (!cust) return;
-      document.getElementById("editingCustomerId").value = cust.id;
-      document.getElementById("custName").value = cust.name;
-      document.getElementById("custPhone").value = cust.phone;
-      document.getElementById("custLimit").value = cust.limit;
-      document.getElementById("saveCustomerBtn").textContent = "Atualizar Cliente";
-      document.getElementById("cancelEditBtn").classList.remove("hidden");
     }
 
-    function resetCustomerForm() {
-      document.getElementById("editingCustomerId").value = "";
-      document.getElementById("custName").value = "";
-      document.getElementById("custPhone").value = "";
-      document.getElementById("custLimit").value = "1000";
-      document.getElementById("saveCustomerBtn").textContent = "Salvar Cliente";
-      document.getElementById("cancelEditBtn").classList.add("hidden");
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (_err) {
+        // Ignora erro de quota caso o armazenamento local esteja cheio
+      }
     }
 
-    document.getElementById("cancelEditBtn").addEventListener("click", resetCustomerForm);
+    function normalizeDigits(value) {
+      return String(value || "").replace(/\D+/g, "");
+    }
 
-    document.getElementById("purchaseForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const msgEl = document.getElementById("purchaseMsg");
-      msgEl.textContent = "";
+    function formatCurrency(val) {
+      const num = Number(val) || 0;
+      return num.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    }
 
-      const custId = document.getElementById("purchCustomer").value;
-      const product = document.getElementById("purchProduct").value.trim();
-      const value = parseFloat(document.getElementById("purchValue").value) || 0;
-      const buyDate = document.getElementById("purchDate").value;
-      const dueDate = document.getElementById("purchDueDate").value;
+    function formatDatePtBr(dateStr) {
+      if (!dateStr) return "Selecionar data";
+      const parts = String(dateStr).split("-");
+      if (parts.length !== 3) return String(dateStr);
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
 
-      const cust = state.customers.find(c => c.id === custId);
-      if (!cust) return;
+    function toIsoDate(year, monthIndex, day) {
+      const y = String(year).padStart(4, "0");
+      const m = String(monthIndex + 1).padStart(2, "0");
+      const d = String(day).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
 
-      if (cust.used + value > cust.limit) {
-        msgEl.textContent = "Valor ultrapassa o limite disponível do cliente.";
+    function setPickerDate(inputId, dateStr) {
+      const inputEl = document.getElementById(inputId);
+      const displayEl = document.getElementById(`${inputId}Display`);
+      const normalized = dateStr || todayStr;
+      if (inputEl) inputEl.value = normalized;
+      if (displayEl) displayEl.textContent = formatDatePtBr(normalized);
+    }
+
+    const calendarViewState = {
+      purchDate: { year: new Date().getFullYear(), month: new Date().getMonth() },
+      purchDueDate: { year: new Date().getFullYear(), month: new Date().getMonth() }
+    };
+
+    function closeAllMiniCalendars(exceptInputId = null) {
+      ["purchDate", "purchDueDate"].forEach((id) => {
+        if (id === exceptInputId) return;
+        const pop = document.getElementById(`${id}Popover`);
+        const trig = document.getElementById(`${id}Trigger`);
+        if (pop) pop.classList.add("hidden");
+        if (trig) trig.setAttribute("aria-expanded", "false");
+      });
+    }
+
+    function renderMiniCalendar(inputId) {
+      const pop = document.getElementById(`${inputId}Popover`);
+      const inputEl = document.getElementById(inputId);
+      if (!pop || !inputEl) return;
+
+      const selectedVal = inputEl.value || todayStr;
+      const view = calendarViewState[inputId] || {
+        year: new Date().getFullYear(),
+        month: new Date().getMonth()
+      };
+
+      const firstDayWeek = new Date(view.year, view.month, 1).getDay();
+      const daysInMonth = new Date(view.year, view.month + 1, 0).getDate();
+      const monthLabel = new Date(view.year, view.month, 1).toLocaleDateString("pt-BR", {
+        month: "long",
+        year: "numeric"
+      });
+
+      let dayCellsHtml = "";
+      for (let i = 0; i < firstDayWeek; i++) {
+        dayCellsHtml += `<button type="button" class="mini-cal-day" disabled aria-hidden="true"></button>`;
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const iso = toIsoDate(view.year, view.month, day);
+        const isSelected = iso === selectedVal;
+        const isToday = iso === todayStr;
+        const cls = [
+          "mini-cal-day",
+          isSelected ? "is-selected" : "",
+          isToday ? "is-today" : ""
+        ].filter(Boolean).join(" ");
+
+        dayCellsHtml += `<button type="button" class="${cls}" data-cal-day="${iso}">${day}</button>`;
+      }
+
+      pop.innerHTML = `
+        <div class="mini-cal-header">
+          <button type="button" class="mini-cal-nav" data-cal-prev="${inputId}" aria-label="Mês anterior">&lsaquo;</button>
+          <span class="mini-cal-title">${escapeHtml(monthLabel)}</span>
+          <button type="button" class="mini-cal-nav" data-cal-next="${inputId}" aria-label="Próximo mês">&rsaquo;</button>
+        </div>
+        <div class="mini-cal-weekdays">
+          <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
+        </div>
+        <div class="mini-cal-days">${dayCellsHtml}</div>
+        <div class="mini-cal-footer">
+          <button type="button" class="mini-cal-action" data-cal-today="${inputId}">Hoje</button>
+          <button type="button" class="mini-cal-action" data-cal-close="${inputId}">Fechar</button>
+        </div>
+      `;
+
+      pop.querySelector(`[data-cal-prev="${inputId}"]`)?.addEventListener("click", () => {
+        const prevDate = new Date(view.year, view.month - 1, 1);
+        calendarViewState[inputId] = { year: prevDate.getFullYear(), month: prevDate.getMonth() };
+        renderMiniCalendar(inputId);
+      });
+
+      pop.querySelector(`[data-cal-next="${inputId}"]`)?.addEventListener("click", () => {
+        const nextDate = new Date(view.year, view.month + 1, 1);
+        calendarViewState[inputId] = { year: nextDate.getFullYear(), month: nextDate.getMonth() };
+        renderMiniCalendar(inputId);
+      });
+
+      pop.querySelectorAll("[data-cal-day]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const chosen = btn.getAttribute("data-cal-day");
+          if (!chosen) return;
+          setPickerDate(inputId, chosen);
+          closeAllMiniCalendars();
+        });
+      });
+
+      pop.querySelector(`[data-cal-today="${inputId}"]`)?.addEventListener("click", () => {
+        const now = new Date();
+        calendarViewState[inputId] = { year: now.getFullYear(), month: now.getMonth() };
+        setPickerDate(inputId, todayStr);
+        closeAllMiniCalendars();
+      });
+
+      pop.querySelector(`[data-cal-close="${inputId}"]`)?.addEventListener("click", () => {
+        closeAllMiniCalendars();
+      });
+    }
+
+    function initMiniCalendars() {
+      ["purchDate", "purchDueDate"].forEach((inputId) => {
+        const triggerBtn = document.getElementById(`${inputId}Trigger`);
+        const popoverEl = document.getElementById(`${inputId}Popover`);
+        if (!triggerBtn || !popoverEl) return;
+
+        triggerBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const willOpen = popoverEl.classList.contains("hidden");
+          closeAllMiniCalendars(inputId);
+          if (willOpen) {
+            const currentVal = document.getElementById(inputId)?.value || todayStr;
+            const parsed = new Date(`${currentVal}T12:00:00`);
+            if (!Number.isNaN(parsed.getTime())) {
+              calendarViewState[inputId] = { year: parsed.getFullYear(), month: parsed.getMonth() };
+            }
+            renderMiniCalendar(inputId);
+            popoverEl.classList.remove("hidden");
+            triggerBtn.setAttribute("aria-expanded", "true");
+          }
+        });
+
+        popoverEl.addEventListener("click", (e) => {
+          e.stopPropagation();
+        });
+      });
+
+      document.addEventListener("click", () => {
+        closeAllMiniCalendars();
+      });
+    }
+
+    function enqueueAuthTask(fn) {
+      authQueue = authQueue.then(() => fn()).catch(() => {});
+      return authQueue;
+    }
+
+    function setLoginFormBusy(busy) {
+      isAuthenticating = busy;
+      const loginBtn = document.getElementById("loginSubmitBtn");
+      const regBtn = document.getElementById("registerSubmitBtn");
+      if (loginBtn) loginBtn.disabled = busy;
+      if (regBtn) regBtn.disabled = busy;
+    }
+
+    function setAuthFeedback(htmlOrText, isError = false) {
+      const el = document.getElementById("authFeedback");
+      if (!el) return;
+      el.className = isError ? "feedback-msg feedback-error" : "feedback-msg";
+      el.innerHTML = htmlOrText;
+    }
+
+    /* =======================================================================
+       CONTROLE DE MODO DE LOGIN / CADASTRO / SUPER ADMIN
+       ======================================================================= */
+    function applyAuthModeUI() {
+      const userTabs = document.getElementById("userTabs");
+      const loginForm = document.getElementById("loginForm");
+      const registerForm = document.getElementById("registerForm");
+      const loginUserLabel = document.getElementById("loginUserLabel");
+      const loginUserInput = document.getElementById("loginUser");
+      const subtitleEl = document.getElementById("authSubtitle");
+      const toggleAdminText = document.getElementById("toggleAdminText");
+
+      setAuthFeedback("");
+
+      if (isAdminMode) {
+        if (userTabs) userTabs.classList.add("hidden");
+        if (registerForm) registerForm.classList.add("hidden");
+        if (loginForm) loginForm.classList.remove("hidden");
+        if (loginUserLabel) loginUserLabel.textContent = "Usuário Administrador";
+        if (loginUserInput) loginUserInput.placeholder = "Digite o usuário admin";
+        if (subtitleEl) subtitleEl.textContent = "Acesso restrito ao administrador Rodrigues ProDev.";
+        if (toggleAdminText) toggleAdminText.textContent = "Voltar para Acesso do Usuário";
         return;
       }
 
-      cust.used += value;
-      state.purchases.push({
-        id: "p_" + Date.now(),
-        customerId: cust.id,
-        customerName: cust.name,
-        product,
-        value,
-        buyDate,
-        dueDate
-      });
+      if (userTabs) userTabs.classList.remove("hidden");
+      if (loginUserLabel) loginUserLabel.textContent = "Usuário ou CPF";
+      if (loginUserInput) loginUserInput.placeholder = "Digite seu usuário ou CPF";
+      if (toggleAdminText) toggleAdminText.textContent = "Acesso Restrito (Admin)";
 
-      document.getElementById("purchProduct").value = "";
-      document.getElementById("purchValue").value = "";
-      renderCustomers();
-      renderPurchases();
-    });
+      const tabLoginBtn = document.getElementById("tabLoginBtn");
+      const tabRegisterBtn = document.getElementById("tabRegisterBtn");
 
-    document.getElementById("chatForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const input = document.getElementById("chatInput");
-      const text = input.value.trim();
-      if (!text) return;
-
-      const box = document.getElementById("chatBox");
-      box.innerHTML += `<div class="chat-item"><strong>Você:</strong> ${escapeHtml(text)}</div>`;
-
-      const totalClientes = state.customers.length;
-      const totalCompras = state.purchases.length;
-      const reply = `Resumo atual: ${totalClientes} cliente(s) cadastrado(s) e ${totalCompras} compra(s) lançada(s).`;
-
-      box.innerHTML += `<div class="chat-item"><strong>IA:</strong> ${escapeHtml(reply)}</div>`;
-      box.scrollTop = box.scrollHeight;
-      input.value = "";
-    });
-
-    function escapeHtml(str) {
-      return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-    }
-
-    function renderTenants() {
-      const tbody = document.getElementById("tenantsTableBody");
-      tbody.innerHTML = state.tenants.map(t => `
-        <tr>
-          <td>${escapeHtml(t.name)}</td>
-          <td>${escapeHtml(t.plan)}</td>
-          <td><span class="badge ${t.status !== "Ativo" ? "blocked" : ""}">${escapeHtml(t.status)}</span></td>
-          <td>
-            <button class="small ${t.status === "Ativo" ? "danger" : ""}" onclick="toggleTenantStatus('${t.id}')">
-              ${t.status === "Ativo" ? "Bloquear" : "Ativar"}
-            </button>
-          </td>
-        </tr>
-      `).join("");
-    }
-
-    function renderCustomers() {
-      const tbody = document.getElementById("customersTableBody");
-      const select = document.getElementById("purchCustomer");
-      const prevSelected = select.value;
-
-      tbody.innerHTML = state.customers.map(c => `
-        <tr>
-          <td>${escapeHtml(c.name)}</td>
-          <td>R$ ${c.limit.toFixed(2)}</td>
-          <td>R$ ${c.used.toFixed(2)}</td>
-          <td><button class="small secondary" onclick="editCustomer('${c.id}')">Editar</button></td>
-        </tr>
-      `).join("");
-
-      select.innerHTML = state.customers.map(c =>
-        `<option value="${c.id}">${escapeHtml(c.name)} (Disp: R$ ${(c.limit - c.used).toFixed(2)})</option>`
-      ).join("");
-
-      if (prevSelected && state.customers.some(c => c.id === prevSelected)) {
-        select.value = prevSelected;
+      if (activeAuthTab === "register") {
+        tabLoginBtn?.classList.remove("active");
+        tabRegisterBtn?.classList.add("active");
+        loginForm?.classList.add("hidden");
+        registerForm?.classList.remove("hidden");
+        if (subtitleEl) subtitleEl.textContent = "Preencha seus dados completos. O acesso será liberado pelo administrador.";
+      } else {
+        tabLoginBtn?.classList.add("active");
+        tabRegisterBtn?.classList.remove("active");
+        loginForm?.classList.remove("hidden");
+        registerForm?.classList.add("hidden");
+        if (subtitleEl) subtitleEl.textContent = "Acesse seu painel da mercearia ou cadastre sua conta para liberação.";
       }
     }
 
-    function renderPurchases() {
-      const tbody = document.getElementById("purchasesTableBody");
-      tbody.innerHTML = state.purchases.map(p => `
-        <tr>
-          <td>${escapeHtml(p.customerName)} — ${escapeHtml(p.product)}</td>
-          <td>${escapeHtml(p.buyDate)}</td>
-          <td>${escapeHtml(p.dueDate)}</td>
-          <td>R$ ${p.value.toFixed(2)}</td>
-        </tr>
-      `).join("");
+    function bindPasswordToggle(btnId, inputId) {
+      const btn = document.getElementById(btnId);
+      const input = document.getElementById(inputId);
+      if (!btn || !input) return;
+      btn.addEventListener("click", () => {
+        input.type = input.type === "password" ? "text" : "password";
+      });
     }
 
-    function renderAll() {
-      renderTenants();
-      renderCustomers();
-      renderPurchases();
+    /* =======================================================================
+       AUTENTICAÇÃO E CADASTRO DE USUÁRIO
+       ======================================================================= */
+    async function processLoginSubmit(e) {
+      e.preventDefault();
+      if (isAuthenticating) return;
+
+      return enqueueAuthTask(async () => {
+        setLoginFormBusy(true);
+        setAuthFeedback("");
+
+        try {
+          const rawUser = String(document.getElementById("loginUser")?.value || "").trim();
+          const rawPass = String(document.getElementById("loginPass")?.value || "");
+
+          if (!rawUser || !rawPass) {
+            setAuthFeedback("Preencha o usuário e a senha para entrar.", true);
+            return;
+          }
+
+          if (isAdminMode) {
+            if (rawUser.toLowerCase() === SUPER_ADMIN_USER && rawPass === SUPER_ADMIN_PASS) {
+              state.session = {
+                role: "super_admin",
+                name: "Administrador Rodrigues ProDev",
+                user: SUPER_ADMIN_USER
+              };
+              saveState();
+              syncView();
+              return;
+            }
+            setAuthFeedback("Usuário ou senha de administrador incorretos.", true);
+            return;
+          }
+
+          const userDigits = normalizeDigits(rawUser);
+          const matchedUser = state.users.find((u) => {
+            const byUser = String(u.user || "").trim().toLowerCase() === rawUser.toLowerCase();
+            const byCpf = userDigits.length >= 3 && normalizeDigits(u.cpf) === userDigits;
+            return (byUser || byCpf) && String(u.pass) === rawPass;
+          });
+
+          if (!matchedUser) {
+            setAuthFeedback("Usuário/CPF ou senha inválidos. Se ainda não tem conta, clique em <strong>Cadastrar Conta</strong>.", true);
+            return;
+          }
+
+          if (matchedUser.status === "Pendente") {
+            setAuthFeedback(
+              "Seu cadastro está <strong>Pendente de Liberação</strong>. Entre em contato com <strong>Rodrigues ProDev</strong> pelo telefone/WhatsApp <strong>67 991267853</strong>.",
+              true
+            );
+            return;
+          }
+
+          if (matchedUser.status === "Suspenso" || matchedUser.status === "Bloqueado") {
+            setAuthFeedback(
+              `Seu acesso está <strong>${matchedUser.status}</strong>. Fale com <strong>Rodrigues ProDev</strong> pelo telefone/WhatsApp <strong>67 991267853</strong>.`,
+              true
+            );
+            return;
+          }
+
+          state.session = {
+            role: "merchant_user",
+            userId: matchedUser.id,
+            name: matchedUser.name,
+            user: matchedUser.user
+          };
+          saveState();
+          syncView();
+        } finally {
+          setLoginFormBusy(false);
+        }
+      });
     }
+
+    async function processRegisterSubmit(e) {
+      e.preventDefault();
+      if (isAuthenticating) return;
+
+      return enqueueAuthTask(async () => {
+        setLoginFormBusy(true);
+        setAuthFeedback("");
+
+        try {
+          const name = String(document.getElementById("regName")?.value || "").trim();
+          const cpf = String(document.getElementById("regCpf")?.value || "").trim();
+          const phone = String(document.getElementById("regPhone")?.value || "").trim();
+          const address = String(document.getElementById("regAddress")?.value || "").trim();
+          const user = String(document.getElementById("regUser")?.value || "").trim();
+          const pass = String(document.getElementById("regPass")?.value || "");
+
+          if (!name || !cpf || !phone || !address || !user || !pass) {
+            setAuthFeedback("Preencha todos os campos do cadastro para enviar.", true);
+            return;
+          }
+
+          const duplicate = state.users.some(
+            (u) => String(u.user || "").trim().toLowerCase() === user.toLowerCase()
+          );
+          if (duplicate) {
+            setAuthFeedback("Este nome de usuário já está em uso. Escolha outro usuário.", true);
+            return;
+          }
+
+          const newUser = {
+            id: "u_" + Date.now(),
+            name,
+            cpf,
+            phone,
+            address,
+            user,
+            pass,
+            status: "Pendente"
+          };
+
+          state.users.unshift(newUser);
+          saveState();
+
+          document.getElementById("registerForm")?.reset();
+          activeAuthTab = "login";
+          applyAuthModeUI();
+          setAuthFeedback(
+            "Cadastro enviado! Seu acesso ficará liberado assim que o administrador aprovar. Contato: <strong>Rodrigues ProDev — 67 991267853</strong>."
+          );
+        } finally {
+          setLoginFormBusy(false);
+        }
+      });
+    }
+
+    /* =======================================================================
+       RENDERIZAÇÃO DO SUPER ADMIN (LIBERAR, SUSPENDER, BLOQUEAR, EXCLUIR)
+       ======================================================================= */
+    function renderSuperAdmin() {
+      const totalEl = document.getElementById("statTotalUsers");
+      const activeEl = document.getElementById("statActiveUsers");
+      const pendingEl = document.getElementById("statPendingUsers");
+      const blockedEl = document.getElementById("statBlockedUsers");
+      const tbody = document.getElementById("adminUsersTableBody");
+
+      const total = state.users.length;
+      const active = state.users.filter(u => u.status === "Ativo").length;
+      const pending = state.users.filter(u => u.status === "Pendente").length;
+      const blocked = state.users.filter(u => u.status === "Suspenso" || u.status === "Bloqueado").length;
+
+      if (totalEl) totalEl.textContent = String(total);
+      if (activeEl) activeEl.textContent = String(active);
+      if (pendingEl) pendingEl.textContent = String(pending);
+      if (blockedEl) blockedEl.textContent = String(blocked);
+
+      if (!tbody) return;
+      tbody.innerHTML = "";
+
+      if (state.users.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="muted">Nenhum usuário cadastrado no momento.</td></tr>`;
+        return;
+      }
+
+      state.users.forEach((u) => {
+        const tr = document.createElement("tr");
+        let badgeClass = "badge-pending";
+        if (u.status === "Ativo") badgeClass = "badge-active";
+        if (u.status === "Suspenso" || u.status === "Bloqueado") badgeClass = "badge-blocked";
+
+        tr.innerHTML = `
+          <td>
+            <strong>${escapeHtml(u.name)}</strong><br />
+            <span class="muted">${escapeHtml(u.address || "")}</span>
+          </td>
+          <td>
+            ${escapeHtml(u.cpf || "")}<br />
+            <span class="muted">${escapeHtml(u.phone || "")}</span>
+          </td>
+          <td>
+            Usuário: <strong>${escapeHtml(u.user)}</strong><br />
+            <span class="muted">Senha: ${escapeHtml(u.pass)}</span>
+          </td>
+          <td><span class="badge ${badgeClass}">${escapeHtml(u.status)}</span></td>
+          <td>
+            <div class="action-group">
+              <button type="button" class="btn-approve" data-action="Ativo" data-id="${escapeHtml(u.id)}">Liberar Login</button>
+              <button type="button" class="btn-warn" data-action="Suspenso" data-id="${escapeHtml(u.id)}">Suspender</button>
+              <button type="button" class="btn-danger" data-action="Bloqueado" data-id="${escapeHtml(u.id)}">Bloquear</button>
+              <button type="button" class="btn-danger" data-delete-id="${escapeHtml(u.id)}">Excluir</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      tbody.querySelectorAll("button[data-action]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const userId = btn.getAttribute("data-id");
+          const nextStatus = btn.getAttribute("data-action");
+          const target = state.users.find(item => item.id === userId);
+          if (!target) return;
+          target.status = nextStatus;
+          saveState();
+          renderSuperAdmin();
+        });
+      });
+
+      tbody.querySelectorAll("button[data-delete-id]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const userId = btn.getAttribute("data-delete-id");
+          state.users = state.users.filter(item => item.id !== userId);
+          state.groceryCustomers = state.groceryCustomers.filter(c => c.ownerUserId !== userId);
+          state.purchases = state.purchases.filter(p => p.ownerUserId !== userId);
+          saveState();
+          renderSuperAdmin();
+        });
+      });
+    }
+
+    /* =======================================================================
+       RENDERIZAÇÃO DO PAINEL DA MERCEARIA (CLIENTES, PARCELAS E IA)
+       ======================================================================= */
+    function renderMerchantPanel() {
+      if (state.session?.role !== "merchant_user") return;
+      const ownerUserId = state.session.userId;
+
+      const myCustomers = state.groceryCustomers.filter(c => c.ownerUserId === ownerUserId);
+      const myPurchases = state.purchases.filter(p => p.ownerUserId === ownerUserId);
+
+      const openTotal = myPurchases
+        .filter(p => p.status === "Em Aberto")
+        .reduce((acc, p) => acc + (Number(p.value) || 0), 0);
+
+      const paidTotal = myPurchases
+        .filter(p => p.status === "Pago")
+        .reduce((acc, p) => acc + (Number(p.value) || 0), 0);
+
+      const custCountEl = document.getElementById("statMerchantCustomers");
+      const openEl = document.getElementById("statMerchantOpen");
+      const paidEl = document.getElementById("statMerchantPaid");
+
+      if (custCountEl) custCountEl.textContent = String(myCustomers.length);
+      if (openEl) openEl.textContent = formatCurrency(openTotal);
+      if (paidEl) paidEl.textContent = formatCurrency(paidTotal);
+
+      renderPurchaseCustomerSelect(myCustomers);
+      renderMerchantCustomers(myCustomers);
+      renderPurchases(myPurchases);
+      updateInstallmentPreview();
+    }
+
+    function renderPurchaseCustomerSelect(myCustomers) {
+      const selectEl = document.getElementById("purchCustomer");
+      if (!selectEl) return;
+
+      const previousValue = selectEl.value;
+      selectEl.innerHTML = "";
+
+      if (!myCustomers.length) {
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = "Cadastre um cliente primeiro";
+        selectEl.appendChild(opt);
+        return;
+      }
+
+      myCustomers.forEach((c) => {
+        const available = Math.max(0, (Number(c.limit) || 0) - (Number(c.used) || 0));
+        const opt = document.createElement("option");
+        opt.value = c.id;
+        opt.textContent = `${c.name} — Disponível: ${formatCurrency(available)}`;
+        selectEl.appendChild(opt);
+      });
+
+      if (previousValue && myCustomers.some(c => c.id === previousValue)) {
+        selectEl.value = previousValue;
+      }
+    }
+
+    function renderMerchantCustomers(myCustomers) {
+      const tbody = document.getElementById("merchantCustomersBody");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+
+      if (!myCustomers.length) {
+        tbody.innerHTML = `<tr><td colspan="7" class="muted">Nenhum cliente cadastrado na sua mercearia ainda.</td></tr>`;
+        return;
+      }
+
+      myCustomers.forEach((c) => {
+        const limitVal = Number(c.limit) || 0;
+        const usedVal = Number(c.used) || 0;
+        const availableVal = Math.max(0, limitVal - usedVal);
+        const streetText = c.street ? escapeHtml(c.street) : `<span class="muted">Rua não informada</span>`;
+        const typeText = c.propertyType ? escapeHtml(c.propertyType) : "Casa";
+        const numText = c.number ? escapeHtml(c.number) : "-";
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${escapeHtml(c.name)}</strong></td>
+          <td>
+            ${streetText}<br />
+            <span class="muted">${typeText} • Nº ${numText}</span>
+          </td>
+          <td>${escapeHtml(c.cpf)}</td>
+          <td>${formatCurrency(limitVal)}</td>
+          <td>${formatCurrency(usedVal)}</td>
+          <td><strong class="brand-highlight">${formatCurrency(availableVal)}</strong></td>
+          <td>
+            <button type="button" class="btn-danger" data-del-cust="${escapeHtml(c.id)}">Excluir</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      tbody.querySelectorAll("button[data-del-cust]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const cid = btn.getAttribute("data-del-cust");
+          state.groceryCustomers = state.groceryCustomers.filter(c => c.id !== cid);
+          state.purchases = state.purchases.filter(p => p.customerId !== cid);
+          saveState();
+          renderMerchantPanel();
+        });
+      });
+    }
+
+    function renderPurchases(myPurchases) {
+      const tbody = document.getElementById("purchasesBody");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+
+      if (!myPurchases.length) {
+        tbody.innerHTML = `<tr><td colspan="7" class="muted">Nenhuma compra ou parcela registrada ainda.</td></tr>`;
+        return;
+      }
+
+      myPurchases.forEach((p) => {
+        const isPaid = p.status === "Pago";
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${escapeHtml(p.customerName)}</strong></td>
+          <td>${escapeHtml(p.product)}</td>
+          <td><strong>${formatCurrency(p.value)}</strong></td>
+          <td>${escapeHtml(p.buyDate || "-")}</td>
+          <td>${escapeHtml(p.dueDate || "-")}</td>
+          <td>
+            <span class="badge ${isPaid ? "badge-active" : "badge-pending"}">${escapeHtml(p.status)}</span>
+          </td>
+          <td>
+            ${
+              isPaid
+                ? `<span class="muted">Quitado</span>`
+                : `<button type="button" class="btn-approve" data-pay-id="${escapeHtml(p.id)}">Dar Baixa</button>`
+            }
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      tbody.querySelectorAll("button[data-pay-id]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const pid = btn.getAttribute("data-pay-id");
+          const item = state.purchases.find(p => p.id === pid);
+          if (!item || item.status === "Pago") return;
+
+          item.status = "Pago";
+          const cust = state.groceryCustomers.find(c => c.id === item.customerId);
+          if (cust) {
+            cust.used = Math.max(0, Number(((Number(cust.used) || 0) - (Number(item.value) || 0)).toFixed(2)));
+          }
+          saveState();
+          renderMerchantPanel();
+        });
+      });
+    }
+
+    /* =======================================================================
+       PARCELAMENTO COM ENTRADA / SEM ENTRADA (ATÉ 24X)
+       ======================================================================= */
+    function updateInstallmentPreview() {
+      const previewEl = document.getElementById("installmentPreview");
+      const downGroupEl = document.getElementById("downPaymentGroup");
+      const downMode = document.getElementById("purchDownMode")?.value || "none";
+      const hasDownPayment = downMode === "with";
+
+      if (downGroupEl) {
+        downGroupEl.classList.toggle("hidden", !hasDownPayment);
+      }
+
+      if (!previewEl) return;
+      const totalVal = parseFloat(document.getElementById("purchValue")?.value) || 0;
+      const rawDown = hasDownPayment ? (parseFloat(document.getElementById("purchDownPayment")?.value) || 0) : 0;
+      const downVal = Math.min(Math.max(0, rawDown), totalVal);
+      const financedVal = Math.max(0, Number((totalVal - downVal).toFixed(2)));
+      const count = Math.min(24, Math.max(1, parseInt(document.getElementById("purchInstallments")?.value, 10) || 1));
+
+      if (totalVal <= 0) {
+        previewEl.textContent = hasDownPayment
+          ? `Modalidade: Com entrada • Parcelamento em ${count}x mensais.`
+          : `Modalidade: Sem entrada • Parcelamento em ${count}x mensais.`;
+        return;
+      }
+
+      if (hasDownPayment && rawDown > totalVal) {
+        previewEl.textContent = `Atenção: entrada de ${formatCurrency(rawDown)} maior que o total de ${formatCurrency(totalVal)}.`;
+        return;
+      }
+
+      const baseParcela = Math.floor((financedVal / count) * 100) / 100;
+      const ultimaParcela = Number((financedVal - baseParcela * (count - 1)).toFixed(2));
+      const entradaPrefix = hasDownPayment ? `Entrada de ${formatCurrency(downVal)} + ` : "";
+
+      if (count === 1 || Math.abs(baseParcela - ultimaParcela) < 0.005) {
+        previewEl.textContent = `Resumo: ${entradaPrefix}${count}x de ${formatCurrency(baseParcela)} (Saldo parcelado: ${formatCurrency(financedVal)} • Total: ${formatCurrency(totalVal)}).`;
+      } else {
+        previewEl.textContent = `Resumo: ${entradaPrefix}${count - 1}x de ${formatCurrency(baseParcela)} + 1x de ${formatCurrency(ultimaParcela)} (Saldo parcelado: ${formatCurrency(financedVal)} • Total: ${formatCurrency(totalVal)}).`;
+      }
+    }
+
+    function bindMerchantEvents() {
+      const dateInput = document.getElementById("purchDate");
+      const dueDateInput = document.getElementById("purchDueDate");
+      setPickerDate("purchDate", dateInput?.value || todayStr);
+      setPickerDate("purchDueDate", dueDateInput?.value || nextMonthStr);
+      initMiniCalendars();
+
+      document.getElementById("purchValue")?.addEventListener("input", updateInstallmentPreview);
+      document.getElementById("purchDownMode")?.addEventListener("change", updateInstallmentPreview);
+      document.getElementById("purchDownPayment")?.addEventListener("input", updateInstallmentPreview);
+      document.getElementById("purchInstallments")?.addEventListener("change", updateInstallmentPreview);
+
+      document.getElementById("groceryCustomerForm")?.addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (state.session?.role !== "merchant_user") return;
+
+        const ownerUserId = state.session.userId;
+        const name = String(document.getElementById("gcName")?.value || "").trim();
+        const cpf = String(document.getElementById("gcCpf")?.value || "").trim();
+        const street = String(document.getElementById("gcStreet")?.value || "").trim();
+        const propertyType = String(document.getElementById("gcPropertyType")?.value || "Casa").trim();
+        const number = String(document.getElementById("gcNumber")?.value || "").trim();
+        const limit = Number((parseFloat(document.getElementById("gcLimit")?.value) || 0).toFixed(2));
+
+        if (!name || !cpf) return;
+
+        state.groceryCustomers.unshift({
+          id: "gc_" + Date.now(),
+          ownerUserId,
+          name,
+          cpf,
+          street,
+          propertyType,
+          number,
+          limit: Math.max(0, limit),
+          used: 0
+        });
+
+        saveState();
+        document.getElementById("groceryCustomerForm")?.reset();
+        renderMerchantPanel();
+      });
+
+      document.getElementById("purchaseForm")?.addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (state.session?.role !== "merchant_user") return;
+
+        const ownerUserId = state.session.userId;
+        const msgEl = document.getElementById("purchaseMsg");
+        if (msgEl) {
+          msgEl.className = "feedback-msg";
+          msgEl.textContent = "";
+        }
+
+        const custId = document.getElementById("purchCustomer")?.value || "";
+        const product = String(document.getElementById("purchProduct")?.value || "").trim();
+        const value = Number((parseFloat(document.getElementById("purchValue")?.value) || 0).toFixed(2));
+        const downMode = document.getElementById("purchDownMode")?.value || "none";
+        const hasDownPayment = downMode === "with";
+        const downPayment = hasDownPayment
+          ? Number((parseFloat(document.getElementById("purchDownPayment")?.value) || 0).toFixed(2))
+          : 0;
+        const installmentCount = Math.min(24, Math.max(1, parseInt(document.getElementById("purchInstallments")?.value, 10) || 1));
+        const buyDate = document.getElementById("purchDate")?.value || todayStr;
+        const dueDate = document.getElementById("purchDueDate")?.value || nextMonthStr;
+
+        const cust = state.groceryCustomers.find(c => c.id === custId && c.ownerUserId === ownerUserId);
+        if (!cust || !product) {
+          if (msgEl) {
+            msgEl.className = "feedback-msg feedback-error";
+            msgEl.textContent = "Cadastre ou selecione um cliente e informe a descrição da compra.";
+          }
+          return;
+        }
+
+        if (value <= 0) {
+          if (msgEl) {
+            msgEl.className = "feedback-msg feedback-error";
+            msgEl.textContent = "Informe um valor total maior que zero.";
+          }
+          return;
+        }
+
+        if (hasDownPayment && (downPayment < 0 || downPayment >= value)) {
+          if (msgEl) {
+            msgEl.className = "feedback-msg feedback-error";
+            msgEl.textContent = "Informe um valor de entrada menor que o valor total da compra.";
+          }
+          return;
+        }
+
+        const financedValue = Number((value - downPayment).toFixed(2));
+        const available = Math.max(0, Number(((Number(cust.limit) || 0) - (Number(cust.used) || 0)).toFixed(2)));
+        if (financedValue > available) {
+          if (msgEl) {
+            msgEl.className = "feedback-msg feedback-error";
+            msgEl.textContent = `Saldo parcelado (${formatCurrency(financedValue)}) excede o limite disponível do cliente (${formatCurrency(available)}).`;
+          }
+          return;
+        }
+
+        cust.used = Number(((Number(cust.used) || 0) + financedValue).toFixed(2));
+        const batchId = "p_" + Date.now();
+
+        if (hasDownPayment && downPayment > 0) {
+          state.purchases.unshift({
+            id: `${batchId}_entrada`,
+            ownerUserId,
+            customerId: cust.id,
+            customerName: cust.name,
+            product: `${product} (Entrada)`,
+            value: downPayment,
+            buyDate,
+            dueDate: buyDate,
+            status: "Pago"
+          });
+        }
+
+        const baseParcela = Math.floor((financedValue / installmentCount) * 100) / 100;
+
+        for (let i = 1; i <= installmentCount; i++) {
+          const parcelaVal = i === installmentCount
+            ? Number((financedValue - baseParcela * (installmentCount - 1)).toFixed(2))
+            : baseParcela;
+          const parcelaDue = i === 1 ? dueDate : addMonthsToDateStr(dueDate, i - 1);
+          const labelProduto = installmentCount > 1
+            ? `${product} (${i}/${installmentCount})`
+            : product;
+
+          state.purchases.unshift({
+            id: `${batchId}_${i}`,
+            ownerUserId,
+            customerId: cust.id,
+            customerName: cust.name,
+            product: labelProduto,
+            value: parcelaVal,
+            buyDate,
+            dueDate: parcelaDue,
+            status: "Em Aberto"
+          });
+        }
+
+        document.getElementById("purchProduct").value = "";
+        document.getElementById("purchValue").value = "";
+        setPickerDate("purchDate", todayStr);
+        setPickerDate("purchDueDate", nextMonthStr);
+        if (document.getElementById("purchDownMode")) {
+          document.getElementById("purchDownMode").value = "none";
+        }
+        if (document.getElementById("purchDownPayment")) {
+          document.getElementById("purchDownPayment").value = "0";
+        }
+        if (document.getElementById("purchInstallments")) {
+          document.getElementById("purchInstallments").value = "3";
+        }
+
+        saveState();
+        renderMerchantPanel();
+      });
+
+      document.getElementById("aiSummaryBtn")?.addEventListener("click", () => {
+        const ownerUserId = state.session?.userId;
+        const myCusts = state.groceryCustomers.filter(c => c.ownerUserId === ownerUserId);
+        const myPurchs = state.purchases.filter(p => p.ownerUserId === ownerUserId);
+        const openSum = myPurchs.filter(p => p.status === "Em Aberto").reduce((s, p) => s + (Number(p.value) || 0), 0);
+        const paidSum = myPurchs.filter(p => p.status === "Pago").reduce((s, p) => s + (Number(p.value) || 0), 0);
+        const aiOut = document.getElementById("aiOutput");
+        if (aiOut) {
+          aiOut.textContent =
+            `Resumo da Mercearia:\n` +
+            `• Clientes cadastrados: ${myCusts.length}\n` +
+            `• Total em aberto: ${formatCurrency(openSum)}\n` +
+            `• Total já pago/quitado: ${formatCurrency(paidSum)}`;
+        }
+      });
+
+      document.getElementById("aiDueBtn")?.addEventListener("click", () => {
+        const ownerUserId = state.session?.userId;
+        const openItems = state.purchases.filter(p => p.ownerUserId === ownerUserId && p.status === "Em Aberto");
+        const aiOut = document.getElementById("aiOutput");
+        if (!aiOut) return;
+        if (!openItems.length) {
+          aiOut.textContent = "Não há parcelas em aberto no momento.";
+          return;
+        }
+        const lines = openItems.slice(0, 8).map(item => `• ${item.customerName} — ${item.product}: ${formatCurrency(item.value)} (Venc.: ${item.dueDate})`);
+        aiOut.textContent = `Parcelas em aberto (${openItems.length}):\n` + lines.join("\n");
+      });
+
+      document.getElementById("aiLimitsBtn")?.addEventListener("click", () => {
+        const ownerUserId = state.session?.userId;
+        const myCusts = state.groceryCustomers.filter(c => c.ownerUserId === ownerUserId);
+        const aiOut = document.getElementById("aiOutput");
+        if (!aiOut) return;
+        if (!myCusts.length) {
+          aiOut.textContent = "Nenhum cliente cadastrado para verificar limites.";
+          return;
+        }
+        const lines = myCusts.map((c) => {
+          const avail = Math.max(0, (Number(c.limit) || 0) - (Number(c.used) || 0));
+          return `• ${c.name}: Limite ${formatCurrency(c.limit)} | Usado ${formatCurrency(c.used)} | Disponível ${formatCurrency(avail)}`;
+        });
+        aiOut.textContent = "Situação de limites dos clientes:\n" + lines.join("\n");
+      });
+    }
+
+    /* =======================================================================
+       SINCRONIZAÇÃO DE TELA E EVENTOS GLOBAIS
+       ======================================================================= */
+    function syncView() {
+      const loginView = document.getElementById("loginView");
+      const appView = document.getElementById("appView");
+      const superAdminPanel = document.getElementById("superAdminPanel");
+      const merchantPanel = document.getElementById("merchantPanel");
+      const sessionTitle = document.getElementById("sessionTitle");
+      const sessionSubtitle = document.getElementById("sessionSubtitle");
+
+      const sess = state.session;
+
+      if (!sess) {
+        loginView?.classList.remove("hidden");
+        appView?.classList.add("hidden");
+        applyAuthModeUI();
+        return;
+      }
+
+      if (sess.role === "super_admin") {
+        loginView?.classList.add("hidden");
+        appView?.classList.remove("hidden");
+        superAdminPanel?.classList.remove("hidden");
+        merchantPanel?.classList.add("hidden");
+        if (sessionTitle) sessionTitle.innerHTML = `Painel Super Admin — <span class="brand-highlight">Rodrigues ProDev</span>`;
+        if (sessionSubtitle) sessionSubtitle.textContent = "Controle de usuários cadastrados, liberação, suspensão, bloqueio e exclusão.";
+        renderSuperAdmin();
+        return;
+      }
+
+      const currentUser = state.users.find(u => u.id === sess.userId);
+      if (!currentUser || currentUser.status !== "Ativo") {
+        state.session = null;
+        saveState();
+        loginView?.classList.remove("hidden");
+        appView?.classList.add("hidden");
+        applyAuthModeUI();
+        setAuthFeedback("Seu acesso foi alterado pelo administrador. Entre em contato com Rodrigues ProDev (67 991267853).", true);
+        return;
+      }
+
+      loginView?.classList.add("hidden");
+      appView?.classList.remove("hidden");
+      superAdminPanel?.classList.add("hidden");
+      merchantPanel?.classList.remove("hidden");
+      if (sessionTitle) sessionTitle.innerHTML = `${escapeHtml(currentUser.name)} — <span class="brand-highlight">Rodrigues ProDev</span>`;
+      if (sessionSubtitle) sessionSubtitle.textContent = `Usuário logado: ${currentUser.user} • Status: ${currentUser.status}`;
+      renderMerchantPanel();
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("tabLoginBtn")?.addEventListener("click", () => {
+        activeAuthTab = "login";
+        applyAuthModeUI();
+      });
+
+      document.getElementById("tabRegisterBtn")?.addEventListener("click", () => {
+        activeAuthTab = "register";
+        applyAuthModeUI();
+      });
+
+      document.getElementById("toggleAdminBtn")?.addEventListener("click", () => {
+        isAdminMode = !isAdminMode;
+        applyAuthModeUI();
+      });
+
+      bindPasswordToggle("toggleLoginPassBtn", "loginPass");
+      bindPasswordToggle("toggleRegPassBtn", "regPass");
+
+      document.getElementById("loginForm")?.addEventListener("submit", processLoginSubmit);
+      document.getElementById("registerForm")?.addEventListener("submit", processRegisterSubmit);
+
+      document.getElementById("logoutBtn")?.addEventListener("click", () => {
+        state.session = null;
+        isAdminMode = false;
+        activeAuthTab = "login";
+        saveState();
+        syncView();
+      });
+
+      window.addEventListener("storage", (e) => {
+        if (e.key === STORAGE_KEY) {
+          state = loadInitialState();
+          syncView();
+        }
+      });
+
+      bindMerchantEvents();
+      syncView();
+    });
   </script>
 </body>
 </html>
