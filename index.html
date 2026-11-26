@@ -1218,26 +1218,6 @@
 
     const defaultUsers = [
       {
-        id: "u_demo_1",
-        name: "Mercearia Bom Preço",
-        cpf: "111.222.333-44",
-        phone: "(67) 99999-1111",
-        address: "Av. Iguatemi, 500 - Centro",
-        user: "mercearia1",
-        pass: "123456",
-        status: "Ativo"
-      },
-      {
-        id: "u_demo_2",
-        name: "Mercearia do Bairro",
-        cpf: "555.666.777-88",
-        phone: "(67) 98888-2222",
-        address: "Rua das Flores, 120 - Jardim",
-        user: "mercearia2",
-        pass: "123456",
-        status: "Pendente"
-      },
-      {
         id: "u_test_123",
         name: "Mercearia Teste 123",
         cpf: "123.123.123-12",
@@ -1249,69 +1229,12 @@
       }
     ];
 
-    const defaultGroceryCustomers = [
-      {
-        id: "gc_demo_1",
-        ownerUserId: "u_demo_1",
-        name: "João da Silva",
-        cpf: "(67) 99111-0001",
-        street: "Rua Mato Grosso",
-        propertyType: "Casa",
-        number: "145",
-        limit: 1000,
-        used: 240
-      },
-      {
-        id: "gc_demo_2",
-        ownerUserId: "u_demo_1",
-        name: "Ana Paula",
-        cpf: "(67) 99222-0002",
-        street: "Av. Weimar Gonçalves Torres",
-        propertyType: "Comércio",
-        number: "890",
-        limit: 750,
-        used: 0
-      },
-      {
-        id: "gc_test_123_1",
-        ownerUserId: "u_test_123",
-        name: "Cliente Teste Crediário",
-        cpf: "(67) 99126-7853",
-        street: "Rua Principal",
-        propertyType: "Ap",
-        number: "302",
-        limit: 5000,
-        used: 0
-      }
-    ];
+    const defaultGroceryCustomers = [];
 
     const todayStr = new Date().toISOString().split("T")[0];
     const nextMonthStr = addMonthsToDateStr(todayStr, 1);
 
-    const defaultPurchases = [
-      {
-        id: "p_demo_1",
-        ownerUserId: "u_demo_1",
-        customerId: "gc_demo_1",
-        customerName: "João da Silva",
-        product: "Compras da semana (1/2)",
-        value: 120,
-        buyDate: todayStr,
-        dueDate: nextMonthStr,
-        status: "Em Aberto"
-      },
-      {
-        id: "p_demo_2",
-        ownerUserId: "u_demo_1",
-        customerId: "gc_demo_1",
-        customerName: "João da Silva",
-        product: "Compras da semana (2/2)",
-        value: 120,
-        buyDate: todayStr,
-        dueDate: addMonthsToDateStr(todayStr, 2),
-        status: "Em Aberto"
-      }
-    ];
+    const defaultPurchases = [];
 
     let state = loadInitialState();
     let isAdminMode = false;
@@ -1323,45 +1246,32 @@
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) {
-          return {
+          const initial = {
             users: cloneData(defaultUsers),
             groceryCustomers: cloneData(defaultGroceryCustomers),
             purchases: cloneData(defaultPurchases),
             session: null
           };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+          return initial;
         }
+
         const parsed = JSON.parse(raw);
-        const users = Array.isArray(parsed.users) && parsed.users.length
-          ? parsed.users
-          : cloneData(defaultUsers);
-
-        const testUser = users.find(u => String(u.user) === "123");
-        if (!testUser) {
-          users.push(cloneData(defaultUsers[2]));
-        } else {
-          testUser.pass = "123";
-          testUser.status = "Pendente";
-        }
-
-        const groceryCustomers = Array.isArray(parsed.groceryCustomers)
-          ? parsed.groceryCustomers
-          : cloneData(defaultGroceryCustomers);
-
-        if (!groceryCustomers.some(c => c.ownerUserId === "u_test_123")) {
-          groceryCustomers.push(cloneData(defaultGroceryCustomers[2]));
-        }
+        const users = Array.isArray(parsed.users) ? parsed.users : cloneData(defaultUsers);
+        const groceryCustomers = Array.isArray(parsed.groceryCustomers) ? parsed.groceryCustomers : [];
+        const purchases = Array.isArray(parsed.purchases) ? parsed.purchases : [];
 
         return {
           users,
           groceryCustomers,
-          purchases: Array.isArray(parsed.purchases) ? parsed.purchases : cloneData(defaultPurchases),
+          purchases,
           session: parsed.session || null
         };
       } catch (_err) {
         return {
           users: cloneData(defaultUsers),
-          groceryCustomers: cloneData(defaultGroceryCustomers),
-          purchases: cloneData(defaultPurchases),
+          groceryCustomers: [],
+          purchases: [],
           session: null
         };
       }
@@ -1371,7 +1281,7 @@
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       } catch (_err) {
-        // Ignora erro de quota caso o armazenamento local esteja cheio
+        setAuthFeedback("Não foi possível salvar no navegador (armazenamento cheio ou bloqueado).", true);
       }
     }
 
@@ -2058,7 +1968,7 @@
         if (!name || !cpf) return;
 
         state.groceryCustomers.unshift({
-          id: "gc_" + Date.now(),
+          id: "gc_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
           ownerUserId,
           name,
           cpf,
