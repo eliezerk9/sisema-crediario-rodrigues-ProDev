@@ -1244,6 +1244,8 @@
     let activeAuthTab = "login";
     let isAuthenticating = false;
     let authQueue = Promise.resolve();
+    const AUTH_CHANNEL_NAME = "rodrigues_prodev_auth_sync_v1";
+    let authBroadcastChannel = null;
 
     function cloneData(value) {
       return JSON.parse(JSON.stringify(value));
@@ -1289,16 +1291,19 @@
           const norm = normalizeUserRecord(raw);
           if (!norm || !norm.user) return;
           const key = norm.user.toLowerCase();
-          if (!map.has(key)) {
+          const prev = map.get(key);
+          if (!prev) {
             map.set(key, norm);
           } else {
-            const existing = map.get(key);
-            if (existing.id === "u_test_123" && norm.id !== "u_test_123") {
+            // Prioriza o cadastro real em relação ao registro padrão "u_test_123"
+            // e mantém o registro da fonte primária quando ambos existem
+            if (prev.id === "u_test_123" && norm.id !== "u_test_123") {
               map.set(key, norm);
             }
           }
         });
       };
+      // Ordem: fonte primária primeiro para preservar liberações/edições mais recentes
       addList(primaryUsers);
       addList(secondaryUsers);
       if (!map.has("123")) {
@@ -1350,15 +1355,19 @@
           return initial;
         }
 
-        const mergedUsers = mergeUsersList(primaryData?.users, backupData?.users);
-        const mergedCustomers = mergeById(primaryData?.groceryCustomers, backupData?.groceryCustomers);
-        const mergedPurchases = mergeById(primaryData?.purchases, backupData?.purchases);
+        // Usa a fonte principal como base quando disponível, complementando com o backup
+        const base = primaryData || backupData;
+        const secondary = primaryData && backupData ? backupData : null;
+
+        const mergedUsers = mergeUsersList(base.users, secondary?.users);
+        const mergedCustomers = mergeById(base.groceryCustomers, secondary?.groceryCustomers);
+        const mergedPurchases = mergeById(base.purchases, secondary?.purchases);
 
         const restored = {
           users: mergedUsers,
           groceryCustomers: mergedCustomers,
           purchases: mergedPurchases,
-          session: primaryData?.session ?? backupData?.session ?? null
+          session: base.session ?? secondary?.session ?? null
         };
 
         persistStateToStorage(restored);
@@ -1421,6 +1430,7 @@
 
         if (!idbRecord || typeof idbRecord !== "object") return;
 
+        // Mantém os dados atuais do estado/localStorage como prioridade e recupera apenas itens faltantes do IDB
         const mergedUsers = mergeUsersList(state.users, idbRecord.users);
         const mergedCustomers = mergeById(state.groceryCustomers, idbRecord.groceryCustomers);
         const mergedPurchases = mergeById(state.purchases, idbRecord.purchases);
@@ -1446,17 +1456,240 @@
       localStorage.setItem(STORAGE_KEY, serialized);
       localStorage.setItem(BACKUP_STORAGE_KEY, serialized);
       if (syncIdb) {
-        persistStateToIndexedDb(targetState);
+        return persistStateToIndexedDb(targetState);
       }
+      return Promise.resolve();
     }
 
     function saveState() {
       try {
         state.users = mergeUsersList(state.users, []);
-        persistStateToStorage(state, true);
+        // Grava de forma síncrona no localStorage (chave principal + backup) e dispara gravação no IndexedDB
+        const serialized = JSON.stringify(state);
+        localStorage.setItem(STORAGE_KEY, serialized);
+        localStorage.setItem(BACKUP_STORAGE_KEY, serialized);
+        void persistStateToIndexedDb(state);
+        broadcastAuthSync("STATE_UPDATED");
       } catch (_err) {
         setAuthFeedback("Não foi possível salvar no navegador (armazenamento cheio ou bloqueado).", true);
       }
+    }
+
+    /* =======================================================================
+       CAMADA DE REPOSITÓRIO / SERVIÇO DE AUTENTICAÇÃO (PRONTO PARA API/NUVEM)
+       ======================================================================= */
+    const UserRepository = {
+      // Ponto de extensão para conectar API/banco remoto (ex.: GET /api/auth/me ou Supabase)
+      remoteEndpoint: "",
+
+      readLatestLocalState() {
+        try {
+          const primaryRaw = localStorage.getItem(STORAGE_KEY);
+          const backupRaw = localStorage.getItem(BACKUP_STORAGE_KEY);
+          const primaryData = primaryRaw ? parseStoredState(primaryRaw) : null;
+          const backupData = backupRaw ? parseStoredState(backupRaw) : null;
+
+          if (!primaryData && !backupData) {
+            return state;
+          }
+
+          const base = primaryData || backupData;
+          const secondary = primaryData && backupData ? backupData : null;
+
+          const mergedUsers = mergeUsersList(base.users, secondary?.users);
+          const mergedCustomers = mergeById(base.groceryCustomers, secondary?.groceryCustomers);
+          const mergedPurchases = mergeById(base.purchases, secondary?.purchases);
+
+          state.users = mergedUsers.length ? mergedUsers : state.users;
+          state.groceryCustomers = mergedCustomers;
+          state.purchases = mergedPurchases;
+
+          if (base && Object.prototype.hasOwnProperty.call(base, "session")) {
+            state.session = base.session;
+          } else if (secondary && Object.prototype.hasOwnProperty.call(secondary, "session")) {
+            state.session = secondary.session;
+          }
+
+          return state;
+        } catch (_err) {
+          return state;
+        }
+      },
+
+      getUserById(userId) {
+        if (!userId) return null;
+        const latest = this.readLatestLocalState();
+        return latest.users.find((u) => u.id === userId) || null;
+      },
+
+      getUserByLoginOrCpf(rawUser) {
+        const clean = String(rawUser || "").trim();
+        const digits = normalizeDigits(clean);
+        const latest = this.readLatestLocalState();
+        return latest.users.find((u) => {
+          const byUser = String(u.user || "").trim().toLowerCase() === clean.toLowerCase();
+          const byCpf = digits.length >= 3 && normalizeDigits(u.cpf) === digits;
+          return byUser || byCpf;
+        }) || null;
+      },
+
+      updateUserStatus(userId, nextStatus) {
+        const validStatuses = ["Ativo", "Pendente", "Suspenso", "Bloqueado"];
+        if (!validStatuses.includes(nextStatus)) return null;
+        this.readLatestLocalState();
+        const target = state.users.find((u) => u.id === userId);
+        if (!target) return null;
+        target.status = nextStatus;
+        saveState();
+        broadcastAuthSync("USER_STATUS_CHANGED", { userId, status: nextStatus });
+        return target;
+      },
+
+      deleteUser(userId) {
+        this.readLatestLocalState();
+        state.users = state.users.filter((u) => u.id !== userId);
+        state.groceryCustomers = state.groceryCustomers.filter((c) => c.ownerUserId !== userId);
+        state.purchases = state.purchases.filter((p) => p.ownerUserId !== userId);
+        saveState();
+        broadcastAuthSync("USER_DELETED", { userId });
+      },
+
+      // Estrutura pronta para consultar backend real (ex.: GET /api/auth/me com Bearer token)
+      async fetchRemoteSessionStatus(sessionToken) {
+        if (!this.remoteEndpoint || !sessionToken) return null;
+        try {
+          const res = await fetch(`${this.remoteEndpoint}/api/auth/me`, {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${sessionToken}`,
+              "Cache-Control": "no-store"
+            }
+          });
+          if (!res.ok) return { authorized: false, status: "Não autorizado" };
+          const data = await res.json();
+          return {
+            authorized: Boolean(data?.authorized && data?.status === "Ativo"),
+            status: String(data?.status || "Pendente")
+          };
+        } catch (_err) {
+          return null;
+        }
+      }
+    };
+
+    const AuthStore = {
+      getSession() {
+        const latest = UserRepository.readLatestLocalState();
+        return latest.session || null;
+      },
+
+      revokeSession(reasonMessage, isError = true) {
+        state.session = null;
+        persistStateToStorage(state, true);
+        broadcastAuthSync("SESSION_REVOKED");
+
+        const loginView = document.getElementById("loginView");
+        const appView = document.getElementById("appView");
+        const superAdminPanel = document.getElementById("superAdminPanel");
+        const merchantPanel = document.getElementById("merchantPanel");
+
+        appView?.classList.add("hidden");
+        superAdminPanel?.classList.add("hidden");
+        merchantPanel?.classList.add("hidden");
+        loginView?.classList.remove("hidden");
+        applyAuthModeUI();
+
+        if (reasonMessage) {
+          setAuthFeedback(reasonMessage, isError);
+        }
+      }
+    };
+
+    function broadcastAuthSync(eventType, payload = {}) {
+      try {
+        if (authBroadcastChannel) {
+          authBroadcastChannel.postMessage({
+            type: eventType,
+            payload,
+            ts: Date.now()
+          });
+        }
+      } catch (_err) {
+        // Ignora caso BroadcastChannel não esteja disponível
+      }
+    }
+
+    function initCrossTabSync() {
+      const handleExternalUpdate = () => {
+        UserRepository.readLatestLocalState();
+        hydrateStateFromIndexedDb();
+        syncView();
+      };
+
+      if (typeof BroadcastChannel !== "undefined") {
+        try {
+          authBroadcastChannel = new BroadcastChannel(AUTH_CHANNEL_NAME);
+          authBroadcastChannel.onmessage = (event) => {
+            if (!event || !event.data) return;
+            handleExternalUpdate();
+          };
+        } catch (_err) {
+          authBroadcastChannel = null;
+        }
+      }
+
+      window.addEventListener("storage", (e) => {
+        if (e.key === STORAGE_KEY || e.key === BACKUP_STORAGE_KEY) {
+          handleExternalUpdate();
+        }
+      });
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          handleExternalUpdate();
+        }
+      });
+    }
+
+    /* =======================================================================
+       GUARDA CENTRAL DE AUTORIZAÇÃO SÍNCRONA / EM TEMPO REAL
+       ======================================================================= */
+    function assertUserAuthorized(actionName = "acessar o sistema") {
+      const sess = AuthStore.getSession();
+      if (!sess) {
+        AuthStore.revokeSession(`Sessão encerrada: faça login para ${actionName}.`, true);
+        return false;
+      }
+
+      if (sess.role === "super_admin") {
+        if (sess.user === SUPER_ADMIN_USER) {
+          return true;
+        }
+        AuthStore.revokeSession("Sessão administrativa inválida. Faça login novamente.", true);
+        return false;
+      }
+
+      if (sess.role !== "merchant_user" || !sess.userId) {
+        AuthStore.revokeSession("Permissão inválida para a ação solicitada.", true);
+        return false;
+      }
+
+      const freshUser = UserRepository.getUserById(sess.userId);
+      if (!freshUser) {
+        AuthStore.revokeSession("Seu cadastro não foi encontrado ou foi removido pelo administrador.", true);
+        return false;
+      }
+
+      if (freshUser.status !== "Ativo") {
+        const currentStatus = freshUser.status || "Pendente";
+        AuthStore.revokeSession(
+          `Acesso bloqueado para ${actionName}: seu status atual é <strong>${escapeHtml(currentStatus)}</strong>. Entre em contato com <strong>Rodrigues ProDev</strong> pelo telefone/WhatsApp <strong>67 991267853</strong>.`,
+          true
+        );
+        return false;
+      }
+
+      return true;
     }
 
     function loadRememberedCredentials() {
@@ -1790,14 +2023,9 @@
             return;
           }
 
-          const userDigits = normalizeDigits(rawUser);
-          const matchedUser = state.users.find((u) => {
-            const byUser = String(u.user || "").trim().toLowerCase() === rawUser.toLowerCase();
-            const byCpf = userDigits.length >= 3 && normalizeDigits(u.cpf) === userDigits;
-            return (byUser || byCpf) && String(u.pass) === rawPass;
-          });
+          const matchedUser = UserRepository.getUserByLoginOrCpf(rawUser);
 
-          if (!matchedUser) {
+          if (!matchedUser || String(matchedUser.pass) !== rawPass) {
             setAuthFeedback("Usuário/CPF ou senha inválidos. Se ainda não tem conta, clique em <strong>Cadastrar Conta</strong>.", true);
             return;
           }
@@ -1948,30 +2176,26 @@
 
       tbody.querySelectorAll("button[data-action]").forEach((btn) => {
         btn.addEventListener("click", () => {
+          if (!assertUserAuthorized("alterar o status de usuários")) return;
           const userId = btn.getAttribute("data-id");
           const nextStatus = btn.getAttribute("data-action");
-          const target = state.users.find(item => item.id === userId);
-          if (!target) return;
-          target.status = nextStatus;
-          saveState();
+          UserRepository.updateUserStatus(userId, nextStatus);
           renderSuperAdmin();
         });
       });
 
       tbody.querySelectorAll("button[data-delete-id]").forEach((btn) => {
         btn.addEventListener("click", () => {
+          if (!assertUserAuthorized("excluir usuários")) return;
           const userId = btn.getAttribute("data-delete-id");
-          state.users = state.users.filter(item => item.id !== userId);
-          state.groceryCustomers = state.groceryCustomers.filter(c => c.ownerUserId !== userId);
-          state.purchases = state.purchases.filter(p => p.ownerUserId !== userId);
-          saveState();
+          UserRepository.deleteUser(userId);
           renderSuperAdmin();
         });
       });
     }
 
     function renderMerchantPanel() {
-      if (state.session?.role !== "merchant_user") return;
+      if (!assertUserAuthorized("abrir o painel da mercearia")) return;
       const ownerUserId = state.session.userId;
 
       const myCustomers = state.groceryCustomers.filter(c => c.ownerUserId === ownerUserId);
@@ -2178,7 +2402,7 @@
 
       document.getElementById("groceryCustomerForm")?.addEventListener("submit", (e) => {
         e.preventDefault();
-        if (state.session?.role !== "merchant_user") return;
+        if (!assertUserAuthorized("cadastrar cliente na mercearia")) return;
 
         const ownerUserId = state.session.userId;
         const name = String(document.getElementById("gcName")?.value || "").trim();
@@ -2209,7 +2433,7 @@
 
       document.getElementById("purchaseForm")?.addEventListener("submit", (e) => {
         e.preventDefault();
-        if (state.session?.role !== "merchant_user") return;
+        if (!assertUserAuthorized("registrar compra ou parcela na mercearia")) return;
 
         const ownerUserId = state.session.userId;
         const msgEl = document.getElementById("purchaseMsg");
@@ -2378,12 +2602,16 @@
       const sessionTitle = document.getElementById("sessionTitle");
       const sessionSubtitle = document.getElementById("sessionSubtitle");
 
-      const sess = state.session;
+      const sess = AuthStore.getSession();
 
       if (!sess) {
         loginView?.classList.remove("hidden");
         appView?.classList.add("hidden");
         applyAuthModeUI();
+        return;
+      }
+
+      if (!assertUserAuthorized("acessar o painel")) {
         return;
       }
 
@@ -2398,17 +2626,7 @@
         return;
       }
 
-      const currentUser = state.users.find(u => u.id === sess.userId);
-      if (!currentUser || currentUser.status !== "Ativo") {
-        state.session = null;
-        saveState();
-        loginView?.classList.remove("hidden");
-        appView?.classList.add("hidden");
-        applyAuthModeUI();
-        setAuthFeedback("Seu acesso foi alterado pelo administrador. Entre em contato com Rodrigues ProDev (67 991267853).", true);
-        return;
-      }
-
+      const currentUser = UserRepository.getUserById(sess.userId);
       loginView?.classList.add("hidden");
       appView?.classList.remove("hidden");
       superAdminPanel?.classList.add("hidden");
@@ -2450,19 +2668,12 @@
       document.getElementById("registerForm")?.addEventListener("submit", processRegisterSubmit);
 
       document.getElementById("logoutBtn")?.addEventListener("click", () => {
-        state.session = null;
         isAdminMode = false;
         activeAuthTab = "login";
-        saveState();
-        syncView();
+        AuthStore.revokeSession("", false);
       });
 
-      window.addEventListener("storage", (e) => {
-        if (e.key === STORAGE_KEY || e.key === BACKUP_STORAGE_KEY) {
-          state = loadInitialState();
-          syncView();
-        }
-      });
+      initCrossTabSync();
 
       document.getElementById("rememberMeCheck")?.addEventListener("change", (e) => {
         const checked = Boolean(e.target?.checked);
@@ -2479,7 +2690,7 @@
 
       bindMerchantEvents();
       applyRememberedCredentialsToForm();
-      hydrateStateFromIndexedDb();
+      void hydrateStateFromIndexedDb();
       syncView();
     });
   </script>
