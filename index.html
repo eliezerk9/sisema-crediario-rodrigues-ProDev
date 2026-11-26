@@ -47,7 +47,6 @@
       line-height: 1.45;
     }
 
-    /* Cenário profissional inspirado no PRODEV.jpg: favos hexagonais 3D, energia verde e linhas digitais */
     body::before {
       content: "";
       position: fixed;
@@ -117,6 +116,37 @@
     .brand-highlight {
       color: var(--neon);
       text-shadow: 0 0 16px rgba(0, 255, 102, 0.55);
+    }
+
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-top: 12px;
+      margin-bottom: 5px;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 11px 13px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: var(--bg-input);
+      color: var(--text-main);
+      font-size: 0.9rem;
+      font-family: inherit;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--neon);
+      box-shadow: 0 0 0 3px rgba(0, 255, 102, 0.15);
     }
 
     /* =========================================================================
@@ -215,34 +245,35 @@
     .tab-btn.active {
       background: var(--neon);
       color: #041008;
-      box-shadow: 0 0 14px rgba(0, 255, 102, 0.35);
     }
 
-    label {
-      display: block;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: #cfe0d6;
+    .remember-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
       margin-top: 12px;
-      margin-bottom: 5px;
     }
 
-    input, select, textarea {
-      width: 100%;
-      padding: 11px 13px;
-      border-radius: var(--radius-sm);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      background: var(--bg-input);
-      color: var(--text-main);
-      font-size: 0.92rem;
-      font-family: inherit;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    .remember-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
     }
 
-    input:focus, select:focus, textarea:focus {
-      outline: none;
-      border-color: var(--neon);
-      box-shadow: 0 0 0 3px rgba(0, 255, 102, 0.15);
+    .remember-label input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      accent-color: var(--neon);
+      cursor: pointer;
+      flex-shrink: 0;
     }
 
     .password-wrap {
@@ -759,7 +790,6 @@
       text-decoration: underline;
     }
 
-    /* Assistente IA da Mercearia */
     .ai-box {
       margin-top: 12px;
       background: var(--bg-input);
@@ -802,13 +832,11 @@
         <p id="authSubtitle">Acesse seu painel da mercearia ou cadastre sua conta para liberação.</p>
       </div>
 
-      <!-- Abas Cliente / Cadastro (visíveis apenas fora do modo Super Admin) -->
       <div id="userTabs" class="tab-row">
         <button type="button" id="tabLoginBtn" class="tab-btn active">Entrar</button>
         <button type="button" id="tabRegisterBtn" class="tab-btn">Cadastrar Conta</button>
       </div>
 
-      <!-- Formulário de Login (Usuário da Mercearia ou Super Admin) -->
       <form id="loginForm" novalidate>
         <label id="loginUserLabel" for="loginUser">Usuário ou CPF</label>
         <input id="loginUser" type="text" placeholder="Digite seu usuário ou CPF" autocomplete="username" required />
@@ -824,10 +852,16 @@
           </button>
         </div>
 
+        <div class="remember-row">
+          <label class="remember-label" for="rememberMeCheck">
+            <input id="rememberMeCheck" type="checkbox" />
+            <span>Lembrar de mim</span>
+          </label>
+        </div>
+
         <button type="submit" id="loginSubmitBtn" class="btn-primary">Entrar no Sistema</button>
       </form>
 
-      <!-- Formulário de Cadastro Completo do Usuário (sem limite solicitado) -->
       <form id="registerForm" class="hidden" novalidate>
         <label for="regName">Nome Completo / Nome da Mercearia</label>
         <input id="regName" type="text" placeholder="Ex.: Mercearia Central" required />
@@ -868,7 +902,6 @@
         <button type="submit" id="registerSubmitBtn" class="btn-primary">Enviar Cadastro para Liberação</button>
       </form>
 
-      <!-- Mensagens de feedback e contato único do Rodrigues ProDev -->
       <div id="authFeedback" class="feedback-msg"></div>
 
       <div class="contact-notice">
@@ -885,7 +918,6 @@
         </div>
       </div>
 
-      <!-- Botão discreto para alternar para Acesso Restrito (Super Admin) -->
       <div class="admin-toggle-footer">
         <button type="button" id="toggleAdminBtn" class="admin-icon-btn">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -985,7 +1017,6 @@
       </div>
 
       <div class="panel-grid">
-        <!-- Cadastrar Cliente da Mercearia -->
         <div class="card">
           <h2>Cadastrar Cliente da Mercearia</h2>
           <p class="card-desc">Adicione o cliente, seu endereço completo e o limite de crédito no crediário da sua loja.</p>
@@ -1027,7 +1058,6 @@
           </form>
         </div>
 
-        <!-- Registrar Compra Parcelada (Com Entrada / Sem Entrada até 24x) -->
         <div class="card">
           <h2>Registrar Compra na Mercearia</h2>
           <p class="card-desc">Escolha com ou sem entrada, defina as parcelas de 1x até 24x e gere os vencimentos.</p>
@@ -1124,7 +1154,6 @@
         </div>
       </div>
 
-      <!-- Lista de Clientes da Mercearia -->
       <div class="card" style="margin-bottom: 20px;">
         <h2>Clientes Cadastrados na Mercearia</h2>
         <p class="card-desc">Acompanhe endereço, limite total, saldo utilizado e limite disponível de cada cliente.</p>
@@ -1146,7 +1175,6 @@
         </div>
       </div>
 
-      <!-- Lançamentos e Parcelas / Calendário -->
       <div class="card" style="margin-bottom: 20px;">
         <h2>Lançamentos, Parcelas e Vencimentos</h2>
         <p class="card-desc">Dê baixa nas parcelas pagas e acompanhe as datas de vencimento.</p>
@@ -1168,7 +1196,6 @@
         </div>
       </div>
 
-      <!-- Assistente IA Rápido da Mercearia -->
       <div class="card">
         <h2>Assistente IA da Mercearia</h2>
         <p class="card-desc">Consulte resumo rápido do crediário, clientes com saldo aberto ou próximos vencimentos.</p>
@@ -1184,12 +1211,41 @@
 
   <script>
     /* =======================================================================
-       FUNÇÕES AUXILIARES DE DATA E CLONE SEGURO
+       ESTADO INICIAL E PERSISTÊNCIA SEGURA EM LOCALSTORAGE + INDEXEDDB
        ======================================================================= */
-    function cloneData(value) {
-      if (typeof structuredClone === "function") {
-        return structuredClone(value);
+    const STORAGE_KEY = "rodrigues_prodev_state_v2026_11_closed_test";
+    const BACKUP_STORAGE_KEY = "rodrigues_prodev_backup_db_v1";
+    const REMEMBER_CREDS_KEY = "rodrigues_prodev_remember_creds_v1";
+    const IDB_DB_NAME = "RodriguesProDevDB";
+    const IDB_STORE_NAME = "system_state";
+    const IDB_RECORD_KEY = "main_database";
+
+    const SUPER_ADMIN_USER = "rodrigues";
+    const SUPER_ADMIN_PASS = "Rodrigues84326810";
+
+    const defaultUsers = [
+      {
+        id: "u_test_123",
+        name: "Mercearia Teste 123",
+        cpf: "123.123.123-12",
+        phone: "(67) 99123-0123",
+        address: "Rua Principal, 123 - Centro",
+        user: "123",
+        pass: "123",
+        status: "Pendente"
       }
+    ];
+
+    const todayStr = new Date().toISOString().split("T")[0];
+    const nextMonthStr = addMonthsToDateStr(todayStr, 1);
+
+    let state = loadInitialState();
+    let isAdminMode = false;
+    let activeAuthTab = "login";
+    let isAuthenticating = false;
+    let authQueue = Promise.resolve();
+
+    function cloneData(value) {
       return JSON.parse(JSON.stringify(value));
     }
 
@@ -1208,65 +1264,105 @@
       return base.toISOString().split("T")[0];
     }
 
-    /* =======================================================================
-       ESTADO INICIAL E PERSISTÊNCIA SEGURA EM LOCALSTORAGE
-       ======================================================================= */
-    const STORAGE_KEY = "rodrigues_prodev_state_v2026_11_closed_test";
+    function normalizeUserRecord(u) {
+      if (!u || typeof u !== "object") return null;
+      const validStatuses = ["Ativo", "Pendente", "Suspenso", "Bloqueado"];
+      const status = validStatuses.includes(u.status) ? u.status : "Pendente";
+      return {
+        id: String(u.id || ("u_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6))),
+        name: String(u.name || "").trim(),
+        cpf: String(u.cpf || "").trim(),
+        phone: String(u.phone || "").trim(),
+        address: String(u.address || "").trim(),
+        user: String(u.user || "").trim(),
+        pass: String(u.pass || ""),
+        status,
+        createdAt: String(u.createdAt || new Date().toISOString())
+      };
+    }
 
-    const SUPER_ADMIN_USER = "rodrigues";
-    const SUPER_ADMIN_PASS = "Rodrigues84326810";
-
-    const defaultUsers = [
-      {
-        id: "u_test_123",
-        name: "Mercearia Teste 123",
-        cpf: "123.123.123-12",
-        phone: "(67) 99123-0123",
-        address: "Rua Principal, 123 - Centro",
-        user: "123",
-        pass: "123",
-        status: "Pendente"
+    function mergeUsersList(primaryUsers, secondaryUsers) {
+      const map = new Map();
+      const addList = (list) => {
+        if (!Array.isArray(list)) return;
+        list.forEach((raw) => {
+          const norm = normalizeUserRecord(raw);
+          if (!norm || !norm.user) return;
+          const key = norm.user.toLowerCase();
+          if (!map.has(key)) {
+            map.set(key, norm);
+          } else {
+            const existing = map.get(key);
+            if (existing.id === "u_test_123" && norm.id !== "u_test_123") {
+              map.set(key, norm);
+            }
+          }
+        });
+      };
+      addList(primaryUsers);
+      addList(secondaryUsers);
+      if (!map.has("123")) {
+        addList(defaultUsers);
       }
-    ];
+      return Array.from(map.values());
+    }
 
-    const defaultGroceryCustomers = [];
+    function mergeById(primaryList, secondaryList) {
+      const map = new Map();
+      [primaryList, secondaryList].forEach((list) => {
+        if (!Array.isArray(list)) return;
+        list.forEach((item) => {
+          if (item && item.id && !map.has(item.id)) {
+            map.set(item.id, item);
+          }
+        });
+      });
+      return Array.from(map.values());
+    }
 
-    const todayStr = new Date().toISOString().split("T")[0];
-    const nextMonthStr = addMonthsToDateStr(todayStr, 1);
-
-    const defaultPurchases = [];
-
-    let state = loadInitialState();
-    let isAdminMode = false;
-    let activeAuthTab = "login";
-    let isAuthenticating = false;
-    let authQueue = Promise.resolve();
+    function parseStoredState(raw) {
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== "object") return null;
+      return {
+        users: Array.isArray(parsed.users) ? parsed.users.map(normalizeUserRecord).filter(Boolean) : [],
+        groceryCustomers: Array.isArray(parsed.groceryCustomers) ? parsed.groceryCustomers : [],
+        purchases: Array.isArray(parsed.purchases) ? parsed.purchases : [],
+        session: parsed.session || null
+      };
+    }
 
     function loadInitialState() {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) {
+        const primaryRaw = localStorage.getItem(STORAGE_KEY);
+        const backupRaw = localStorage.getItem(BACKUP_STORAGE_KEY);
+        const primaryData = primaryRaw ? parseStoredState(primaryRaw) : null;
+        const backupData = backupRaw ? parseStoredState(backupRaw) : null;
+
+        if (!primaryData && !backupData) {
           const initial = {
             users: cloneData(defaultUsers),
-            groceryCustomers: cloneData(defaultGroceryCustomers),
-            purchases: cloneData(defaultPurchases),
+            groceryCustomers: [],
+            purchases: [],
             session: null
           };
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+          persistStateToStorage(initial);
           return initial;
         }
 
-        const parsed = JSON.parse(raw);
-        const users = Array.isArray(parsed.users) ? parsed.users : cloneData(defaultUsers);
-        const groceryCustomers = Array.isArray(parsed.groceryCustomers) ? parsed.groceryCustomers : [];
-        const purchases = Array.isArray(parsed.purchases) ? parsed.purchases : [];
+        const mergedUsers = mergeUsersList(primaryData?.users, backupData?.users);
+        const mergedCustomers = mergeById(primaryData?.groceryCustomers, backupData?.groceryCustomers);
+        const mergedPurchases = mergeById(primaryData?.purchases, backupData?.purchases);
 
-        return {
-          users,
-          groceryCustomers,
-          purchases,
-          session: parsed.session || null
+        const restored = {
+          users: mergedUsers,
+          groceryCustomers: mergedCustomers,
+          purchases: mergedPurchases,
+          session: primaryData?.session ?? backupData?.session ?? null
         };
+
+        persistStateToStorage(restored);
+        return restored;
       } catch (_err) {
         return {
           users: cloneData(defaultUsers),
@@ -1277,12 +1373,145 @@
       }
     }
 
+    function openIndexedDb() {
+      return new Promise((resolve, reject) => {
+        if (typeof indexedDB === "undefined") {
+          reject(new Error("IndexedDB indisponível"));
+          return;
+        }
+        const req = indexedDB.open(IDB_DB_NAME, 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains(IDB_STORE_NAME)) {
+            db.createObjectStore(IDB_STORE_NAME);
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function persistStateToIndexedDb(snapshot) {
+      try {
+        const db = await openIndexedDb();
+        const tx = db.transaction(IDB_STORE_NAME, "readwrite");
+        const store = tx.objectStore(IDB_STORE_NAME);
+        store.put(cloneData(snapshot), IDB_RECORD_KEY);
+        await new Promise((resolve, reject) => {
+          tx.oncomplete = resolve;
+          tx.onerror = () => reject(tx.error);
+        });
+        db.close();
+      } catch (_err) {
+        // Fallback silencioso quando IndexedDB estiver bloqueado pelo navegador
+      }
+    }
+
+    async function hydrateStateFromIndexedDb() {
+      try {
+        const db = await openIndexedDb();
+        const tx = db.transaction(IDB_STORE_NAME, "readonly");
+        const store = tx.objectStore(IDB_STORE_NAME);
+        const req = store.get(IDB_RECORD_KEY);
+        const idbRecord = await new Promise((resolve, reject) => {
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => reject(req.error);
+        });
+        db.close();
+
+        if (!idbRecord || typeof idbRecord !== "object") return;
+
+        const mergedUsers = mergeUsersList(state.users, idbRecord.users);
+        const mergedCustomers = mergeById(state.groceryCustomers, idbRecord.groceryCustomers);
+        const mergedPurchases = mergeById(state.purchases, idbRecord.purchases);
+
+        const usersChanged = JSON.stringify(mergedUsers) !== JSON.stringify(state.users);
+        const custsChanged = JSON.stringify(mergedCustomers) !== JSON.stringify(state.groceryCustomers);
+        const purchsChanged = JSON.stringify(mergedPurchases) !== JSON.stringify(state.purchases);
+
+        if (usersChanged || custsChanged || purchsChanged) {
+          state.users = mergedUsers;
+          state.groceryCustomers = mergedCustomers;
+          state.purchases = mergedPurchases;
+          persistStateToStorage(state, false);
+          syncView();
+        }
+      } catch (_err) {
+        // Mantém o estado carregado no localStorage
+      }
+    }
+
+    function persistStateToStorage(targetState, syncIdb = true) {
+      const serialized = JSON.stringify(targetState);
+      localStorage.setItem(STORAGE_KEY, serialized);
+      localStorage.setItem(BACKUP_STORAGE_KEY, serialized);
+      if (syncIdb) {
+        persistStateToIndexedDb(targetState);
+      }
+    }
+
     function saveState() {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        state.users = mergeUsersList(state.users, []);
+        persistStateToStorage(state, true);
       } catch (_err) {
         setAuthFeedback("Não foi possível salvar no navegador (armazenamento cheio ou bloqueado).", true);
       }
+    }
+
+    function loadRememberedCredentials() {
+      try {
+        const raw = localStorage.getItem(REMEMBER_CREDS_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== "object") return null;
+        return {
+          user: String(parsed.user || ""),
+          pass: String(parsed.pass || ""),
+          adminMode: Boolean(parsed.adminMode)
+        };
+      } catch (_err) {
+        return null;
+      }
+    }
+
+    function saveRememberedCredentials(user, pass, adminMode) {
+      try {
+        localStorage.setItem(
+          REMEMBER_CREDS_KEY,
+          JSON.stringify({
+            user: String(user || ""),
+            pass: String(pass || ""),
+            adminMode: Boolean(adminMode)
+          })
+        );
+      } catch (_err) {
+        // Ignora erro de armazenamento
+      }
+    }
+
+    function clearRememberedCredentials() {
+      try {
+        localStorage.removeItem(REMEMBER_CREDS_KEY);
+      } catch (_err) {
+        // Ignora erro de armazenamento
+      }
+    }
+
+    function applyRememberedCredentialsToForm() {
+      const saved = loadRememberedCredentials();
+      const checkEl = document.getElementById("rememberMeCheck");
+      const userInput = document.getElementById("loginUser");
+      const passInput = document.getElementById("loginPass");
+
+      if (!saved) {
+        if (checkEl) checkEl.checked = false;
+        return;
+      }
+
+      if (checkEl) checkEl.checked = true;
+      if (userInput && !userInput.value) userInput.value = saved.user;
+      if (passInput && !passInput.value) passInput.value = saved.pass;
     }
 
     function normalizeDigits(value) {
@@ -1468,9 +1697,6 @@
       el.innerHTML = htmlOrText;
     }
 
-    /* =======================================================================
-       CONTROLE DE MODO DE LOGIN / CADASTRO / SUPER ADMIN
-       ======================================================================= */
     function applyAuthModeUI() {
       const userTabs = document.getElementById("userTabs");
       const loginForm = document.getElementById("loginForm");
@@ -1525,9 +1751,6 @@
       });
     }
 
-    /* =======================================================================
-       AUTENTICAÇÃO E CADASTRO DE USUÁRIO
-       ======================================================================= */
     async function processLoginSubmit(e) {
       e.preventDefault();
       if (isAuthenticating) return;
@@ -1547,6 +1770,13 @@
 
           if (isAdminMode) {
             if (rawUser.toLowerCase() === SUPER_ADMIN_USER && rawPass === SUPER_ADMIN_PASS) {
+              const rememberChecked = Boolean(document.getElementById("rememberMeCheck")?.checked);
+              if (rememberChecked) {
+                saveRememberedCredentials(rawUser, rawPass, true);
+              } else {
+                clearRememberedCredentials();
+              }
+
               state.session = {
                 role: "super_admin",
                 name: "Administrador Rodrigues ProDev",
@@ -1572,20 +1802,20 @@
             return;
           }
 
-          if (matchedUser.status === "Pendente") {
+          if (matchedUser.status !== "Ativo") {
+            const statusLabel = matchedUser.status || "Pendente";
             setAuthFeedback(
-              "Seu cadastro está <strong>Pendente de Liberação</strong>. Entre em contato com <strong>Rodrigues ProDev</strong> pelo telefone/WhatsApp <strong>67 991267853</strong>.",
+              `Seu cadastro está <strong>${escapeHtml(statusLabel)}</strong> e aguarda liberação manual do administrador. Entre em contato com <strong>Rodrigues ProDev</strong> pelo telefone/WhatsApp <strong>67 991267853</strong>.`,
               true
             );
             return;
           }
 
-          if (matchedUser.status === "Suspenso" || matchedUser.status === "Bloqueado") {
-            setAuthFeedback(
-              `Seu acesso está <strong>${matchedUser.status}</strong>. Fale com <strong>Rodrigues ProDev</strong> pelo telefone/WhatsApp <strong>67 991267853</strong>.`,
-              true
-            );
-            return;
+          const rememberChecked = Boolean(document.getElementById("rememberMeCheck")?.checked);
+          if (rememberChecked) {
+            saveRememberedCredentials(rawUser, rawPass, false);
+          } else {
+            clearRememberedCredentials();
           }
 
           state.session = {
@@ -1631,16 +1861,18 @@
             return;
           }
 
-          const newUser = {
-            id: "u_" + Date.now(),
+          const newUser = normalizeUserRecord({
+            id: "u_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
             name,
             cpf,
             phone,
             address,
             user,
             pass,
-            status: "Pendente"
-          };
+            status: "Pendente",
+            createdAt: new Date().toISOString()
+          });
+          newUser.status = "Pendente";
 
           state.users.unshift(newUser);
           saveState();
@@ -1649,7 +1881,7 @@
           activeAuthTab = "login";
           applyAuthModeUI();
           setAuthFeedback(
-            "Cadastro enviado! Seu acesso ficará liberado assim que o administrador aprovar. Contato: <strong>Rodrigues ProDev — 67 991267853</strong>."
+            "Cadastro salvo e marcado como <strong>Pendente</strong>. O acesso só será liberado após aprovação manual do administrador. Contato: <strong>Rodrigues ProDev — 67 991267853</strong>."
           );
         } finally {
           setLoginFormBusy(false);
@@ -1657,9 +1889,6 @@
       });
     }
 
-    /* =======================================================================
-       RENDERIZAÇÃO DO SUPER ADMIN (LIBERAR, SUSPENDER, BLOQUEAR, EXCLUIR)
-       ======================================================================= */
     function renderSuperAdmin() {
       const totalEl = document.getElementById("statTotalUsers");
       const activeEl = document.getElementById("statActiveUsers");
@@ -1741,9 +1970,6 @@
       });
     }
 
-    /* =======================================================================
-       RENDERIZAÇÃO DO PAINEL DA MERCEARIA (CLIENTES, PARCELAS E IA)
-       ======================================================================= */
     function renderMerchantPanel() {
       if (state.session?.role !== "merchant_user") return;
       const ownerUserId = state.session.userId;
@@ -1898,9 +2124,6 @@
       });
     }
 
-    /* =======================================================================
-       PARCELAMENTO COM ENTRADA / SEM ENTRADA (ATÉ 24X)
-       ======================================================================= */
     function updateInstallmentPreview() {
       const previewEl = document.getElementById("installmentPreview");
       const downGroupEl = document.getElementById("downPaymentGroup");
@@ -2147,9 +2370,6 @@
       });
     }
 
-    /* =======================================================================
-       SINCRONIZAÇÃO DE TELA E EVENTOS GLOBAIS
-       ======================================================================= */
     function syncView() {
       const loginView = document.getElementById("loginView");
       const appView = document.getElementById("appView");
@@ -2238,13 +2458,28 @@
       });
 
       window.addEventListener("storage", (e) => {
-        if (e.key === STORAGE_KEY) {
+        if (e.key === STORAGE_KEY || e.key === BACKUP_STORAGE_KEY) {
           state = loadInitialState();
           syncView();
         }
       });
 
+      document.getElementById("rememberMeCheck")?.addEventListener("change", (e) => {
+        const checked = Boolean(e.target?.checked);
+        if (!checked) {
+          clearRememberedCredentials();
+        } else {
+          const currentUser = String(document.getElementById("loginUser")?.value || "").trim();
+          const currentPass = String(document.getElementById("loginPass")?.value || "");
+          if (currentUser || currentPass) {
+            saveRememberedCredentials(currentUser, currentPass, isAdminMode);
+          }
+        }
+      });
+
       bindMerchantEvents();
+      applyRememberedCredentialsToForm();
+      hydrateStateFromIndexedDb();
       syncView();
     });
   </script>
