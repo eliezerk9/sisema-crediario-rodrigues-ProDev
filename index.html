@@ -1236,19 +1236,8 @@
     const SUPER_ADMIN_USER = "rodrigues";
     const SUPER_ADMIN_PASS = "Rodrigues84326810";
 
-    const defaultUsers = [
-      {
-        id: "u_test_123",
-        name: "Mercearia Teste 123",
-        cpf: "123.123.123-12",
-        phone: "(67) 99123-0123",
-        address: "Rua Principal, 123 - Centro",
-        user: "123",
-        pass: "123",
-        status: "Pendente",
-        updatedAt: 0
-      }
-    ];
+    // Removido o mock data de teste para garantir banco limpo desde o início
+    const defaultUsers = [];
 
     const todayStr = new Date().toISOString().split("T")[0];
     const nextMonthStr = addMonthsToDateStr(todayStr, 1);
@@ -1340,9 +1329,6 @@
       if (Array.isArray(primaryUsers)) primaryUsers.forEach(ingest);
       if (Array.isArray(secondaryUsers)) secondaryUsers.forEach(ingest);
 
-      if (!map.has("123")) {
-        defaultUsers.forEach(ingest);
-      }
       return Array.from(map.values());
     }
 
