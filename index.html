@@ -1169,1096 +1169,585 @@
                         <line x1="16" y1="2" x2="16" y2="6"></line>
                         <line x1="8" y1="2" x2="8" y2="6"></line>
                         <line x1="3" y1="10" x2="21" y2="10"></line>
-        <tbody>
-          <!-- Linhas renderizadas dinamicamente via JS -->
-        </tbody>
-      </table>
+                      </svg>
+                    </span>
+                  </button>
+                  <div id="purchDatePopover" class="mini-calendar-popover hidden" role="dialog" aria-label="Calendário da data da compra"></div>
+                </div>
+              </div>
+              <div>
+                <label for="purchDueDateTrigger">1º Vencimento</label>
+                <div class="date-picker-box" data-calendar-picker="purchDueDate">
+                  <input id="purchDueDate" type="hidden" required />
+                  <button type="button" id="purchDueDateTrigger" class="date-trigger-btn" aria-haspopup="dialog" aria-expanded="false">
+                    <span id="purchDueDateDisplay" class="date-trigger-val">Selecionar data</span>
+                    <span class="date-trigger-icon" aria-hidden="true">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                      </svg>
+                    </span>
+                  </button>
+                  <div id="purchDueDatePopover" class="mini-calendar-popover hidden" role="dialog" aria-label="Calendário do primeiro vencimento"></div>
+                </div>
+              </div>
+            </div>
+
+            <div id="purchaseFeedback" class="feedback-msg"></div>
+            <button type="submit" class="btn-primary">Registrar Compra</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom: 20px;">
+        <h2>Clientes Cadastrados</h2>
+        <p class="card-desc">Acompanhe limite, saldo utilizado, saldo livre e exclua clientes quando necessário.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Cliente / CPF</th>
+                <th>Endereço</th>
+                <th>Limite</th>
+                <th>Saldo</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="merchantCustomersBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Compras e Parcelas do Crediário</h2>
+        <p class="card-desc">Dê baixa nas parcelas pagas ou exclua lançamentos do crediário.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Descrição / Parcela</th>
+                <th>Valor</th>
+                <th>Datas</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="merchantPurchasesBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 20px;">
+        <h2>Assistente IA Rodrigues ProDev</h2>
+        <p class="card-desc">Consulte parcelas quitadas ou vencidas, veja limites, abra seu perfil ou execute ações rápidas no painel.</p>
+
+        <div class="action-group" style="margin-bottom: 12px;">
+          <button type="button" id="aiSummaryBtn" class="btn-secondary">Resumo do Crediário</button>
+          <button type="button" id="aiPaidBtn" class="btn-approve">Parcelas Quitadas</button>
+          <button type="button" id="aiOverdueBtn" class="btn-warn">Vencidos</button>
+          <button type="button" id="aiLimitsBtn" class="btn-secondary">Situação de Limites</button>
+          <button type="button" id="aiProfileBtn" class="btn-secondary">Meu Perfil</button>
+        </div>
+
+        <form id="aiCommandForm" style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <input id="aiInput" type="text" placeholder="Ex.: parcelas quitadas, filtrar cliente..., editar limite..., dar baixa..." style="flex: 1; min-width: 220px;" />
+          <button type="submit" class="btn-primary" style="width: auto; margin-top: 0;">Enviar Comando</button>
+        </form>
+
+        <div id="aiOutput" class="ai-box"><strong>IA Rodrigues ProDev:</strong>
+Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um comando.</div>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <div class="card" style="margin-top: 20px;">
-    <h2>Assistente IA da Mercearia — Rodrigues ProDev</h2>
-    <p class="card-desc">Consulte parcelas quitadas ou vencidas, veja seu perfil, filtre clientes, edite limites, dê baixa ou exclua clientes do seu painel.</p>
+  <script>
+    const SUPER_ADMIN_USER = "rodrigues";
+    const SUPER_ADMIN_PASS = "Rodrigues84326810";
+    const STORAGE_KEY = "rodrigues_prodev_state_v2026_11_closed_test";
+    const REMEMBER_KEY = "rodrigues_prodev_remember_v1";
+    const IDB_NAME = "RodriguesProDevDB";
+    const IDB_STORE = "AppStateStore";
+    const IDB_KEY = "main_state";
+    const PENDING_EXPIRY_MS = 10 * 24 * 60 * 60 * 1000;
 
-    <div class="action-group" style="margin-bottom: 10px;">
-      <button type="button" id="aiSummaryBtn" class="btn-secondary">Resumo do Crediário</button>
-      <button type="button" id="aiPaidBtn" class="btn-secondary">Parcelas Quitadas</button>
-      <button type="button" id="aiOverdueBtn" class="btn-secondary">Vencidos</button>
-      <button type="button" id="aiLimitsBtn" class="btn-secondary">Situação de Limites</button>
-      <button type="button" id="aiProfileBtn" class="btn-secondary">Meu Perfil</button>
-    </div>
+    const todayStr = new Date().toISOString().split("T")[0];
+    const nextMonthStr = (() => {
+      const d = new Date(`${todayStr}T12:00:00`);
+      d.setMonth(d.getMonth() + 1);
+      return d.toISOString().split("T")[0];
+    })();
 
-    <form id="aiCommandForm" style="display: flex; gap: 8px; flex-wrap: wrap;">
-      <input id="aiInput" type="text" placeholder="Ex.: parcelas quitadas, filtrar cliente João, editar limite de João para 1500, dar baixa em João..." style="flex: 1; min-width: 220px;" />
-      <button type="submit" class="btn-secondary" style="background: var(--neon); color: #041008; font-weight: 800;">Enviar Comando</button>
-    </form>
+    let state = {
+      users: [],
+      groceryCustomers: [],
+      purchases: [],
+      deviceLogs: [],
+      deleted: {
+        users: {},
+        customers: {},
+        purchases: {},
+        device_logs: {}
+      },
+      session: null
+    };
 
-    <div id="aiOutput" class="ai-box"><strong>IA Rodrigues ProDev pronta:</strong>
-Digite um comando ou clique em uma das opções acima para consultar ou gerenciar os dados da sua mercearia.</div>
-  </div>
-</div>
-</section>
-
-<script>
-  const STORAGE_KEY = "rodrigues_prodev_state_v2026_11_closed_test";
-  const BACKUP_STORAGE_KEY = "rodrigues_prodev_state_backup_v1";
-  const REMEMBER_CREDS_KEY = "rodrigues_prodev_remember_creds_v1";
-  const IDB_DB_NAME = "rodrigues_prodev_db";
-  const IDB_STORE_NAME = "app_state";
-  const IDB_RECORD_KEY = "main_state";
-
-  const SUPER_ADMIN_USER = "rodrigues";
-  const SUPER_ADMIN_PASS = "Rodrigues84326810";
-  const KEEP_ONLY_USER_LOGIN = "123";
-  const PENDING_EXPIRATION_MS = 10 * 24 * 60 * 60 * 1000;
-
-  const CENTRAL_DB_CONFIG = {
-    supabaseUrl: "",
-    supabasePublishableKey: "",
-    tableName: "rodrigues_prodev_store",
-    recordId: "main_state"
-  };
-
-  // Mantém exclusivamente o usuário "123" como base inicial permitida e sem cadastros fictícios
-  const defaultUsers = [
-    {
-      id: "u_user_123",
-      name: "Conta 123",
-      cpf: "",
-      phone: "",
-      address: "",
-      user: "123",
-      pass: "123",
-      status: "Ativo",
-      createdAt: new Date().toISOString(),
-      updatedAt: Date.now()
-    }
-  ];
-
-  const todayStr = new Date().toISOString().split("T")[0];
-  const nextMonthStr = addMonthsToDateStr(todayStr, 1);
-
-  let state = loadInitialState();
     let isAdminMode = false;
     let activeAuthTab = "login";
     let isAuthenticating = false;
     let authQueue = Promise.resolve();
-    let isCentralDbConnected = false;
-    const AUTH_CHANNEL_NAME = "rodrigues_prodev_auth_sync_v1";
-    let authBroadcastChannel = null;
-
-    // Controle de concorrência e trava anti-looping de requisições na rede
-    let isSyncingCentral = false;
-    let syncDebounceTimer = null;
-    let centralSyncIntervalTimer = null;
-
-    function cloneData(value) {
-      return JSON.parse(JSON.stringify(value));
-    }
-
-    function hasCentralDbConfig() {
-      return Boolean(
-        CENTRAL_DB_CONFIG.supabaseUrl &&
-        CENTRAL_DB_CONFIG.supabasePublishableKey &&
-        CENTRAL_DB_CONFIG.tableName &&
-        CENTRAL_DB_CONFIG.recordId
-      );
-    }
-
-    function addMonthsToDateStr(dateStr, monthsToAdd) {
-      const base = dateStr ? new Date(dateStr + "T12:00:00") : new Date();
-      if (Number.isNaN(base.getTime())) {
-        const fallback = new Date();
-        fallback.setMonth(fallback.getMonth() + monthsToAdd);
-        return fallback.toISOString().split("T")[0];
-      }
-      const targetDay = base.getDate();
-      base.setDate(1);
-      base.setMonth(base.getMonth() + monthsToAdd);
-      const daysInTargetMonth = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate();
-      base.setDate(Math.min(targetDay, daysInTargetMonth));
-      return base.toISOString().split("T")[0];
-    }
-
-    function isSyntheticOrTestRecord(item) {
-      if (!item || typeof item !== "object") return false;
-      const id = String(item.id || "").toLowerCase();
-      const user = String(item.user || "").toLowerCase();
-      return id === "u_test_123" || user === "teste_ativo" || user === "usuario_teste";
-    }
-
-    function isPendingUserExpired(userRecord, nowTs = Date.now()) {
-      if (!userRecord || userRecord.status !== "Pendente") return false;
-      const createdTs = Number(userRecord.createdAtTs) || Date.parse(userRecord.createdAt || "") || Number(userRecord.updatedAt) || 0;
-      if (!createdTs) return false;
-      return (nowTs - createdTs) >= PENDING_EXPIRATION_MS;
-    }
-
-    function enforceSingleUser123AndExpiration(targetState, nowTs = Date.now()) {
-      if (!targetState || typeof targetState !== "object") return targetState;
-      targetState.deleted = normalizeTombstones(targetState.deleted);
-
-      let users = Array.isArray(targetState.users) ? targetState.users : [];
-      const user123 = users.find((u) => String(u?.user || "").trim() === KEEP_ONLY_USER_LOGIN);
-
-      if (user123) {
-        const normalized123 = normalizeUserRecord({
-          ...user123,
-          user: KEEP_ONLY_USER_LOGIN,
-          status: "Ativo",
-          updatedAt: Math.max(Number(user123.updatedAt) || 0, nowTs)
-        });
-        if (normalized123) {
-          users = [normalized123];
-        }
-      } else {
-        users = cloneData(defaultUsers);
-      }
-
-      const removedUserIds = new Set();
-      users = users.filter((u) => {
-        if (!u || String(u.user || "").trim() === KEEP_ONLY_USER_LOGIN) return true;
-        if (isPendingUserExpired(u, nowTs)) {
-          removedUserIds.add(u.id);
-          recordDeletion("user_id", u.id, nowTs);
-          if (u.user) recordDeletion("user_login", u.user, nowTs);
-          return false;
-        }
-        return true;
-      });
-
-      if (removedUserIds.size > 0) {
-        if (Array.isArray(targetState.groceryCustomers)) {
-          const removedCusts = targetState.groceryCustomers.filter((c) => removedUserIds.has(c.ownerUserId));
-          recordDeletion("customer", removedCusts.map((c) => c.id), nowTs);
-          targetState.groceryCustomers = targetState.groceryCustomers.filter((c) => !removedUserIds.has(c.ownerUserId));
-        }
-        if (Array.isArray(targetState.purchases)) {
-          const removedPurchs = targetState.purchases.filter((p) => removedUserIds.has(p.ownerUserId));
-          recordDeletion("purchase", removedPurchs.map((p) => p.id), nowTs);
-          targetState.purchases = targetState.purchases.filter((p) => !removedUserIds.has(p.ownerUserId));
-        }
-        if (targetState.session && targetState.session.role === "merchant_user" && removedUserIds.has(targetState.session.userId)) {
-          targetState.session = null;
-        }
-      }
-
-      targetState.users = users;
-      return targetState;
-    }
-
-    function normalizeTombstones(rawMap) {
-      const map = {};
-      if (!rawMap || typeof rawMap !== "object") return map;
-      Object.entries(rawMap).forEach(([key, ts]) => {
-        const cleanKey = String(key || "").trim().toLowerCase();
-        const numTs = Number(ts) || 0;
-        if (cleanKey && numTs > 0) {
-          map[cleanKey] = Math.max(map[cleanKey] || 0, numTs);
-        }
-      });
-      return map;
-    }
-
-    function mergeTombstones(mapA, mapB) {
-      const merged = normalizeTombstones(mapA);
-      const other = normalizeTombstones(mapB);
-      Object.entries(other).forEach(([key, ts]) => {
-        merged[key] = Math.max(merged[key] || 0, ts);
-      });
-      return merged;
-    }
-
-    function recordDeletion(bucketName, keys, timestamp = Date.now()) {
-      const ts = Number(timestamp) || Date.now();
-      state.deleted = normalizeTombstones(state.deleted);
-      const list = Array.isArray(keys) ? keys : [keys];
-      list.forEach((k) => {
-        const clean = String(k || "").trim().toLowerCase();
-        if (clean) {
-          const fullKey = `${bucketName}:${clean}`;
-          state.deleted[fullKey] = Math.max(state.deleted[fullKey] || 0, ts);
-        }
-      });
-    }
-
-    function isDeletedAtOrBefore(deletedMap, bucketName, key, itemUpdatedAt = 0) {
-      const clean = String(key || "").trim().toLowerCase();
-      if (!clean) return false;
-      const deletedTs = Number(deletedMap?.[`${bucketName}:${clean}`]) || 0;
-      if (!deletedTs) return false;
-      const itemTs = Number(itemUpdatedAt) || 0;
-      return deletedTs >= itemTs;
-    }
-
-    function normalizeUserRecord(u) {
-      if (!u || typeof u !== "object") return null;
-      if (isSyntheticOrTestRecord(u)) return null;
-      const validStatuses = ["Ativo", "Pendente", "Suspenso", "Bloqueado"];
-      const status = validStatuses.includes(u.status) ? u.status : "Pendente";
-      const parsedCreatedAtTs = Number(u.createdAtTs) || Date.parse(u.createdAt || "") || Date.now();
-      const parsedUpdatedAt = Number(u.updatedAt) || parsedCreatedAtTs || 0;
-      const cleanUser = String(u.user || "").trim();
-      const cleanName = String(u.name || "").trim();
-      if (!cleanUser || !cleanName) return null;
-      return {
-        id: String(u.id || ("u_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6))),
-        name: cleanName,
-        cpf: String(u.cpf || "").trim(),
-        phone: String(u.phone || "").trim(),
-        address: String(u.address || "").trim(),
-        user: cleanUser,
-        pass: String(u.pass ?? ""),
-        status,
-        adminApprovedAt: Number(u.adminApprovedAt) || 0,
-        createdAt: new Date(parsedCreatedAtTs).toISOString(),
-        createdAtTs: parsedCreatedAtTs,
-        updatedAt: parsedUpdatedAt
-      };
-    }
-
-    function pickNewerUser(a, b) {
-      if (!a) return b;
-      if (!b) return a;
-      const timeA = Number(a.updatedAt) || 0;
-      const timeB = Number(b.updatedAt) || 0;
-      if (timeB > timeA) return b;
-      if (timeA > timeB) return a;
-      if (a.status === "Pendente" && b.status !== "Pendente") return b;
-      return a;
-    }
-
-    function mergeUsersList(primaryUsers, secondaryUsers, deletedMap = {}) {
-      const map = new Map();
-      const ingest = (raw) => {
-        const norm = normalizeUserRecord(raw);
-        if (!norm || !norm.user) return;
-        if (
-          isDeletedAtOrBefore(deletedMap, "user_login", norm.user, norm.updatedAt) ||
-          isDeletedAtOrBefore(deletedMap, "user_id", norm.id, norm.updatedAt)
-        ) {
-          return;
-        }
-        const key = norm.user.toLowerCase();
-        const existing = map.get(key);
-        map.set(key, pickNewerUser(existing, norm));
-      };
-
-      if (Array.isArray(primaryUsers)) primaryUsers.forEach(ingest);
-      if (Array.isArray(secondaryUsers)) secondaryUsers.forEach(ingest);
-
-      return Array.from(map.values());
-    }
-
-    function mergeById(primaryList, secondaryList, bucketName = "item", deletedMap = {}) {
-      const map = new Map();
-      [primaryList, secondaryList].forEach((list) => {
-        if (!Array.isArray(list)) return;
-        list.forEach((item) => {
-          if (!item || !item.id || isSyntheticOrTestRecord(item)) return;
-          const itemTs = Number(item.updatedAt) || 0;
-          if (isDeletedAtOrBefore(deletedMap, bucketName, item.id, itemTs)) {
-            return;
-          }
-          const prev = map.get(item.id);
-          if (!prev) {
-            map.set(item.id, item);
-          } else {
-            const prevTs = Number(prev.updatedAt) || 0;
-            if (itemTs > prevTs) {
-              map.set(item.id, item);
-            }
-          }
-        });
-      });
-      return Array.from(map.values());
-    }
-
-    function parseStoredState(raw) {
-      if (!raw) return null;
-      const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-      if (!parsed || typeof parsed !== "object") return null;
-      return {
-        users: Array.isArray(parsed.users) ? parsed.users.map(normalizeUserRecord).filter(Boolean) : [],
-        groceryCustomers: Array.isArray(parsed.groceryCustomers) ? parsed.groceryCustomers.filter(c => !isSyntheticOrTestRecord(c)) : [],
-        purchases: Array.isArray(parsed.purchases) ? parsed.purchases.filter(p => !isSyntheticOrTestRecord(p)) : [],
-        deviceLogs: Array.isArray(parsed.deviceLogs) ? parsed.deviceLogs : [],
-        deleted: normalizeTombstones(parsed.deleted),
-        session: parsed.session || null,
-        updatedAt: Number(parsed.updatedAt) || 0
-      };
-    }
-
-    function loadInitialState() {
-      try {
-        const primaryRaw = localStorage.getItem(STORAGE_KEY);
-        const backupRaw = localStorage.getItem(BACKUP_STORAGE_KEY);
-        const primaryData = primaryRaw ? parseStoredState(primaryRaw) : null;
-        const backupData = backupRaw ? parseStoredState(backupRaw) : null;
-
-        if (!primaryData && !backupData) {
-          const initial = {
-            users: cloneData(defaultUsers),
-            groceryCustomers: [],
-            purchases: [],
-            deviceLogs: [],
-            deleted: {},
-            session: null,
-            updatedAt: Date.now()
-          };
-          persistStateToStorage(initial, false);
-          return initial;
-        }
-
-        const base = primaryData || backupData;
-        const secondary = primaryData && backupData ? backupData : null;
-        const mergedDeleted = mergeTombstones(base.deleted, secondary?.deleted);
-
-        const restored = {
-          users: mergeUsersList(base.users, secondary?.users, mergedDeleted),
-          groceryCustomers: mergeById(base.groceryCustomers, secondary?.groceryCustomers, "customer", mergedDeleted),
-          purchases: mergeById(base.purchases, secondary?.purchases, "purchase", mergedDeleted),
-          deviceLogs: mergeById(base.deviceLogs, secondary?.deviceLogs, "device_log", mergedDeleted),
-          deleted: mergedDeleted,
-          session: base.session ?? secondary?.session ?? null,
-          updatedAt: Math.max(Number(base.updatedAt) || 0, Number(secondary?.updatedAt) || 0)
-        };
-
-        enforceSingleUser123AndExpiration(restored, Date.now());
-        persistStateToStorage(restored, false);
-        return restored;
-      } catch (_err) {
-        return {
-          users: cloneData(defaultUsers),
-          groceryCustomers: [],
-          purchases: [],
-          deviceLogs: [],
-          deleted: {},
-          session: null,
-          updatedAt: Date.now()
-        };
-      }
-    }
-
-    let warnedPublishableRestFormat = false;
-
-    const CentralDatabase = {
-      getRestUrl() {
-        const baseUrl = String(CENTRAL_DB_CONFIG.supabaseUrl || "").replace(/\/+$/, "");
-        return `${baseUrl}/rest/v1/${CENTRAL_DB_CONFIG.tableName}`;
-      },
-
-      getHeaders() {
-        const apiKey = String(CENTRAL_DB_CONFIG.supabasePublishableKey || "").trim();
-        return {
-          "Content-Type": "application/json",
-          "apikey": apiKey,
-          "Authorization": `Bearer ${apiKey}`,
-          "Prefer": "resolution=merge-duplicates,return=representation"
-        };
-      },
-
-      logRestAuthHintIfNeeded(status) {
-        const key = String(CENTRAL_DB_CONFIG.supabasePublishableKey || "");
-        if ((status === 401 || status === 403) && key.startsWith("sb_publishable_") && !warnedPublishableRestFormat) {
-          warnedPublishableRestFormat = true;
-          console.warn(
-            "Supabase REST API retornou " + status + " com a chave sb_publishable_. " +
-            "Verifique as políticas (RLS) da tabela no Supabase para permitir acesso com a chave pública configurada no front-end."
-          );
-        }
-      },
-
-      async pullCentralState() {
-        if (!hasCentralDbConfig()) {
-          isCentralDbConnected = false;
-          updateCloudSyncBadge();
-          return null;
-        }
-
-        try {
-          const url = `${this.getRestUrl()}?id=eq.${encodeURIComponent(CENTRAL_DB_CONFIG.recordId)}&select=payload,updated_at`;
-          const res = await fetch(url, {
-            method: "GET",
-            headers: this.getHeaders(),
-            cache: "no-store"
-          });
-
-          if (!res.ok) {
-            this.logRestAuthHintIfNeeded(res.status);
-            isCentralDbConnected = false;
-            updateCloudSyncBadge();
-            return null;
-          }
-
-          const rows = await res.json();
-          isCentralDbConnected = true;
-          updateCloudSyncBadge();
-
-          if (!Array.isArray(rows) || rows.length === 0 || !rows[0]?.payload) {
-            return null;
-          }
-
-          return parseStoredState(rows[0].payload);
-        } catch (_err) {
-          isCentralDbConnected = false;
-          updateCloudSyncBadge();
-          return null;
-        }
-      },
-
-      async pushCentralState(snapshot) {
-        if (!hasCentralDbConfig()) {
-          isCentralDbConnected = false;
-          updateCloudSyncBadge();
-          return false;
-        }
-
-        try {
-          const payloadToSave = {
-            users: snapshot.users || [],
-            groceryCustomers: snapshot.groceryCustomers || [],
-            purchases: snapshot.purchases || [],
-            deviceLogs: snapshot.deviceLogs || [],
-            deleted: normalizeTombstones(snapshot.deleted),
-            updatedAt: Number(snapshot.updatedAt) || Date.now()
-          };
-
-          const res = await fetch(`${this.getRestUrl()}?on_conflict=id`, {
-            method: "POST",
-            headers: this.getHeaders(),
-            body: JSON.stringify([
-              {
-                id: CENTRAL_DB_CONFIG.recordId,
-                payload: payloadToSave,
-                updated_at: new Date().toISOString()
-              }
-            ])
-          });
-
-          if (!res.ok) {
-            this.logRestAuthHintIfNeeded(res.status);
-          }
-
-          isCentralDbConnected = res.ok;
-          updateCloudSyncBadge();
-          return res.ok;
-        } catch (_err) {
-          isCentralDbConnected = false;
-          updateCloudSyncBadge();
-          return false;
-        }
-      },
-
-      async syncWithCentral(forcePushIfEmpty = false) {
-        if (!hasCentralDbConfig() || isSyncingCentral) {
-          return;
-        }
-
-        isSyncingCentral = true;
-        try {
-          const remoteState = await this.pullCentralState();
-          if (!remoteState) {
-            if (forcePushIfEmpty) {
-              await this.pushCentralState(state);
-            }
-            return;
-          }
-
-          const mergedDeleted = mergeTombstones(state.deleted, remoteState.deleted);
-          const mergedUsers = mergeUsersList(remoteState.users, state.users, mergedDeleted);
-          const mergedCustomers = mergeById(remoteState.groceryCustomers, state.groceryCustomers, "customer", mergedDeleted);
-          const mergedPurchases = mergeById(remoteState.purchases, state.purchases, "purchase", mergedDeleted);
-          const mergedLogs = mergeById(remoteState.deviceLogs, state.deviceLogs, "device_log", mergedDeleted);
-
-          const changed =
-            JSON.stringify(mergedUsers) !== JSON.stringify(state.users) ||
-            JSON.stringify(mergedCustomers) !== JSON.stringify(state.groceryCustomers) ||
-            JSON.stringify(mergedPurchases) !== JSON.stringify(state.purchases) ||
-            JSON.stringify(mergedLogs) !== JSON.stringify(state.deviceLogs || []) ||
-            JSON.stringify(mergedDeleted) !== JSON.stringify(state.deleted || {});
-
-          state.deleted = mergedDeleted;
-          state.users = mergedUsers;
-          state.groceryCustomers = mergedCustomers;
-          state.purchases = mergedPurchases;
-          state.deviceLogs = mergedLogs;
-          enforceSingleUser123AndExpiration(state, Date.now());
-          state.updatedAt = Math.max(Number(state.updatedAt) || 0, Number(remoteState.updatedAt) || 0);
-
-          persistStateToStorage(state, false);
-
-          if (changed) {
-            await this.pushCentralState(state);
-            syncView();
-          }
-        } finally {
-          isSyncingCentral = false;
-        }
-      }
-    };
-
-    function updateCloudSyncBadge() {
-      const badge = document.getElementById("cloudSyncBadge");
-      if (!badge) return;
-      if (hasCentralDbConfig() && isCentralDbConnected) {
-        badge.textContent = "Banco Central Online";
-        badge.className = "cloud-pill";
-      } else if (hasCentralDbConfig()) {
-        badge.textContent = "Reconectando Banco...";
-        badge.className = "cloud-pill is-local";
-      } else {
-        badge.textContent = "Banco Local (Sync Ativo)";
-        badge.className = "cloud-pill is-local";
-      }
-    }
-
-    function openIndexedDb() {
-      return new Promise((resolve, reject) => {
-        if (typeof indexedDB === "undefined") {
-          reject(new Error("IndexedDB indisponível"));
-          return;
-        }
-        const req = indexedDB.open(IDB_DB_NAME, 1);
-        req.onupgradeneeded = () => {
-          const db = req.result;
-          if (!db.objectStoreNames.contains(IDB_STORE_NAME)) {
-            db.createObjectStore(IDB_STORE_NAME);
-          }
-        };
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      });
-    }
-
-    async function persistStateToIndexedDb(snapshot) {
-      try {
-        const db = await openIndexedDb();
-        const tx = db.transaction(IDB_STORE_NAME, "readwrite");
-        const store = tx.objectStore(IDB_STORE_NAME);
-        store.put(cloneData(snapshot), IDB_RECORD_KEY);
-        await new Promise((resolve, reject) => {
-          tx.oncomplete = resolve;
-          tx.onerror = () => reject(tx.error);
-        });
-        db.close();
-      } catch (_err) {
-        // Fallback silencioso
-      }
-    }
-
-    async function hydrateStateFromIndexedDb() {
-      try {
-        const db = await openIndexedDb();
-        const tx = db.transaction(IDB_STORE_NAME, "readonly");
-        const store = tx.objectStore(IDB_STORE_NAME);
-        const req = store.get(IDB_RECORD_KEY);
-        const idbRecord = await new Promise((resolve, reject) => {
-          req.onsuccess = () => resolve(req.result || null);
-          req.onerror = () => reject(req.error);
-        });
-        db.close();
-
-        if (!idbRecord || typeof idbRecord !== "object") return;
-
-        const mergedDeleted = mergeTombstones(state.deleted, idbRecord.deleted);
-        const mergedUsers = mergeUsersList(state.users, idbRecord.users, mergedDeleted);
-        const mergedCustomers = mergeById(state.groceryCustomers, idbRecord.groceryCustomers, "customer", mergedDeleted);
-        const mergedPurchases = mergeById(state.purchases, idbRecord.purchases, "purchase", mergedDeleted);
-        const mergedLogs = mergeById(state.deviceLogs, idbRecord.deviceLogs, "device_log", mergedDeleted);
-
-        const usersChanged = JSON.stringify(mergedUsers) !== JSON.stringify(state.users);
-        const custsChanged = JSON.stringify(mergedCustomers) !== JSON.stringify(state.groceryCustomers);
-        const purchsChanged = JSON.stringify(mergedPurchases) !== JSON.stringify(state.purchases);
-        const logsChanged = JSON.stringify(mergedLogs) !== JSON.stringify(state.deviceLogs || []);
-        const delChanged = JSON.stringify(mergedDeleted) !== JSON.stringify(state.deleted || {});
-
-        if (usersChanged || custsChanged || purchsChanged || logsChanged || delChanged) {
-          state.deleted = mergedDeleted;
-          state.users = mergedUsers;
-          state.groceryCustomers = mergedCustomers;
-          state.purchases = mergedPurchases;
-          state.deviceLogs = mergedLogs;
-          persistStateToStorage(state, false);
-          syncView();
-        }
-      } catch (_err) {
-        // Mantém o estado carregado
-      }
-    }
-
-    function persistStateToStorage(targetState, syncIdb = true, pushRemote = false) {
-      const serialized = JSON.stringify(targetState);
-      localStorage.setItem(STORAGE_KEY, serialized);
-      localStorage.setItem(BACKUP_STORAGE_KEY, serialized);
-      const tasks = [];
-      if (syncIdb) {
-        tasks.push(persistStateToIndexedDb(targetState));
-      }
-      if (pushRemote && hasCentralDbConfig()) {
-        tasks.push(CentralDatabase.pushCentralState(targetState));
-      }
-      return Promise.all(tasks);
-    }
-
-    function saveState() {
-      try {
-        enforceSingleUser123AndExpiration(state, Date.now());
-        state.deleted = normalizeTombstones(state.deleted);
-        state.users = mergeUsersList(state.users, [], state.deleted);
-        state.groceryCustomers = mergeById(state.groceryCustomers, [], "customer", state.deleted);
-        state.purchases = mergeById(state.purchases, [], "purchase", state.deleted);
-        state.deviceLogs = mergeById(state.deviceLogs, [], "device_log", state.deleted);
-        state.updatedAt = Date.now();
-        const serialized = JSON.stringify(state);
-        localStorage.setItem(STORAGE_KEY, serialized);
-        localStorage.setItem(BACKUP_STORAGE_KEY, serialized);
-        void persistStateToIndexedDb(state);
-        if (hasCentralDbConfig()) {
-          void CentralDatabase.pushCentralState(state);
-        }
-        broadcastAuthSync("STATE_UPDATED");
-      } catch (_err) {
-        setAuthFeedback("Não foi possível salvar no navegador (armazenamento cheio ou bloqueado).", true);
-      }
-    }
-
-    const UserRepository = {
-      remoteEndpoint: "",
-
-      readLatestLocalState() {
-        try {
-          const primaryRaw = localStorage.getItem(STORAGE_KEY);
-          const backupRaw = localStorage.getItem(BACKUP_STORAGE_KEY);
-          const primaryData = primaryRaw ? parseStoredState(primaryRaw) : null;
-          const backupData = backupRaw ? parseStoredState(backupRaw) : null;
-
-          if (!primaryData && !backupData) {
-            return state;
-          }
-
-          const base = primaryData || backupData;
-          const secondary = primaryData && backupData ? backupData : null;
-          const mergedDeleted = mergeTombstones(mergeTombstones(state.deleted, base.deleted), secondary?.deleted);
-
-          state.deleted = mergedDeleted;
-          state.users = mergeUsersList(base.users, secondary?.users, mergedDeleted);
-          state.groceryCustomers = mergeById(base.groceryCustomers, secondary?.groceryCustomers, "customer", mergedDeleted);
-          state.purchases = mergeById(base.purchases, secondary?.purchases, "purchase", mergedDeleted);
-          state.deviceLogs = mergeById(base.deviceLogs, secondary?.deviceLogs, "device_log", mergedDeleted);
-          enforceSingleUser123AndExpiration(state, Date.now());
-
-          if (base && Object.prototype.hasOwnProperty.call(base, "session")) {
-            state.session = base.session;
-          } else if (secondary && Object.prototype.hasOwnProperty.call(secondary, "session")) {
-            state.session = secondary.session;
-          }
-
-          return state;
-        } catch (_err) {
-          return state;
-        }
-      },
-
-      getUserById(userId) {
-        if (!userId) return null;
-        const latest = this.readLatestLocalState();
-        return latest.users.find((u) => u.id === userId) || null;
-      },
-
-      getUserByLoginOrCpf(rawUser) {
-        const clean = String(rawUser || "").trim();
-        const digits = normalizeDigits(clean);
-        const latest = this.readLatestLocalState();
-        return latest.users.find((u) => {
-          const uLogin = String(u.user || "").trim().toLowerCase();
-          const byUser = uLogin === clean.toLowerCase();
-          const uCpfDigits = normalizeDigits(u.cpf);
-          const byCpf = digits.length >= 3 && uCpfDigits.length >= 3 && uCpfDigits === digits;
-          return byUser || byCpf;
-        }) || null;
-      },
-
-      updateUserStatus(userId, nextStatus) {
-        const validStatuses = ["Ativo", "Pendente", "Suspenso", "Bloqueado"];
-        if (!validStatuses.includes(nextStatus)) return null;
-        this.readLatestLocalState();
-        const target = state.users.find((u) => u.id === userId);
-        if (!target) return null;
-        target.status = nextStatus;
-        if (nextStatus === "Ativo") {
-          target.adminApprovedAt = Date.now();
-        } else {
-          target.adminApprovedAt = 0;
-        }
-        target.updatedAt = Date.now();
-        saveState();
-        broadcastAuthSync("USER_STATUS_CHANGED", { userId, status: nextStatus });
-        return target;
-      },
-
-      deleteUser(userId) {
-        this.readLatestLocalState();
-        const nowTs = Date.now();
-        const targetUser = state.users.find((u) => u.id === userId);
-        if (targetUser && String(targetUser.user || "").trim() === KEEP_ONLY_USER_LOGIN) {
-          return;
-        }
-        recordDeletion("user_id", userId, nowTs);
-        if (targetUser?.user) {
-          recordDeletion("user_login", targetUser.user, nowTs);
-        }
-        const removedCustomers = state.groceryCustomers.filter((c) => c.ownerUserId === userId);
-        recordDeletion("customer", removedCustomers.map((c) => c.id), nowTs);
-        const removedPurchases = state.purchases.filter((p) => p.ownerUserId === userId);
-        recordDeletion("purchase", removedPurchases.map((p) => p.id), nowTs);
-
-        state.users = state.users.filter((u) => u.id !== userId);
-        state.groceryCustomers = state.groceryCustomers.filter((c) => c.ownerUserId !== userId);
-        state.purchases = state.purchases.filter((p) => p.ownerUserId !== userId);
-        saveState();
-        broadcastAuthSync("USER_DELETED", { userId });
-      }
-    };
-
-    const AuthStore = {
-      getSession() {
-        const latest = UserRepository.readLatestLocalState();
-        return latest.session || null;
-      },
-
-      revokeSession(reasonMessage, isError = true) {
-        state.session = null;
-        persistStateToStorage(state, true, false);
-        broadcastAuthSync("SESSION_REVOKED");
-
-        const loginView = document.getElementById("loginView");
-        const appView = document.getElementById("appView");
-        const superAdminPanel = document.getElementById("superAdminPanel");
-        const merchantPanel = document.getElementById("merchantPanel");
-
-        appView?.classList.add("hidden");
-        superAdminPanel?.classList.add("hidden");
-        merchantPanel?.classList.add("hidden");
-        loginView?.classList.remove("hidden");
-        applyAuthModeUI();
-
-        if (reasonMessage) {
-          setAuthFeedback(reasonMessage, isError);
-        }
-      }
-    };
-
-    function broadcastAuthSync(eventType, payload = {}) {
-      try {
-        if (authBroadcastChannel) {
-          authBroadcastChannel.postMessage({
-            type: eventType,
-            payload,
-            ts: Date.now()
-          });
-        }
-      } catch (_err) {
-        // Ignora
-      }
-    }
-
-    function initCrossTabSync() {
-      const handleExternalUpdate = () => {
-        UserRepository.readLatestLocalState();
-        void hydrateStateFromIndexedDb();
-        
-        // Debounce de 1.5s para barrar requisições concorrentes ou em loop no Supabase ao trocar abas ou focar a página
-        if (hasCentralDbConfig()) {
-          clearTimeout(syncDebounceTimer);
-          syncDebounceTimer = setTimeout(() => {
-            if (document.visibilityState === "visible") {
-              void CentralDatabase.syncWithCentral(false);
-            }
-          }, 1500);
-        }
-        syncView();
-      };
-
-      if (typeof BroadcastChannel !== "undefined") {
-        try {
-          authBroadcastChannel = new BroadcastChannel(AUTH_CHANNEL_NAME);
-          authBroadcastChannel.onmessage = (event) => {
-            if (!event || !event.data) return;
-            handleExternalUpdate();
-          };
-        } catch (_err) {
-          authBroadcastChannel = null;
-        }
-      }
-
-      window.addEventListener("storage", (e) => {
-        if (e.key === STORAGE_KEY || e.key === BACKUP_STORAGE_KEY) {
-          handleExternalUpdate();
-        }
-      });
-
-      document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible") {
-          handleExternalUpdate();
-        }
-      });
-
-      // Intervalo estendido para 30s, controlado pela visibilidade da aba
-      if (hasCentralDbConfig()) {
-        if (centralSyncIntervalTimer) clearInterval(centralSyncIntervalTimer);
-        centralSyncIntervalTimer = setInterval(() => {
-          if (document.visibilityState === "visible" && !isSyncingCentral) {
-            void CentralDatabase.syncWithCentral(false);
-          }
-        }, 30000);
-      }
-    }
-
-    function assertUserAuthorized(actionName = "acessar o sistema") {
-      const sess = AuthStore.getSession();
-      if (!sess) {
-        AuthStore.revokeSession(`Sessão encerrada: faça login para ${actionName}.`, true);
-        return false;
-      }
-
-      if (sess.role === "super_admin") {
-        if (sess.user === SUPER_ADMIN_USER) {
-          return true;
-        }
-        AuthStore.revokeSession("Sessão administrativa inválida. Faça login novamente.", true);
-        return false;
-      }
-
-      if (sess.role !== "merchant_user" || !sess.userId) {
-        AuthStore.revokeSession("Permissão inválida para a ação solicitada.", true);
-        return false;
-      }
-
-      const freshUser = UserRepository.getUserById(sess.userId);
-      if (!freshUser) {
-        AuthStore.revokeSession("Seu cadastro não foi encontrado ou foi removido pelo administrador.", true);
-        return false;
-      }
-
-      if (freshUser.status !== "Ativo") {
-        const currentStatus = freshUser.status || "Pendente";
-        AuthStore.revokeSession(
-          `Acesso bloqueado para ${actionName}: seu status atual é <strong>${escapeHtml(currentStatus)}</strong>. Entre em contato com <strong>Rodrigues ProDev</strong> pelo telefone/WhatsApp <strong>67 991267853</strong>.`,
-          true
-        );
-        return false;
-      }
-
-      return true;
-    }
-
-    function loadRememberedCredentials() {
-      try {
-        const raw = localStorage.getItem(REMEMBER_CREDS_KEY);
-        if (!raw) return null;
-        const parsed = JSON.parse(raw);
-        if (!parsed || typeof parsed !== "object") return null;
-        return {
-          user: String(parsed.user || ""),
-          pass: String(parsed.pass || ""),
-          adminMode: Boolean(parsed.adminMode)
-        };
-      } catch (_err) {
-        return null;
-      }
-    }
-
-    function saveRememberedCredentials(user, pass, adminMode) {
-      try {
-        localStorage.setItem(
-          REMEMBER_CREDS_KEY,
-          JSON.stringify({
-            user: String(user || ""),
-            pass: String(pass || ""),
-            adminMode: Boolean(adminMode)
-          })
-        );
-      } catch (_err) {
-        // Ignora
-      }
-    }
-
-    function clearRememberedCredentials() {
-      try {
-        localStorage.removeItem(REMEMBER_CREDS_KEY);
-      } catch (_err) {
-        // Ignora
-      }
-    }
-
-    function applyRememberedCredentialsToForm() {
-      const saved = loadRememberedCredentials();
-      const checkEl = document.getElementById("rememberMeCheck");
-      const userInput = document.getElementById("loginUser");
-      const passInput = document.getElementById("loginPass");
-
-      if (!saved) {
-        if (checkEl) checkEl.checked = false;
-        return;
-      }
-
-      if (checkEl) checkEl.checked = true;
-      if (userInput && !userInput.value) userInput.value = saved.user;
-      if (passInput && !passInput.value) passInput.value = saved.pass;
-    }
-
-    function normalizeDigits(value) {
-      return String(value || "").replace(/\D+/g, "");
-    }
-
-    function detectDeviceInfo() {
-      const ua = navigator.userAgent || "";
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-      const isTablet = /iPad|Tablet|PlayBook/i.test(ua) || (isMobile && Math.min(window.screen?.width || 0, window.screen?.height || 0) >= 600);
-      const deviceType = isTablet ? "Tablet" : (isMobile ? "Celular / Mobile" : "Computador / Desktop");
-
-      let platform = navigator.platform || "Desconhecida";
-      if (/Android/i.test(ua)) platform = "Android";
-      else if (/iPhone|iPad|iPod/i.test(ua)) platform = "iOS";
-      else if (/Windows/i.test(ua)) platform = "Windows";
-      else if (/Mac OS X|Macintosh/i.test(ua)) platform = "macOS";
-      else if (/Linux/i.test(ua)) platform = "Linux";
-
-      let browser = "Navegador Web";
-      if (/Edg\//i.test(ua)) browser = "Microsoft Edge";
-      else if (/OPR\//i.test(ua) || /Opera/i.test(ua)) browser = "Opera";
-      else if (/Chrome\//i.test(ua) && !/Chromium/i.test(ua)) browser = "Google Chrome";
-      else if (/Safari\//i.test(ua) && !/Chrome/i.test(ua)) browser = "Safari";
-      else if (/Firefox\//i.test(ua)) browser = "Firefox";
-
-      const screenRes = (window.screen && window.screen.width && window.screen.height)
-        ? `${window.screen.width}x${window.screen.height}`
-        : "";
-
-      return {
-        deviceType,
-        platform,
-        browserDetails: screenRes ? `${browser} (${screenRes})` : browser
-      };
-    }
-
-    function recordDeviceAccess(sessionInfo) {
-      if (!sessionInfo) return;
-      try {
-        UserRepository.readLatestLocalState();
-        if (!Array.isArray(state.deviceLogs)) state.deviceLogs = [];
-        const info = detectDeviceInfo();
-        const nowTs = Date.now();
-        const formattedDate = new Date(nowTs).toLocaleString("pt-BR");
-
-        state.deviceLogs.unshift({
-          id: "dev_" + nowTs + "_" + Math.random().toString(36).slice(2, 6),
-          userLabel: sessionInfo.name ? `${sessionInfo.name} (${sessionInfo.user})` : (sessionInfo.user || "Usuário"),
-          role: sessionInfo.role || "merchant_user",
-          deviceType: info.deviceType,
-          platform: info.platform,
-          browserDetails: info.browserDetails,
-          accessedAtText: formattedDate,
-          updatedAt: nowTs
-        });
-
-        // Mantém os últimos 200 registros de acesso para desempenho ideal
-        if (state.deviceLogs.length > 200) {
-          const extra = state.deviceLogs.slice(200);
-          recordDeletion("device_log", extra.map(d => d.id), nowTs);
-          state.deviceLogs = state.deviceLogs.slice(0, 200);
-        }
-
-        saveState();
-      } catch (_err) {
-        // Não bloqueia o fluxo de login caso o registro de log falhe
-      }
-    }
-
-    function formatCurrency(val) {
-      const num = Number(val) || 0;
-      return num.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-    }
-
-    function formatDatePtBr(dateStr) {
-      if (!dateStr) return "Selecionar data";
-      const parts = String(dateStr).split("-");
-      if (parts.length !== 3) return String(dateStr);
-      return `${parts[2]}/${parts[1]}/${parts[0]}`;
-    }
-
-    function toIsoDate(year, monthIndex, day) {
-      const y = String(year).padStart(4, "0");
-      const m = String(monthIndex + 1).padStart(2, "0");
-      const d = String(day).padStart(2, "0");
-      return `${y}-${m}-${d}`;
-    }
-
-    function setPickerDate(inputId, dateStr) {
-      const inputEl = document.getElementById(inputId);
-      const displayEl = document.getElementById(`${inputId}Display`);
-      const normalized = dateStr || todayStr;
-      if (inputEl) inputEl.value = normalized;
-      if (displayEl) displayEl.textContent = formatDatePtBr(normalized);
-    }
 
     const calendarViewState = {
       purchDate: { year: new Date().getFullYear(), month: new Date().getMonth() },
       purchDueDate: { year: new Date().getFullYear(), month: new Date().getMonth() }
     };
 
-    function closeAllMiniCalendars(exceptInputId = null) {
+    function formatCurrency(val) {
+      return (Number(val) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    }
+
+    function formatDatePtBr(isoStr) {
+      if (!isoStr || typeof isoStr !== "string") return "-";
+      const parts = isoStr.split("-");
+      if (parts.length !== 3) return isoStr;
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+
+    function addMonthsToDateStr(isoStr, monthsToAdd) {
+      const base = new Date(`${isoStr}T12:00:00`);
+      if (Number.isNaN(base.getTime())) return isoStr;
+      base.setMonth(base.getMonth() + monthsToAdd);
+      return base.toISOString().split("T")[0];
+    }
+
+    function isSyntheticOrTestRecord(rec) {
+      if (!rec) return true;
+      const idStr = String(rec.id || "").toLowerCase();
+      const userStr = String(rec.user || "").toLowerCase();
+      return idStr === "u_test_123" || userStr === "test_demo" || idStr.startsWith("demo_");
+    }
+
+    function normalizeUserRecord(u) {
+      const nowTs = Date.now();
+      const createdAtTs = Number(u.createdAtTs) || Date.parse(u.createdAt) || nowTs;
+      const rawStatus = u.status || "Pendente";
+      const validStatuses = ["Ativo", "Pendente", "Suspenso", "Bloqueado"];
+      const status = validStatuses.includes(rawStatus) ? rawStatus : "Pendente";
+      return {
+        id: String(u.id || ("u_" + nowTs)),
+        name: String(u.name || "").trim(),
+        cpf: String(u.cpf || "").trim(),
+        phone: String(u.phone || "").trim(),
+        address: String(u.address || "").trim(),
+        user: String(u.user || "").trim(),
+        pass: String(u.pass ?? ""),
+        status,
+        adminApprovedAt: Number(u.adminApprovedAt) || 0,
+        createdAt: u.createdAt || new Date(createdAtTs).toISOString(),
+        createdAtTs,
+        updatedAt: Number(u.updatedAt) || createdAtTs
+      };
+    }
+
+    function pruneExpiredPendingUsers() {
+      const cutoff = Date.now() - PENDING_EXPIRY_MS;
+      const beforeCount = state.users.length;
+      state.users = state.users.filter((u) => {
+        if (u.status === "Pendente" && (Number(u.createdAtTs) || 0) < cutoff) {
+          recordDeletion("user", u.id, Date.now());
+          return false;
+        }
+        return true;
+      });
+      return state.users.length !== beforeCount;
+    }
+
+    function recordDeletion(bucket, ids, ts = Date.now()) {
+      if (!state.deleted || typeof state.deleted !== "object") {
+        state.deleted = { users: {}, customers: {}, purchases: {}, device_logs: {} };
+      }
+      if (!state.deleted[bucket]) state.deleted[bucket] = {};
+      const list = Array.isArray(ids) ? ids : [ids];
+      list.forEach((id) => {
+        if (id) state.deleted[bucket][String(id)] = Number(ts) || Date.now();
+      });
+    }
+
+    function saveState() {
+      try {
+        pruneExpiredPendingUsers();
+        state.users = (Array.isArray(state.users) ? state.users : [])
+          .filter((u) => !isSyntheticOrTestRecord(u) && u.user)
+          .map(normalizeUserRecord);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        void writeStateToIndexedDb(state);
+      } catch (err) {
+        console.error("Erro ao salvar estado:", err);
+      }
+    }
+
+    function openIndexedDb() {
+      return new Promise((resolve) => {
+        if (!("indexedDB" in window)) return resolve(null);
+        try {
+          const req = indexedDB.open(IDB_NAME, 1);
+          req.onupgradeneeded = () => {
+            const db = req.result;
+            if (!db.objectStoreNames.contains(IDB_STORE)) {
+              db.createObjectStore(IDB_STORE);
+            }
+          };
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => resolve(null);
+        } catch {
+          resolve(null);
+        }
+      });
+    }
+
+    async function writeStateToIndexedDb(payload) {
+      const db = await openIndexedDb();
+      if (!db) return;
+      try {
+        const tx = db.transaction(IDB_STORE, "readwrite");
+        tx.objectStore(IDB_STORE).put(JSON.parse(JSON.stringify(payload)), IDB_KEY);
+      } catch {
+        // Ignora erro de escrita assíncrona no IDB
+      }
+    }
+
+    async function readStateFromIndexedDb() {
+      const db = await openIndexedDb();
+      if (!db) return null;
+      return new Promise((resolve) => {
+        try {
+          const tx = db.transaction(IDB_STORE, "readonly");
+          const req = tx.objectStore(IDB_STORE).get(IDB_KEY);
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => resolve(null);
+        } catch {
+          resolve(null);
+        }
+      });
+    }
+
+    function mergeDeletedMaps(mapA, mapB) {
+      const merged = {};
+      const allKeys = new Set([
+        ...Object.keys(mapA || {}),
+        ...Object.keys(mapB || {})
+      ]);
+      allKeys.forEach((k) => {
+        const tA = Number(mapA?.[k]) || 0;
+        const tB = Number(mapB?.[k]) || 0;
+        merged[k] = Math.max(tA, tB);
+      });
+      return merged;
+    }
+
+    function mergeRecordsById(listA, listB, deletedMap) {
+      const map = new Map();
+      [...(Array.isArray(listA) ? listA : []), ...(Array.isArray(listB) ? listB : [])].forEach((item) => {
+        if (!item || !item.id || isSyntheticOrTestRecord(item)) return;
+        const delTs = Number(deletedMap?.[item.id]) || 0;
+        const itemTs = Number(item.updatedAt) || Number(item.createdAtTs) || 0;
+        if (delTs > 0 && itemTs <= delTs) return;
+        const existing = map.get(item.id);
+        const existingTs = Number(existing?.updatedAt) || 0;
+        if (!existing || itemTs >= existingTs) {
+          map.set(item.id, { ...existing, ...item, updatedAt: Math.max(itemTs, delTs) });
+        }
+      });
+      return Array.from(map.values());
+    }
+
+    async function hydrateStateFromIndexedDb() {
+      const rawLocal = localStorage.getItem(STORAGE_KEY);
+      let localParsed = null;
+      if (rawLocal) {
+        try {
+          localParsed = JSON.parse(rawLocal);
+        } catch {
+          localParsed = null;
+        }
+      }
+      const idbParsed = await readStateFromIndexedDb();
+      if (!localParsed && !idbParsed) return;
+
+      const mergedDeleted = {
+        users: mergeDeletedMaps(localParsed?.deleted?.users, idbParsed?.deleted?.users),
+        customers: mergeDeletedMaps(localParsed?.deleted?.customers, idbParsed?.deleted?.customers),
+        purchases: mergeDeletedMaps(localParsed?.deleted?.purchases, idbParsed?.deleted?.purchases),
+        device_logs: mergeDeletedMaps(localParsed?.deleted?.device_logs, idbParsed?.deleted?.device_logs)
+      };
+
+      state = {
+        users: mergeRecordsById(localParsed?.users, idbParsed?.users, mergedDeleted.users).map(normalizeUserRecord),
+        groceryCustomers: mergeRecordsById(localParsed?.groceryCustomers, idbParsed?.groceryCustomers, mergedDeleted.customers),
+        purchases: mergeRecordsById(localParsed?.purchases, idbParsed?.purchases, mergedDeleted.purchases),
+        deviceLogs: mergeRecordsById(localParsed?.deviceLogs, idbParsed?.deviceLogs, mergedDeleted.device_logs),
+        deleted: mergedDeleted,
+        session: localParsed?.session || idbParsed?.session || null
+      };
+      pruneExpiredPendingUsers();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      syncView();
+    }
+
+    function hasCentralDbConfig() {
+      return false;
+    }
+
+    const CentralDatabase = {
+      async syncWithCentral() {
+        await hydrateStateFromIndexedDb();
+      }
+    };
+
+    function updateCloudSyncBadge() {
+      const badge = document.getElementById("cloudSyncBadge");
+      if (!badge) return;
+      badge.className = "cloud-pill is-local";
+      badge.textContent = "Banco Local (Sync Ativo)";
+    }
+
+    function saveRememberedCredentials(user, pass, adminFlag) {
+      try {
+        localStorage.setItem(REMEMBER_KEY, JSON.stringify({ user, pass, isAdmin: Boolean(adminFlag) }));
+      } catch {
+        // Ignora falha de armazenamento
+      }
+    }
+
+    function clearRememberedCredentials() {
+      try {
+        localStorage.removeItem(REMEMBER_KEY);
+      } catch {
+        // Ignora falha de armazenamento
+      }
+    }
+
+    function applyRememberedCredentialsToForm() {
+      try {
+        const raw = localStorage.getItem(REMEMBER_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        const check = document.getElementById("rememberMeCheck");
+        const userInput = document.getElementById("loginUser");
+        const passInput = document.getElementById("loginPass");
+        if (check) check.checked = true;
+        if (typeof parsed.isAdmin === "boolean") {
+          isAdminMode = parsed.isAdmin;
+          applyAuthModeUI();
+        }
+        if (userInput && parsed.user) userInput.value = parsed.user;
+        if (passInput && parsed.pass) passInput.value = parsed.pass;
+      } catch {
+        // Ignora erro de leitura
+      }
+    }
+
+    function detectDeviceInfo() {
+      const ua = navigator.userAgent || "";
+      const platform = navigator.platform || "Desconhecida";
+      const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+      const deviceType = isMobile ? "Celular / Tablet" : "Computador / Desktop";
+      let browser = "Navegador Web";
+      if (/Edg\//i.test(ua)) browser = "Microsoft Edge";
+      else if (/OPR\//i.test(ua) || /Opera/i.test(ua)) browser = "Opera";
+      else if (/Chrome\//i.test(ua)) browser = "Google Chrome";
+      else if (/Firefox\//i.test(ua)) browser = "Mozilla Firefox";
+      else if (/Safari\//i.test(ua)) browser = "Safari";
+
+      return {
+        deviceType,
+        platform,
+        browserDetails: `${browser} • ${platform}`
+      };
+    }
+
+    function recordDeviceAccess(sess) {
+      if (!sess) return;
+      const now = new Date();
+      const info = detectDeviceInfo();
+      const entry = {
+        id: "dev_" + now.getTime() + "_" + Math.random().toString(36).slice(2, 6),
+        userLabel: `${sess.name || sess.user} (${sess.role === "super_admin" ? "Admin" : "Usuário"})`,
+        deviceType: info.deviceType,
+        platform: info.platform,
+        browserDetails: info.browserDetails,
+        accessedAtText: now.toLocaleString("pt-BR"),
+        updatedAt: now.getTime()
+      };
+      state.deviceLogs = [entry, ...(Array.isArray(state.deviceLogs) ? state.deviceLogs : [])].slice(0, 100);
+      saveState();
+    }
+
+    const UserRepository = {
+      readLatestLocalState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === "object") {
+              state.users = Array.isArray(parsed.users) ? parsed.users.map(normalizeUserRecord) : state.users;
+              state.groceryCustomers = Array.isArray(parsed.groceryCustomers) ? parsed.groceryCustomers : state.groceryCustomers;
+              state.purchases = Array.isArray(parsed.purchases) ? parsed.purchases : state.purchases;
+              state.deviceLogs = Array.isArray(parsed.deviceLogs) ? parsed.deviceLogs : state.deviceLogs;
+              state.deleted = parsed.deleted || state.deleted;
+            }
+          }
+        } catch {
+          // Mantém estado atual em memória
+        }
+        pruneExpiredPendingUsers();
+      },
+      getUserById(id) {
+        this.readLatestLocalState();
+        return state.users.find((u) => u.id === id) || null;
+      },
+      getUserByLoginOrCpf(loginOrCpf) {
+        this.readLatestLocalState();
+        const needle = String(loginOrCpf || "").trim().toLowerCase();
+        const digitsOnly = needle.replace(/\D/g, "");
+        return state.users.find((u) => {
+          const byUser = String(u.user || "").trim().toLowerCase() === needle;
+          const byCpfRaw = String(u.cpf || "").trim().toLowerCase() === needle;
+          const byCpfDigits = digitsOnly.length >= 6 && String(u.cpf || "").replace(/\D/g, "") === digitsOnly;
+          return byUser || byCpfRaw || byCpfDigits;
+        }) || null;
+      },
+      updateUserStatus(userId, nextStatus) {
+        this.readLatestLocalState();
+        const nowTs = Date.now();
+        state.users = state.users.map((u) => {
+          if (u.id !== userId) return u;
+          return {
+            ...u,
+            status: nextStatus,
+            adminApprovedAt: nextStatus === "Ativo" ? nowTs : 0,
+            updatedAt: nowTs
+          };
+        });
+        saveState();
+        if (state.session && state.session.role === "merchant_user" && state.session.userId === userId && nextStatus !== "Ativo") {
+          AuthStore.revokeSession(`Sua conta foi alterada para ${nextStatus}.`);
+        }
+      },
+      deleteUser(userId) {
+        this.readLatestLocalState();
+        const nowTs = Date.now();
+        recordDeletion("user", userId, nowTs);
+        const ownedCustIds = state.groceryCustomers.filter((c) => c.ownerUserId === userId).map((c) => c.id);
+        recordDeletion("customer", ownedCustIds, nowTs);
+        const ownedPurchIds = state.purchases.filter((p) => p.ownerUserId === userId).map((p) => p.id);
+        recordDeletion("purchase", ownedPurchIds, nowTs);
+
+        state.users = state.users.filter((u) => u.id !== userId);
+        state.groceryCustomers = state.groceryCustomers.filter((c) => c.ownerUserId !== userId);
+        state.purchases = state.purchases.filter((p) => p.ownerUserId !== userId);
+        saveState();
+        if (state.session && state.session.role === "merchant_user" && state.session.userId === userId) {
+          AuthStore.revokeSession("Sua conta foi removida pelo administrador.");
+        }
+      }
+    };
+
+    const AuthStore = {
+      getSession() {
+        return state.session || null;
+      },
+      revokeSession(reasonMessage = "", showAuthNotice = true) {
+        state.session = null;
+        saveState();
+        const loginView = document.getElementById("loginView");
+        const appView = document.getElementById("appView");
+        loginView?.classList.remove("hidden");
+        appView?.classList.add("hidden");
+        applyAuthModeUI();
+        if (showAuthNotice && reasonMessage) {
+          setAuthFeedback(reasonMessage, true);
+        }
+      }
+    };
+
+    function assertUserAuthorized() {
+      const sess = AuthStore.getSession();
+      if (!sess) {
+        AuthStore.revokeSession("Sessão encerrada. Faça login novamente.");
+        return false;
+      }
+      if (sess.role === "super_admin") {
+        return true;
+      }
+      const userRec = UserRepository.getUserById(sess.userId);
+      if (!userRec) {
+        AuthStore.revokeSession("Sua conta não foi encontrada. Entre em contato com Rodrigues ProDev (67 991267853).");
+        return false;
+      }
+      if (userRec.status !== "Ativo") {
+        AuthStore.revokeSession(`Seu acesso está ${userRec.status}. Entre em contato com Rodrigues ProDev (67 991267853).`);
+        return false;
+      }
+      return true;
+    }
+
+    function initCrossTabSync() {
+      window.addEventListener("storage", (e) => {
+        if (e.key === STORAGE_KEY) {
+          void hydrateStateFromIndexedDb();
+        }
+      });
+    }
+
+    function setPickerDate(inputId, isoDate) {
+      const hiddenInput = document.getElementById(inputId);
+      const displaySpan = document.getElementById(`${inputId}Display`);
+      if (hiddenInput) hiddenInput.value = isoDate;
+      if (displaySpan) displaySpan.textContent = formatDatePtBr(isoDate);
+    }
+
+    function closeAllMiniCalendars(exceptId = null) {
       ["purchDate", "purchDueDate"].forEach((id) => {
-        if (id === exceptInputId) return;
-        const pop = document.getElementById(`${id}Popover`);
-        const trig = document.getElementById(`${id}Trigger`);
-        if (pop) pop.classList.add("hidden");
-        if (trig) trig.setAttribute("aria-expanded", "false");
+        if (id === exceptId) return;
+        document.getElementById(`${id}Popover`)?.classList.add("hidden");
+        document.getElementById(`${id}Trigger`)?.setAttribute("aria-expanded", "false");
       });
     }
 
     function renderMiniCalendar(inputId) {
       const pop = document.getElementById(`${inputId}Popover`);
-      const inputEl = document.getElementById(inputId);
-      if (!pop || !inputEl) return;
-
-      const selectedVal = inputEl.value || todayStr;
-      const view = calendarViewState[inputId] || {
-        year: new Date().getFullYear(),
-        month: new Date().getMonth()
-      };
-
-      const firstDayWeek = new Date(view.year, view.month, 1).getDay();
+      if (!pop) return;
+      const view = calendarViewState[inputId] || { year: new Date().getFullYear(), month: new Date().getMonth() };
+      const selectedVal = document.getElementById(inputId)?.value || todayStr;
+      const firstDay = new Date(view.year, view.month, 1);
+      const startWeekday = firstDay.getDay();
       const daysInMonth = new Date(view.year, view.month + 1, 0).getDate();
-      const monthLabel = new Date(view.year, view.month, 1).toLocaleDateString("pt-BR", {
-        month: "long",
-        year: "numeric"
-      });
+      const monthLabel = firstDay.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 
       let dayCellsHtml = "";
-      for (let i = 0; i < firstDayWeek; i++) {
-        dayCellsHtml += `<button type="button" class="mini-cal-day" disabled aria-hidden="true"></button>`;
+      for (let i = 0; i < startWeekday; i++) {
+        dayCellsHtml += `<button type="button" class="mini-cal-day" disabled></button>`;
       }
-
-      for (let day = 1; day <= daysInMonth; day++) {
-        const iso = toIsoDate(view.year, view.month, day);
-        const isSelected = iso === selectedVal;
-        const isToday = iso === todayStr;
-        const cls = [
-          "mini-cal-day",
-          isSelected ? "is-selected" : "",
-          isToday ? "is-today" : ""
-        ].filter(Boolean).join(" ");
-
-        dayCellsHtml += `<button type="button" class="${cls}" data-cal-day="${iso}">${day}</button>`;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const mm = String(view.month + 1).padStart(2, "0");
+        const dd = String(d).padStart(2, "0");
+        const isoDay = `${view.year}-${mm}-${dd}`;
+        const isSelected = isoDay === selectedVal;
+        const isToday = isoDay === todayStr;
+        const classes = ["mini-cal-day"];
+        if (isSelected) classes.push("is-selected");
+        if (isToday) classes.push("is-today");
+        dayCellsHtml += `<button type="button" class="${classes.join(" ")}" data-cal-day="${isoDay}">${d}</button>`;
       }
 
       pop.innerHTML = `
         <div class="mini-cal-header">
-          <button type="button" class="mini-cal-nav" data-cal-prev="${inputId}" aria-label="Mês anterior">&lsaquo;</button>
+          <button type="button" class="mini-cal-nav" data-cal-prev="${inputId}" aria-label="Mês anterior">‹</button>
           <span class="mini-cal-title">${escapeHtml(monthLabel)}</span>
-          <button type="button" class="mini-cal-nav" data-cal-next="${inputId}" aria-label="Próximo mês">&rsaquo;</button>
+          <button type="button" class="mini-cal-nav" data-cal-next="${inputId}" aria-label="Próximo mês">›</button>
         </div>
         <div class="mini-cal-weekdays">
           <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
@@ -2906,6 +2395,8 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
 
         saveState();
         document.getElementById("groceryCustomerForm")?.reset();
+        const propSel = document.getElementById("gcPropertyType");
+        if (propSel) propSel.value = "Casa";
         renderMerchantPanel();
       });
 
@@ -3505,7 +2996,9 @@ Digite um comando ou clique em uma das opções acima para consultar ou gerencia
       bindMerchantEvents();
       applyRememberedCredentialsToForm();
       updateCloudSyncBadge();
-      void hydrateStateFromIndexedDb();
+      void hydrateStateFromIndexedDb().then(() => {
+        syncView();
+      });
       if (hasCentralDbConfig()) {
         void CentralDatabase.syncWithCentral(true);
       }
