@@ -1375,6 +1375,12 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       });
     }
 
+    function clearDeletionMarker(bucket, id) {
+      if (state.deleted && state.deleted[bucket] && id) {
+        delete state.deleted[bucket][String(id)];
+      }
+    }
+
     function saveState() {
       try {
         pruneExpiredPendingUsers();
@@ -2014,8 +2020,11 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
           }
 
           const nowTs = Date.now();
+          const newUserId = "u_" + nowTs + "_" + Math.random().toString(36).slice(2, 6);
+          clearDeletionMarker("users", newUserId);
+
           const newUser = normalizeUserRecord({
-            id: "u_" + nowTs + "_" + Math.random().toString(36).slice(2, 6),
+            id: newUserId,
             name,
             cpf,
             phone,
@@ -2054,7 +2063,8 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       const tbody = document.getElementById("adminUsersTableBody");
 
       // Filtra rigorosamente apenas usuários reais cadastrados na plataforma (nunca dados sintéticos)
-      const realUsers = state.users.filter(u => !isSyntheticOrTestRecord(u) && u.user);
+      const realUsers = (Array.isArray(state.users) ? state.users : [])
+        .filter(u => u && !isSyntheticOrTestRecord(u) && String(u.user || "").trim() !== "");
 
       const total = realUsers.length;
       const active = realUsers.filter(u => u.status === "Ativo").length;
