@@ -15,10 +15,9 @@
       --text: #e9f5ee;
       --muted: #8fa899;
       --danger: #ff4d4d;
-      --warn: #ffb020;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
 
     body {
       min-height: 100vh;
@@ -119,7 +118,6 @@
   </style>
 </head>
 <body>
-  <!-- TELA DE LOGIN OCULTA (SEM CREDENCIAIS EXPOSTAS NA INTERFACE) -->
   <div id="loginView" class="card login-box">
     <h2>Rodrigues ProDev</h2>
     <p class="muted">Acesso ao sistema de crediário e administração.</p>
@@ -135,7 +133,6 @@
     </form>
   </div>
 
-  <!-- PAINEL PRINCIPAL APÓS AUTENTICAÇÃO -->
   <div id="appView" class="container hidden">
     <div class="topbar card">
       <div>
@@ -148,7 +145,6 @@
       </div>
     </div>
 
-    <!-- GESTÃO DE LOJISTAS (SUPER ADMIN) -->
     <div class="card">
       <h3>Lojistas / Tenants</h3>
       <form id="tenantForm" class="grid-3" style="align-items:end; margin-top:8px;">
@@ -182,7 +178,6 @@
       </table>
     </div>
 
-    <!-- CLIENTES, EDIÇÃO, LIMITE E CALENDÁRIO DE COMPRA / VENCIMENTO -->
     <div class="grid-2">
       <div class="card">
         <h3>Ficha e Edição de Cliente</h3>
@@ -258,7 +253,6 @@
       </div>
     </div>
 
-    <!-- ASSISTENTE DE IA DO SISTEMA -->
     <div class="card">
       <h3>Assistente IA Rodrigues ProDev</h3>
       <div id="chatBox" class="chat-box">
@@ -272,14 +266,10 @@
   </div>
 
   <script>
-    // Hash SHA-256 auxiliar para validação sem exibir credenciais na interface
     async function sha256(text) {
       const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
       return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
     }
-
-    const ADMIN_USER_HASH = "e36889962151f4951402ab59a32f966e4e7226fa5bd7c9d25702dd0d897b427d";
-    const ADMIN_PASS_HASH = "956389098eb282195d3fd01f939398f8c448df12377054f34bd338fd74a87e42";
 
     const state = {
       session: null,
@@ -309,8 +299,10 @@
 
       const uHash = await sha256(userVal);
       const pHash = await sha256(passVal);
+      const expectedUserHash = await sha256("rodrigues");
+      const expectedPassHash = await sha256("Rodrigues84326810");
 
-      if (uHash === ADMIN_USER_HASH && pHash === ADMIN_PASS_HASH) {
+      if (uHash === expectedUserHash && pHash === expectedPassHash) {
         state.session = { role: "super_admin", user: "rodrigues" };
         document.getElementById("loginPass").value = "";
         loginView.classList.add("hidden");
