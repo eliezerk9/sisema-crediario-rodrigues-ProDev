@@ -13,9 +13,9 @@
        ========================================================================= */
     :root {
       --bg-base: #040806;
-      --bg-surface: rgba(9, 16, 12, 0.88);
-      --bg-card: rgba(12, 21, 16, 0.9);
-      --bg-input: rgba(6, 11, 8, 0.94);
+      --bg-surface: rgba(9, 16, 12, 0.9);
+      --bg-card: rgba(12, 21, 16, 0.92);
+      --bg-input: rgba(6, 11, 8, 0.95);
       --neon: #00ff66;
       --neon-strong: #39ff88;
       --neon-soft: rgba(0, 255, 102, 0.14);
@@ -26,7 +26,7 @@
       --danger: #ff5263;
       --warning: #ffbe2e;
       --success: #00ff66;
-      --border-subtle: rgba(0, 255, 102, 0.14);
+      --border-subtle: rgba(0, 255, 102, 0.15);
       --radius-lg: 18px;
       --radius-md: 12px;
       --radius-sm: 9px;
@@ -808,7 +808,6 @@
       text-decoration: underline;
     }
 
-    /* ESTILIZAÇÃO CYBER / PRODEV PARA A CAIXA DA IA (INSPIRADO NA IMAGEM RODRIGUES PRODEV) */
     .ai-box {
       margin-top: 14px;
       background: linear-gradient(135deg, rgba(6, 12, 9, 0.95) 0%, rgba(10, 20, 15, 0.98) 100%),
@@ -844,6 +843,7 @@
   </style>
 </head>
 <body>
+  <!-- Tela de Acesso: Login, Cadastro e Acesso Restrito Admin -->
   <section id="loginView" class="auth-shell">
     <div class="auth-card">
       <div class="auth-brand">
@@ -959,6 +959,7 @@
     </div>
   </section>
 
+  <!-- Aplicação Principal: Painel Super Admin e Painel da Mercearia -->
   <section id="appView" class="app-shell hidden">
     <header class="topbar">
       <div style="display: flex; align-items: center; gap: 12px;">
@@ -975,12 +976,13 @@
         </div>
       </div>
       <div class="topbar-actions">
-        <span id="cloudSyncBadge" class="cloud-pill is-local">Banco Local (Sync Ativo)</span>
+        <span id="cloudSyncBadge" class="cloud-pill is-local">Prévia Interativa (Local)</span>
         <button type="button" id="refreshCloudBtn" class="btn-secondary">Sincronizar Agora</button>
         <button type="button" id="logoutBtn" class="btn-secondary">Sair da Conta</button>
       </div>
     </header>
 
+    <!-- Painel Super Admin -->
     <div id="superAdminPanel" class="hidden">
       <div class="stats-grid">
         <div class="stat-card">
@@ -1047,6 +1049,7 @@
       </div>
     </div>
 
+    <!-- Painel da Mercearia -->
     <div id="merchantPanel" class="hidden">
       <div class="stats-grid">
         <div class="stat-card">
@@ -1266,38 +1269,9 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
   <script>
     const SUPER_ADMIN_USER = "rodrigues";
     const SUPER_ADMIN_PASS = "Rodrigues84326810";
-    const STORAGE_KEY = "rodrigues_prodev_state_v2026_11_closed_test";
-    const REMEMBER_KEY = "rodrigues_prodev_remember_v1";
-    const IDB_NAME = "RodriguesProDevDB";
-    const IDB_STORE = "AppStateStore";
-    const IDB_KEY = "main_state";
+    const STORAGE_KEY = "rodrigues_prodev_preview_v1";
+    const REMEMBER_KEY = "rodrigues_prodev_preview_remember_v1";
     const PENDING_EXPIRY_MS = 10 * 24 * 60 * 60 * 1000;
-
-    // Configuração de nuvem compartilhada (pode ser sobrescrita via window.__RODRIGUES_CLOUD_CONFIG__)
-    const CLOUD_CONFIG = {
-      supabaseUrl: "https://wuxbopkaxhtdclnhnrvd.supabase.co",
-      supabaseAnonKey: "sb_publishable_bO89d1K2F4T6Z8x0C2V4B6N8M0Q2W4E6",
-      tableName: "rodrigues_prodev_store",
-      recordId: "main_state"
-    };
-
-    function getCloudConfig() {
-      const custom = typeof window !== "undefined" && window.__RODRIGUES_CLOUD_CONFIG__ && typeof window.__RODRIGUES_CLOUD_CONFIG__ === "object"
-        ? window.__RODRIGUES_CLOUD_CONFIG__
-        : {};
-      const url = String(custom.supabaseUrl || CLOUD_CONFIG.supabaseUrl || "").trim().replace(/\/+$/, "");
-      const anonKey = String(custom.supabaseAnonKey || CLOUD_CONFIG.supabaseAnonKey || "").trim();
-      const tableName = String(custom.tableName || CLOUD_CONFIG.tableName || "rodrigues_prodev_store").trim();
-      const recordId = String(custom.recordId || CLOUD_CONFIG.recordId || "main_state").trim();
-      const isPlaceholderKey = anonKey.includes("bO89d1K2F4T6Z8x0C2V4B6N8M0Q2W4E6");
-      return {
-        url,
-        anonKey,
-        tableName,
-        recordId,
-        enabled: Boolean(url && anonKey && !isPlaceholderKey)
-      };
-    }
 
     const todayStr = new Date().toISOString().split("T")[0];
     const nextMonthStr = (() => {
@@ -1306,20 +1280,120 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       return d.toISOString().split("T")[0];
     })();
 
-    let state = {
-      users: [],
-      groceryCustomers: [],
-      purchases: [],
-      deviceLogs: [],
-      deleted: {
-        users: {},
-        customers: {},
-        purchases: {},
-        device_logs: {}
-      },
-      session: null
-    };
+    // Dados iniciais de prévia para teste rápido de ambos os painéis
+    function createInitialPreviewState() {
+      const now = Date.now();
+      return {
+        users: [
+          {
+            id: "u_preview_1",
+            name: "Mercearia Bom Preço",
+            cpf: "123.456.789-00",
+            phone: "(67) 99126-7853",
+            address: "Av. Mato Grosso, 145 - Centro",
+            user: "mercearia123",
+            pass: "123456",
+            status: "Ativo",
+            adminApprovedAt: now,
+            createdAt: new Date(now).toISOString(),
+            createdAtTs: now,
+            updatedAt: now
+          },
+          {
+            id: "u_preview_2",
+            name: "Mercado Nova Esperança",
+            cpf: "98.765.432/0001-10",
+            phone: "(67) 99888-1122",
+            address: "Rua das Flores, 88 - Jardim",
+            user: "esperanca",
+            pass: "123456",
+            status: "Pendente",
+            adminApprovedAt: 0,
+            createdAt: new Date(now).toISOString(),
+            createdAtTs: now,
+            updatedAt: now
+          }
+        ],
+        groceryCustomers: [
+          {
+            id: "c_prev_1",
+            ownerUserId: "u_preview_1",
+            name: "Carlos Eduardo Silva",
+            cpf: "111.222.333-44",
+            street: "Rua Paraná",
+            propertyType: "Casa",
+            number: "310",
+            limit: 800,
+            used: 180,
+            updatedAt: now
+          },
+          {
+            id: "c_prev_2",
+            ownerUserId: "u_preview_1",
+            name: "Ana Paula Souza",
+            cpf: "555.666.777-88",
+            street: "Rua Bahia",
+            propertyType: "Ap",
+            number: "102",
+            limit: 600,
+            used: 0,
+            updatedAt: now
+          }
+        ],
+        purchases: [
+          {
+            id: "p_prev_1",
+            ownerUserId: "u_preview_1",
+            customerId: "c_prev_1",
+            customerName: "Carlos Eduardo Silva",
+            product: "Compras do mês (1/2)",
+            value: 90,
+            buyDate: todayStr,
+            dueDate: nextMonthStr,
+            status: "Em Aberto",
+            updatedAt: now
+          },
+          {
+            id: "p_prev_2",
+            ownerUserId: "u_preview_1",
+            customerId: "c_prev_1",
+            customerName: "Carlos Eduardo Silva",
+            product: "Compras do mês (2/2)",
+            value: 90,
+            buyDate: todayStr,
+            dueDate: nextMonthStr,
+            status: "Em Aberto",
+            updatedAt: now
+          },
+          {
+            id: "p_prev_3",
+            ownerUserId: "u_preview_1",
+            customerId: "c_prev_2",
+            customerName: "Ana Paula Souza",
+            product: "Cesta e padaria",
+            value: 120,
+            buyDate: todayStr,
+            dueDate: todayStr,
+            status: "Pago",
+            updatedAt: now
+          }
+        ],
+        deviceLogs: [
+          {
+            id: "dev_prev_1",
+            userLabel: "Mercearia Bom Preço (Usuário)",
+            deviceType: "Computador / Desktop",
+            platform: navigator.platform || "Web",
+            browserDetails: "Prévia do Editor • Sessão Demonstrativa",
+            accessedAtText: new Date(now).toLocaleString("pt-BR"),
+            updatedAt: now
+          }
+        ],
+        session: null
+      };
+    }
 
+    let state = createInitialPreviewState();
     let isAdminMode = false;
     let activeAuthTab = "login";
     let isAuthenticating = false;
@@ -1329,6 +1403,15 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       purchDate: { year: new Date().getFullYear(), month: new Date().getMonth() },
       purchDueDate: { year: new Date().getFullYear(), month: new Date().getMonth() }
     };
+
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
 
     function formatCurrency(val) {
       return (Number(val) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -1348,297 +1431,58 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       return base.toISOString().split("T")[0];
     }
 
-    function isSyntheticOrTestRecord(rec) {
-      if (!rec) return true;
-      const idStr = String(rec.id || "").toLowerCase();
-      const userStr = String(rec.user || "").toLowerCase();
-      return idStr === "u_test_123" || userStr === "test_demo" || idStr.startsWith("demo_");
-    }
-
-    function normalizeUserRecord(u) {
-      const nowTs = Date.now();
-      const createdAtTs = Number(u.createdAtTs) || Date.parse(u.createdAt) || nowTs;
-      const rawStatus = u.status || "Pendente";
-      const validStatuses = ["Ativo", "Pendente", "Suspenso", "Bloqueado"];
-      const status = validStatuses.includes(rawStatus) ? rawStatus : "Pendente";
-      return {
-        id: String(u.id || ("u_" + nowTs)),
-        name: String(u.name || "").trim(),
-        cpf: String(u.cpf || "").trim(),
-        phone: String(u.phone || "").trim(),
-        address: String(u.address || "").trim(),
-        user: String(u.user || "").trim(),
-        pass: String(u.pass ?? ""),
-        status,
-        adminApprovedAt: Number(u.adminApprovedAt) || 0,
-        createdAt: u.createdAt || new Date(createdAtTs).toISOString(),
-        createdAtTs,
-        updatedAt: Number(u.updatedAt) || createdAtTs
-      };
-    }
-
     function pruneExpiredPendingUsers() {
       const cutoff = Date.now() - PENDING_EXPIRY_MS;
-      const beforeCount = state.users.length;
-      state.users = state.users.filter((u) => {
+      state.users = (state.users || []).filter((u) => {
         if (u.status === "Pendente" && (Number(u.createdAtTs) || 0) < cutoff) {
-          recordDeletion("user", u.id, Date.now());
           return false;
         }
         return true;
       });
-      return state.users.length !== beforeCount;
-    }
-
-    function recordDeletion(bucket, ids, ts = Date.now()) {
-      if (!state.deleted || typeof state.deleted !== "object") {
-        state.deleted = { users: {}, customers: {}, purchases: {}, device_logs: {} };
-      }
-      if (!state.deleted[bucket]) state.deleted[bucket] = {};
-      const list = Array.isArray(ids) ? ids : [ids];
-      list.forEach((id) => {
-        if (id) state.deleted[bucket][String(id)] = Number(ts) || Date.now();
-      });
-    }
-
-    function clearDeletionMarker(bucket, id) {
-      if (state.deleted && state.deleted[bucket] && id) {
-        delete state.deleted[bucket][String(id)];
-      }
     }
 
     function saveState() {
       try {
         pruneExpiredPendingUsers();
-        state.users = (Array.isArray(state.users) ? state.users : [])
-          .filter((u) => !isSyntheticOrTestRecord(u) && u.user)
-          .map(normalizeUserRecord);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        void writeStateToIndexedDb(state);
-        if (hasCentralDbConfig()) {
-          void CentralDatabase.pushToCentral(state);
-        }
       } catch (err) {
-        console.error("Erro ao salvar estado:", err);
+        console.error("Erro ao salvar estado da prévia:", err);
       }
     }
 
-    function openIndexedDb() {
-      return new Promise((resolve) => {
-        if (!("indexedDB" in window)) return resolve(null);
-        try {
-          const req = indexedDB.open(IDB_NAME, 1);
-          req.onupgradeneeded = () => {
-            const db = req.result;
-            if (!db.objectStoreNames.contains(IDB_STORE)) {
-              db.createObjectStore(IDB_STORE);
-            }
-          };
-          req.onsuccess = () => resolve(req.result);
-          req.onerror = () => resolve(null);
-        } catch {
-          resolve(null);
-        }
-      });
-    }
-
-    async function writeStateToIndexedDb(payload) {
-      const db = await openIndexedDb();
-      if (!db) return;
+    function loadState() {
       try {
-        const tx = db.transaction(IDB_STORE, "readwrite");
-        tx.objectStore(IDB_STORE).put(JSON.parse(JSON.stringify(payload)), IDB_KEY);
-      } catch {
-        // Ignora erro de escrita assíncrona no IDB
-      }
-    }
-
-    async function readStateFromIndexedDb() {
-      const db = await openIndexedDb();
-      if (!db) return null;
-      return new Promise((resolve) => {
-        try {
-          const tx = db.transaction(IDB_STORE, "readonly");
-          const req = tx.objectStore(IDB_STORE).get(IDB_KEY);
-          req.onsuccess = () => resolve(req.result || null);
-          req.onerror = () => resolve(null);
-        } catch {
-          resolve(null);
-        }
-      });
-    }
-
-    function mergeDeletedMaps(mapA, mapB) {
-      const merged = {};
-      const allKeys = new Set([
-        ...Object.keys(mapA || {}),
-        ...Object.keys(mapB || {})
-      ]);
-      allKeys.forEach((k) => {
-        const tA = Number(mapA?.[k]) || 0;
-        const tB = Number(mapB?.[k]) || 0;
-        merged[k] = Math.max(tA, tB);
-      });
-      return merged;
-    }
-
-    function mergeRecordsById(listA, listB, deletedMap) {
-      const map = new Map();
-      [...(Array.isArray(listA) ? listA : []), ...(Array.isArray(listB) ? listB : [])].forEach((item) => {
-        if (!item || !item.id || isSyntheticOrTestRecord(item)) return;
-        const delTs = Number(deletedMap?.[item.id]) || 0;
-        const itemTs = Number(item.updatedAt) || Number(item.createdAtTs) || 0;
-        if (delTs > 0 && itemTs <= delTs) return;
-        const existing = map.get(item.id);
-        const existingTs = Number(existing?.updatedAt) || 0;
-        if (!existing || itemTs >= existingTs) {
-          map.set(item.id, { ...existing, ...item, updatedAt: Math.max(itemTs, delTs) });
-        }
-      });
-      return Array.from(map.values());
-    }
-
-    async function hydrateStateFromIndexedDb() {
-      const rawLocal = localStorage.getItem(STORAGE_KEY);
-      let localParsed = null;
-      if (rawLocal) {
-        try {
-          localParsed = JSON.parse(rawLocal);
-        } catch {
-          localParsed = null;
-        }
-      }
-      const idbParsed = await readStateFromIndexedDb();
-      if (!localParsed && !idbParsed) return;
-
-      const mergedDeleted = {
-        users: mergeDeletedMaps(localParsed?.deleted?.users, idbParsed?.deleted?.users),
-        customers: mergeDeletedMaps(localParsed?.deleted?.customers, idbParsed?.deleted?.customers),
-        purchases: mergeDeletedMaps(localParsed?.deleted?.purchases, idbParsed?.deleted?.purchases),
-        device_logs: mergeDeletedMaps(localParsed?.deleted?.device_logs, idbParsed?.deleted?.device_logs)
-      };
-
-      state = {
-        users: mergeRecordsById(localParsed?.users, idbParsed?.users, mergedDeleted.users).map(normalizeUserRecord),
-        groceryCustomers: mergeRecordsById(localParsed?.groceryCustomers, idbParsed?.groceryCustomers, mergedDeleted.customers),
-        purchases: mergeRecordsById(localParsed?.purchases, idbParsed?.purchases, mergedDeleted.purchases),
-        deviceLogs: mergeRecordsById(localParsed?.deviceLogs, idbParsed?.deviceLogs, mergedDeleted.device_logs),
-        deleted: mergedDeleted,
-        session: localParsed?.session || idbParsed?.session || null
-      };
-      pruneExpiredPendingUsers();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      syncView();
-    }
-
-    function hasCentralDbConfig() {
-      return getCloudConfig().enabled;
-    }
-
-    const CentralDatabase = {
-      async pullFromCentral() {
-        const cfg = getCloudConfig();
-        if (!cfg.enabled) return null;
-        try {
-          const endpoint = `${cfg.url}/rest/v1/${encodeURIComponent(cfg.tableName)}?id=eq.${encodeURIComponent(cfg.recordId)}&select=payload`;
-          const res = await fetch(endpoint, {
-            method: "GET",
-            headers: {
-              apikey: cfg.anonKey,
-              Authorization: `Bearer ${cfg.anonKey}`,
-              Accept: "application/json"
-            }
-          });
-          if (!res.ok) return null;
-          const rows = await res.json();
-          if (!Array.isArray(rows) || !rows.length || !rows[0]?.payload) return null;
-          return rows[0].payload;
-        } catch {
-          return null;
-        }
-      },
-
-      async pushToCentral(snapshotState) {
-        const cfg = getCloudConfig();
-        if (!cfg.enabled || !snapshotState) return false;
-        try {
-          const cleanPayload = {
-            users: Array.isArray(snapshotState.users) ? snapshotState.users : [],
-            groceryCustomers: Array.isArray(snapshotState.groceryCustomers) ? snapshotState.groceryCustomers : [],
-            purchases: Array.isArray(snapshotState.purchases) ? snapshotState.purchases : [],
-            deviceLogs: Array.isArray(snapshotState.deviceLogs) ? snapshotState.deviceLogs : [],
-            deleted: snapshotState.deleted || { users: {}, customers: {}, purchases: {}, device_logs: {} }
-          };
-
-          const endpoint = `${cfg.url}/rest/v1/${encodeURIComponent(cfg.tableName)}?on_conflict=id`;
-          const res = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-              apikey: cfg.anonKey,
-              Authorization: `Bearer ${cfg.anonKey}`,
-              "Content-Type": "application/json",
-              Prefer: "resolution=merge-duplicates,return=minimal"
-            },
-            body: JSON.stringify([{
-              id: cfg.recordId,
-              payload: cleanPayload,
-              updated_at: new Date().toISOString()
-            }])
-          });
-          return res.ok;
-        } catch {
-          return false;
-        }
-      },
-
-      async syncWithCentral(pushAfterMerge = false) {
-        await hydrateStateFromIndexedDb();
-        const cfg = getCloudConfig();
-        if (!cfg.enabled) {
-          updateCloudSyncBadge();
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          state = createInitialPreviewState();
+          saveState();
           return;
         }
-
-        const remotePayload = await this.pullFromCentral();
-        if (remotePayload && typeof remotePayload === "object") {
-          const mergedDeleted = {
-            users: mergeDeletedMaps(state.deleted?.users, remotePayload?.deleted?.users),
-            customers: mergeDeletedMaps(state.deleted?.customers, remotePayload?.deleted?.customers),
-            purchases: mergeDeletedMaps(state.deleted?.purchases, remotePayload?.deleted?.purchases),
-            device_logs: mergeDeletedMaps(state.deleted?.device_logs, remotePayload?.deleted?.device_logs)
-          };
-
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") {
           state = {
-            ...state,
-            users: mergeRecordsById(state.users, remotePayload.users, mergedDeleted.users).map(normalizeUserRecord),
-            groceryCustomers: mergeRecordsById(state.groceryCustomers, remotePayload.groceryCustomers, mergedDeleted.customers),
-            purchases: mergeRecordsById(state.purchases, remotePayload.purchases, mergedDeleted.purchases),
-            deviceLogs: mergeRecordsById(state.deviceLogs, remotePayload.deviceLogs, mergedDeleted.device_logs),
-            deleted: mergedDeleted
+            users: Array.isArray(parsed.users) ? parsed.users : [],
+            groceryCustomers: Array.isArray(parsed.groceryCustomers) ? parsed.groceryCustomers : [],
+            purchases: Array.isArray(parsed.purchases) ? parsed.purchases : [],
+            deviceLogs: Array.isArray(parsed.deviceLogs) ? parsed.deviceLogs : [],
+            session: parsed.session || null
           };
           pruneExpiredPendingUsers();
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-          await writeStateToIndexedDb(state);
         }
-
-        if (pushAfterMerge) {
-          await this.pushToCentral(state);
-        }
-
-        updateCloudSyncBadge();
-        syncView();
+      } catch {
+        state = createInitialPreviewState();
       }
-    };
+    }
 
-    function updateCloudSyncBadge() {
-      const badge = document.getElementById("cloudSyncBadge");
-      if (!badge) return;
-      if (hasCentralDbConfig()) {
-        badge.className = "cloud-pill";
-        badge.textContent = "Nuvem Conectada (Multi-Dispositivo)";
-      } else {
-        badge.className = "cloud-pill is-local";
-        badge.textContent = "Banco Local (Sync Ativo)";
+    function saveRememberedCredentials(user, pass, adminFlag) {
+      try {
+        localStorage.setItem(REMEMBER_KEY, JSON.stringify({
+          user: String(user || ""),
+          pass: String(pass || ""),
+          isAdmin: Boolean(adminFlag)
+        }));
+      } catch {
+        // Ignora erro de armazenamento
       }
     }
 
@@ -1646,7 +1490,7 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       try {
         localStorage.removeItem(REMEMBER_KEY);
       } catch {
-        // Ignora falha de armazenamento
+        // Ignora erro de armazenamento
       }
     }
 
@@ -1670,67 +1514,29 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       }
     }
 
-    function detectDeviceInfo() {
-      const ua = navigator.userAgent || "";
-      const platform = navigator.platform || "Desconhecida";
-      const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
-      const deviceType = isMobile ? "Celular / Tablet" : "Computador / Desktop";
-      let browser = "Navegador Web";
-      if (/Edg\//i.test(ua)) browser = "Microsoft Edge";
-      else if (/OPR\//i.test(ua) || /Opera/i.test(ua)) browser = "Opera";
-      else if (/Chrome\//i.test(ua)) browser = "Google Chrome";
-      else if (/Firefox\//i.test(ua)) browser = "Mozilla Firefox";
-      else if (/Safari\//i.test(ua)) browser = "Safari";
-
-      return {
-        deviceType,
-        platform,
-        browserDetails: `${browser} • ${platform}`
-      };
-    }
-
     function recordDeviceAccess(sess) {
       if (!sess) return;
       const now = new Date();
-      const info = detectDeviceInfo();
+      const ua = navigator.userAgent || "";
+      const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
       const entry = {
         id: "dev_" + now.getTime() + "_" + Math.random().toString(36).slice(2, 6),
         userLabel: `${sess.name || sess.user} (${sess.role === "super_admin" ? "Admin" : "Usuário"})`,
-        deviceType: info.deviceType,
-        platform: info.platform,
-        browserDetails: info.browserDetails,
+        deviceType: isMobile ? "Celular / Tablet" : "Computador / Desktop",
+        platform: navigator.platform || "Navegador Web",
+        browserDetails: "Preview Rodrigues ProDev",
         accessedAtText: now.toLocaleString("pt-BR"),
         updatedAt: now.getTime()
       };
-      state.deviceLogs = [entry, ...(Array.isArray(state.deviceLogs) ? state.deviceLogs : [])].slice(0, 100);
+      state.deviceLogs = [entry, ...(state.deviceLogs || [])].slice(0, 50);
       saveState();
     }
 
     const UserRepository = {
-      readLatestLocalState() {
-        try {
-          const raw = localStorage.getItem(STORAGE_KEY);
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            if (parsed && typeof parsed === "object") {
-              state.users = Array.isArray(parsed.users) ? parsed.users.map(normalizeUserRecord) : state.users;
-              state.groceryCustomers = Array.isArray(parsed.groceryCustomers) ? parsed.groceryCustomers : state.groceryCustomers;
-              state.purchases = Array.isArray(parsed.purchases) ? parsed.purchases : state.purchases;
-              state.deviceLogs = Array.isArray(parsed.deviceLogs) ? parsed.deviceLogs : state.deviceLogs;
-              state.deleted = parsed.deleted || state.deleted;
-            }
-          }
-        } catch {
-          // Mantém estado atual em memória
-        }
-        pruneExpiredPendingUsers();
-      },
       getUserById(id) {
-        this.readLatestLocalState();
         return state.users.find((u) => u.id === id) || null;
       },
       getUserByLoginOrCpf(loginOrCpf) {
-        this.readLatestLocalState();
         const needle = String(loginOrCpf || "").trim().toLowerCase();
         const digitsOnly = needle.replace(/\D/g, "");
         return state.users.find((u) => {
@@ -1741,31 +1547,19 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
         }) || null;
       },
       updateUserStatus(userId, nextStatus) {
-        this.readLatestLocalState();
         const nowTs = Date.now();
-        state.users = state.users.map((u) => {
-          if (u.id !== userId) return u;
-          return {
-            ...u,
-            status: nextStatus,
-            adminApprovedAt: nextStatus === "Ativo" ? nowTs : 0,
-            updatedAt: nowTs
-          };
-        });
+        state.users = state.users.map((u) => u.id === userId ? {
+          ...u,
+          status: nextStatus,
+          adminApprovedAt: nextStatus === "Ativo" ? nowTs : 0,
+          updatedAt: nowTs
+        } : u);
         saveState();
         if (state.session && state.session.role === "merchant_user" && state.session.userId === userId && nextStatus !== "Ativo") {
           AuthStore.revokeSession(`Sua conta foi alterada para ${nextStatus}.`);
         }
       },
       deleteUser(userId) {
-        this.readLatestLocalState();
-        const nowTs = Date.now();
-        recordDeletion("user", userId, nowTs);
-        const ownedCustIds = state.groceryCustomers.filter((c) => c.ownerUserId === userId).map((c) => c.id);
-        recordDeletion("customer", ownedCustIds, nowTs);
-        const ownedPurchIds = state.purchases.filter((p) => p.ownerUserId === userId).map((p) => p.id);
-        recordDeletion("purchase", ownedPurchIds, nowTs);
-
         state.users = state.users.filter((u) => u.id !== userId);
         state.groceryCustomers = state.groceryCustomers.filter((c) => c.ownerUserId !== userId);
         state.purchases = state.purchases.filter((p) => p.ownerUserId !== userId);
@@ -1783,10 +1577,8 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       revokeSession(reasonMessage = "", showAuthNotice = true) {
         state.session = null;
         saveState();
-        const loginView = document.getElementById("loginView");
-        const appView = document.getElementById("appView");
-        loginView?.classList.remove("hidden");
-        appView?.classList.add("hidden");
+        document.getElementById("loginView")?.classList.remove("hidden");
+        document.getElementById("appView")?.classList.add("hidden");
         applyAuthModeUI();
         if (showAuthNotice && reasonMessage) {
           setAuthFeedback(reasonMessage, true);
@@ -1800,27 +1592,13 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
         AuthStore.revokeSession("Sessão encerrada. Faça login novamente.");
         return false;
       }
-      if (sess.role === "super_admin") {
-        return true;
-      }
+      if (sess.role === "super_admin") return true;
       const userRec = UserRepository.getUserById(sess.userId);
-      if (!userRec) {
-        AuthStore.revokeSession("Sua conta não foi encontrada. Entre em contato com Rodrigues ProDev (67 991267853).");
-        return false;
-      }
-      if (userRec.status !== "Ativo") {
-        AuthStore.revokeSession(`Seu acesso está ${userRec.status}. Entre em contato com Rodrigues ProDev (67 991267853).`);
+      if (!userRec || userRec.status !== "Ativo") {
+        AuthStore.revokeSession("Conta inativa ou não encontrada. Contate Rodrigues ProDev (67 991267853).");
         return false;
       }
       return true;
-    }
-
-    function initCrossTabSync() {
-      window.addEventListener("storage", (e) => {
-        if (e.key === STORAGE_KEY) {
-          void hydrateStateFromIndexedDb();
-        }
-      });
     }
 
     function setPickerDate(inputId, isoDate) {
@@ -1856,11 +1634,9 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
         const mm = String(view.month + 1).padStart(2, "0");
         const dd = String(d).padStart(2, "0");
         const isoDay = `${view.year}-${mm}-${dd}`;
-        const isSelected = isoDay === selectedVal;
-        const isToday = isoDay === todayStr;
         const classes = ["mini-cal-day"];
-        if (isSelected) classes.push("is-selected");
-        if (isToday) classes.push("is-today");
+        if (isoDay === selectedVal) classes.push("is-selected");
+        if (isoDay === todayStr) classes.push("is-today");
         dayCellsHtml += `<button type="button" class="${classes.join(" ")}" data-cal-day="${isoDay}">${d}</button>`;
       }
 
@@ -1881,23 +1657,24 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       `;
 
       pop.querySelector(`[data-cal-prev="${inputId}"]`)?.addEventListener("click", () => {
-        const prevDate = new Date(view.year, view.month - 1, 1);
-        calendarViewState[inputId] = { year: prevDate.getFullYear(), month: prevDate.getMonth() };
+        const prev = new Date(view.year, view.month - 1, 1);
+        calendarViewState[inputId] = { year: prev.getFullYear(), month: prev.getMonth() };
         renderMiniCalendar(inputId);
       });
 
       pop.querySelector(`[data-cal-next="${inputId}"]`)?.addEventListener("click", () => {
-        const nextDate = new Date(view.year, view.month + 1, 1);
-        calendarViewState[inputId] = { year: nextDate.getFullYear(), month: nextDate.getMonth() };
+        const next = new Date(view.year, view.month + 1, 1);
+        calendarViewState[inputId] = { year: next.getFullYear(), month: next.getMonth() };
         renderMiniCalendar(inputId);
       });
 
       pop.querySelectorAll("[data-cal-day]").forEach((btn) => {
         btn.addEventListener("click", () => {
           const chosen = btn.getAttribute("data-cal-day");
-          if (!chosen) return;
-          setPickerDate(inputId, chosen);
-          closeAllMiniCalendars();
+          if (chosen) {
+            setPickerDate(inputId, chosen);
+            closeAllMiniCalendars();
+          }
         });
       });
 
@@ -1935,14 +1712,10 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
           }
         });
 
-        popoverEl.addEventListener("click", (e) => {
-          e.stopPropagation();
-        });
+        popoverEl.addEventListener("click", (e) => e.stopPropagation());
       });
 
-      document.addEventListener("click", () => {
-        closeAllMiniCalendars();
-      });
+      document.addEventListener("click", () => closeAllMiniCalendars());
     }
 
     function enqueueAuthTask(fn) {
@@ -1977,9 +1750,9 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       setAuthFeedback("");
 
       if (isAdminMode) {
-        if (userTabs) userTabs.classList.add("hidden");
-        if (registerForm) registerForm.classList.add("hidden");
-        if (loginForm) loginForm.classList.remove("hidden");
+        userTabs?.classList.add("hidden");
+        registerForm?.classList.add("hidden");
+        loginForm?.classList.remove("hidden");
         if (loginUserLabel) loginUserLabel.textContent = "Usuário Administrador";
         if (loginUserInput) loginUserInput.placeholder = "Digite o usuário admin";
         if (subtitleEl) subtitleEl.textContent = "Acesso restrito ao administrador Rodrigues ProDev.";
@@ -1987,7 +1760,7 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
         return;
       }
 
-      if (userTabs) userTabs.classList.remove("hidden");
+      userTabs?.classList.remove("hidden");
       if (loginUserLabel) loginUserLabel.textContent = "Usuário ou CPF";
       if (loginUserInput) loginUserInput.placeholder = "Digite seu usuário ou CPF";
       if (toggleAdminText) toggleAdminText.textContent = "Acesso Restrito (Admin)";
@@ -2028,10 +1801,6 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
         setAuthFeedback("");
 
         try {
-          if (hasCentralDbConfig()) {
-            await CentralDatabase.syncWithCentral(false);
-          }
-
           const rawUser = String(document.getElementById("loginUser")?.value || "").trim();
           const rawPass = String(document.getElementById("loginPass")?.value || "");
 
@@ -2041,15 +1810,10 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
           }
 
           if (isAdminMode) {
-            const adminUserInput = rawUser.trim().toLowerCase();
-            const adminPassInput = rawPass.trim();
-            if (adminUserInput === SUPER_ADMIN_USER.toLowerCase() && adminPassInput === SUPER_ADMIN_PASS.trim()) {
+            if (rawUser.toLowerCase() === SUPER_ADMIN_USER.toLowerCase() && rawPass.trim() === SUPER_ADMIN_PASS) {
               const rememberChecked = Boolean(document.getElementById("rememberMeCheck")?.checked);
-              if (rememberChecked) {
-                saveRememberedCredentials(adminUserInput, adminPassInput, true);
-              } else {
-                clearRememberedCredentials();
-              }
+              if (rememberChecked) saveRememberedCredentials(rawUser.toLowerCase(), rawPass.trim(), true);
+              else clearRememberedCredentials();
 
               state.session = {
                 role: "super_admin",
@@ -2066,27 +1830,22 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
           }
 
           const matchedUser = UserRepository.getUserByLoginOrCpf(rawUser);
-
           if (!matchedUser || String(matchedUser.pass ?? "").trim() !== rawPass.trim()) {
             setAuthFeedback("Usuário/CPF ou senha inválidos. Se ainda não tem conta, clique em <strong>Cadastrar Conta</strong>.", true);
             return;
           }
 
           if (matchedUser.status !== "Ativo") {
-            const statusLabel = matchedUser.status || "Pendente";
             setAuthFeedback(
-              `Seu cadastro está <strong>${escapeHtml(statusLabel)}</strong> e aguarda liberação manual do administrador (cadastros não confirmados expiram em 10 dias). Entre em contato com <strong>Rodrigues ProDev</strong> pelo telefone/WhatsApp <strong>67 991267853</strong>.`,
+              `Seu cadastro está <strong>${escapeHtml(matchedUser.status)}</strong> e aguarda liberação manual do administrador (expira em 10 dias se não confirmado). Contato: <strong>Rodrigues ProDev — 67 991267853</strong>.`,
               true
             );
             return;
           }
 
           const rememberChecked = Boolean(document.getElementById("rememberMeCheck")?.checked);
-          if (rememberChecked) {
-            saveRememberedCredentials(rawUser.trim(), rawPass.trim(), false);
-          } else {
-            clearRememberedCredentials();
-          }
+          if (rememberChecked) saveRememberedCredentials(rawUser, rawPass.trim(), false);
+          else clearRememberedCredentials();
 
           state.session = {
             role: "merchant_user",
@@ -2112,10 +1871,6 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
         setAuthFeedback("");
 
         try {
-          if (hasCentralDbConfig()) {
-            await CentralDatabase.syncWithCentral(false);
-          }
-
           const name = String(document.getElementById("regName")?.value || "").trim();
           const cpf = String(document.getElementById("regCpf")?.value || "").trim();
           const phone = String(document.getElementById("regPhone")?.value || "").trim();
@@ -2128,20 +1883,14 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
             return;
           }
 
-          const duplicate = state.users.some(
-            (u) => String(u.user || "").trim().toLowerCase() === user.toLowerCase()
-          );
-          if (duplicate) {
+          if (state.users.some((u) => String(u.user || "").trim().toLowerCase() === user.toLowerCase())) {
             setAuthFeedback("Este nome de usuário já está em uso. Escolha outro usuário.", true);
             return;
           }
 
           const nowTs = Date.now();
-          const newUserId = "u_" + nowTs + "_" + Math.random().toString(36).slice(2, 6);
-          clearDeletionMarker("users", newUserId);
-
-          const newUser = normalizeUserRecord({
-            id: newUserId,
+          state.users.unshift({
+            id: "u_" + nowTs,
             name,
             cpf,
             phone,
@@ -2154,21 +1903,12 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
             createdAtTs: nowTs,
             updatedAt: nowTs
           });
-          newUser.status = "Pendente";
-          newUser.adminApprovedAt = 0;
-
-          state.users.unshift(newUser);
           saveState();
-          if (hasCentralDbConfig()) {
-            await CentralDatabase.syncWithCentral(true);
-          }
 
           document.getElementById("registerForm")?.reset();
           activeAuthTab = "login";
           applyAuthModeUI();
-          setAuthFeedback(
-            "Cadastro salvo como <strong>Pendente</strong>. Ele ficará pendente por até <strong>10 dias</strong> e expira automaticamente se não for confirmado pelo administrador. Contato: <strong>Rodrigues ProDev — 67 991267853</strong>."
-          );
+          setAuthFeedback("Cadastro enviado como <strong>Pendente</strong>. Acesse o modo Admin para liberar ou aguarde confirmação (expira em 10 dias).");
         } finally {
           setLoginFormBusy(false);
         }
@@ -2182,25 +1922,17 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       const blockedEl = document.getElementById("statBlockedUsers");
       const tbody = document.getElementById("adminUsersTableBody");
 
-      // Filtra rigorosamente apenas usuários reais cadastrados na plataforma (nunca dados sintéticos)
-      const realUsers = (Array.isArray(state.users) ? state.users : [])
-        .filter(u => u && !isSyntheticOrTestRecord(u) && String(u.user || "").trim() !== "");
-
-      const total = realUsers.length;
-      const active = realUsers.filter(u => u.status === "Ativo").length;
-      const pending = realUsers.filter(u => u.status === "Pendente").length;
-      const blocked = realUsers.filter(u => u.status === "Suspenso" || u.status === "Bloqueado").length;
-
-      if (totalEl) totalEl.textContent = String(total);
-      if (activeEl) activeEl.textContent = String(active);
-      if (pendingEl) pendingEl.textContent = String(pending);
-      if (blockedEl) blockedEl.textContent = String(blocked);
+      const realUsers = state.users || [];
+      if (totalEl) totalEl.textContent = String(realUsers.length);
+      if (activeEl) activeEl.textContent = String(realUsers.filter((u) => u.status === "Ativo").length);
+      if (pendingEl) pendingEl.textContent = String(realUsers.filter((u) => u.status === "Pendente").length);
+      if (blockedEl) blockedEl.textContent = String(realUsers.filter((u) => u.status === "Suspenso" || u.status === "Bloqueado").length);
 
       if (!tbody) return;
       tbody.innerHTML = "";
 
-      if (realUsers.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="muted">Nenhum usuário cadastrado na plataforma no momento.</td></tr>`;
+      if (!realUsers.length) {
+        tbody.innerHTML = `<tr><td colspan="5" class="muted">Nenhum usuário cadastrado no momento.</td></tr>`;
         return;
       }
 
@@ -2223,10 +1955,7 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
             Usuário: <strong>${escapeHtml(u.user)}</strong><br />
             <span class="muted">Senha: ${escapeHtml(u.pass)}</span>
           </td>
-          <td>
-            <span class="badge ${badgeClass}">${escapeHtml(u.status)}</span>
-            ${u.status === "Pendente" ? `<br /><span class="muted" style="font-size:0.72rem;">Expira em 10 dias se não confirmado</span>` : ""}
-          </td>
+          <td><span class="badge ${badgeClass}">${escapeHtml(u.status)}</span></td>
           <td>
             <div class="action-group">
               ${u.status !== "Ativo" ? `<button type="button" class="btn-approve" data-admin-action="Ativo" data-user-id="${escapeHtml(u.id)}">Ativar / Liberar</button>` : ""}
@@ -2239,27 +1968,23 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
         tbody.appendChild(tr);
       });
 
-      const actionButtons = tbody.querySelectorAll("button[data-admin-action]");
-      actionButtons.forEach((btn) => {
+      tbody.querySelectorAll("button[data-admin-action]").forEach((btn) => {
         btn.addEventListener("click", () => {
           const uid = btn.getAttribute("data-user-id");
           const nextStatus = btn.getAttribute("data-admin-action");
           if (uid && nextStatus) {
             UserRepository.updateUserStatus(uid, nextStatus);
             renderSuperAdmin();
-            syncView();
           }
         });
       });
 
-      const deleteButtons = tbody.querySelectorAll("button[data-admin-delete]");
-      deleteButtons.forEach((btn) => {
+      tbody.querySelectorAll("button[data-admin-delete]").forEach((btn) => {
         btn.addEventListener("click", () => {
           const uid = btn.getAttribute("data-admin-delete");
           if (uid) {
             UserRepository.deleteUser(uid);
             renderSuperAdmin();
-            syncView();
           }
         });
       });
@@ -2271,50 +1996,68 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       const devBody = document.getElementById("adminDevicesTableBody");
       if (!devBody) return;
       devBody.innerHTML = "";
-
-      const logs = Array.isArray(state.deviceLogs) ? state.deviceLogs : [];
+      const logs = state.deviceLogs || [];
       if (!logs.length) {
-        devBody.innerHTML = `<tr><td colspan="5" class="muted">Nenhum acesso de dispositivo registrado ainda.</td></tr>`;
+        devBody.innerHTML = `<tr><td colspan="5" class="muted">Nenhum acesso registrado ainda.</td></tr>`;
         return;
       }
-
       logs.forEach((entry) => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td><strong>${escapeHtml(entry.userLabel || "Usuário")}</strong></td>
-          <td>${escapeHtml(entry.deviceType || "Desconhecido")}</td>
-          <td>${escapeHtml(entry.platform || "Desconhecida")}</td>
-          <td><span class="muted">${escapeHtml(entry.browserDetails || "")}</span></td>
-          <td>${escapeHtml(entry.accessedAtText || "")}</td>
+          <td><strong>${escapeHtml(entry.userLabel)}</strong></td>
+          <td>${escapeHtml(entry.deviceType)}</td>
+          <td>${escapeHtml(entry.platform)}</td>
+          <td><span class="muted">${escapeHtml(entry.browserDetails)}</span></td>
+          <td>${escapeHtml(entry.accessedAtText)}</td>
         `;
         devBody.appendChild(tr);
       });
     }
 
+    function updateInstallmentPreview() {
+      const value = parseFloat(document.getElementById("purchValue")?.value) || 0;
+      const hasDown = document.getElementById("purchDownMode")?.value === "with";
+      const downPayment = hasDown ? Math.max(0, parseFloat(document.getElementById("purchDownPayment")?.value) || 0) : 0;
+      const count = Math.max(1, parseInt(document.getElementById("purchInstallments")?.value, 10) || 1);
+      const previewEl = document.getElementById("installmentPreview");
+      if (!previewEl) return;
+
+      if (value <= 0) {
+        previewEl.textContent = "Informe o valor da compra para ver o resumo das parcelas.";
+        return;
+      }
+      if (hasDown && downPayment >= value) {
+        previewEl.textContent = "A entrada deve ser menor que o valor total da compra.";
+        return;
+      }
+
+      const financed = Math.max(0, Number((value - downPayment).toFixed(2)));
+      const financedCents = Math.round(financed * 100);
+      const baseCents = Math.floor(financedCents / count);
+      const remCents = financedCents - (baseCents * count);
+      const baseVal = formatCurrency(baseCents / 100);
+      const lastVal = formatCurrency((baseCents + remCents) / 100);
+      const instText = remCents > 0 && count > 1 ? `${count - 1}x de ${baseVal} + 1x de ${lastVal}` : `${count}x de ${lastVal}`;
+      const downText = hasDown && downPayment > 0 ? `Entrada de ${formatCurrency(downPayment)} + ` : "";
+      previewEl.textContent = `Resumo: ${downText}${instText} (Parcelado: ${formatCurrency(financed)} • Total: ${formatCurrency(value)})`;
+    }
+
     function renderMerchantPanel() {
-      if (!assertUserAuthorized("visualizar o painel da mercearia")) return;
+      if (!assertUserAuthorized()) return;
       const ownerUserId = state.session?.userId;
-      const myCusts = state.groceryCustomers.filter(c => c.ownerUserId === ownerUserId);
-      const myPurchs = state.purchases.filter(p => p.ownerUserId === ownerUserId);
+      const myCusts = state.groceryCustomers.filter((c) => c.ownerUserId === ownerUserId);
+      const myPurchs = state.purchases.filter((p) => p.ownerUserId === ownerUserId);
 
-      const openTotal = myPurchs
-        .filter(p => p.status === "Em Aberto")
-        .reduce((acc, p) => acc + (Number(p.value) || 0), 0);
+      const openTotal = myPurchs.filter((p) => p.status === "Em Aberto").reduce((acc, p) => acc + (Number(p.value) || 0), 0);
+      const paidTotal = myPurchs.filter((p) => p.status === "Pago").reduce((acc, p) => acc + (Number(p.value) || 0), 0);
 
-      const paidTotal = myPurchs
-        .filter(p => p.status === "Pago")
-        .reduce((acc, p) => acc + (Number(p.value) || 0), 0);
-
-      const custCountEl = document.getElementById("statMerchantCustomers");
-      const openEl = document.getElementById("statMerchantOpen");
-      const paidEl = document.getElementById("statMerchantPaid");
-      if (custCountEl) custCountEl.textContent = String(myCusts.length);
-      if (openEl) openEl.textContent = formatCurrency(openTotal);
-      if (paidEl) paidEl.textContent = formatCurrency(paidTotal);
+      document.getElementById("statMerchantCustomers").textContent = String(myCusts.length);
+      document.getElementById("statMerchantOpen").textContent = formatCurrency(openTotal);
+      document.getElementById("statMerchantPaid").textContent = formatCurrency(paidTotal);
 
       const selectEl = document.getElementById("purchCustomer");
       if (selectEl) {
-        const previousVal = selectEl.value;
+        const prevVal = selectEl.value;
         selectEl.innerHTML = "";
         if (!myCusts.length) {
           const opt = document.createElement("option");
@@ -2329,9 +2072,7 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
             opt.textContent = `${c.name} — Livre: ${formatCurrency(avail)}`;
             selectEl.appendChild(opt);
           });
-          if (previousVal && myCusts.some(c => c.id === previousVal)) {
-            selectEl.value = previousVal;
-          }
+          if (prevVal && myCusts.some((c) => c.id === prevVal)) selectEl.value = prevVal;
         }
       }
 
@@ -2341,17 +2082,17 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       if (custBody) {
         custBody.innerHTML = "";
         if (!myCusts.length) {
-          custBody.innerHTML = `<tr><td colspan="5" class="muted">Nenhum cliente cadastrado na sua mercearia ainda.</td></tr>`;
+          custBody.innerHTML = `<tr><td colspan="5" class="muted">Nenhum cliente cadastrado ainda.</td></tr>`;
         } else {
           myCusts.forEach((c) => {
             const lim = Number(c.limit) || 0;
             const used = Number(c.used) || 0;
             const avail = Math.max(0, lim - used);
-            const addrParts = [c.street, c.propertyType && c.number ? `${c.propertyType} ${c.number}` : (c.propertyType || c.number)].filter(Boolean);
+            const addr = [c.street, c.propertyType && c.number ? `${c.propertyType} ${c.number}` : (c.propertyType || c.number)].filter(Boolean).join(", ");
             const tr = document.createElement("tr");
             tr.innerHTML = `
-              <td><strong>${escapeHtml(c.name)}</strong><br /><span class="muted">${escapeHtml(c.cpf || "")}</span></td>
-              <td>${escapeHtml(addrParts.join(", ") || "Não informado")}</td>
+              <td><strong>${escapeHtml(c.name)}</strong><br /><span class="muted">${escapeHtml(c.cpf)}</span></td>
+              <td>${escapeHtml(addr || "Não informado")}</td>
               <td>${formatCurrency(lim)}</td>
               <td>Usado: ${formatCurrency(used)}<br /><strong>Livre: ${formatCurrency(avail)}</strong></td>
               <td><button type="button" class="btn-danger" data-del-cust="${escapeHtml(c.id)}">Excluir</button></td>
@@ -2361,15 +2102,9 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
 
           custBody.querySelectorAll("button[data-del-cust]").forEach((btn) => {
             btn.addEventListener("click", () => {
-              if (!assertUserAuthorized("excluir cliente da mercearia")) return;
               const cid = btn.getAttribute("data-del-cust");
-              if (!cid) return;
-              const nowTs = Date.now();
-              recordDeletion("customer", cid, nowTs);
-              const removedPurchs = state.purchases.filter(p => p.customerId === cid);
-              recordDeletion("purchase", removedPurchs.map(p => p.id), nowTs);
-              state.groceryCustomers = state.groceryCustomers.filter(c => c.id !== cid);
-              state.purchases = state.purchases.filter(p => p.customerId !== cid);
+              state.groceryCustomers = state.groceryCustomers.filter((c) => c.id !== cid);
+              state.purchases = state.purchases.filter((p) => p.customerId !== cid);
               saveState();
               renderMerchantPanel();
             });
@@ -2380,9 +2115,8 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       const tbody = document.getElementById("merchantPurchasesBody");
       if (!tbody) return;
       tbody.innerHTML = "";
-
       if (!myPurchs.length) {
-        tbody.innerHTML = `<tr><td colspan="6" class="muted">Nenhuma compra ou parcela registrada ainda.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="muted">Nenhuma compra registrada ainda.</td></tr>`;
         return;
       }
 
@@ -2407,17 +2141,12 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
 
       tbody.querySelectorAll("button[data-pay-purch]").forEach((btn) => {
         btn.addEventListener("click", () => {
-          if (!assertUserAuthorized("dar baixa em parcela")) return;
           const pid = btn.getAttribute("data-pay-purch");
-          const purch = state.purchases.find(item => item.id === pid);
+          const purch = state.purchases.find((item) => item.id === pid);
           if (!purch || purch.status === "Pago") return;
           purch.status = "Pago";
-          purch.updatedAt = Date.now();
-          const cust = state.groceryCustomers.find(c => c.id === purch.customerId);
-          if (cust) {
-            cust.used = Math.max(0, Number(((Number(cust.used) || 0) - (Number(purch.value) || 0)).toFixed(2)));
-            cust.updatedAt = Date.now();
-          }
+          const cust = state.groceryCustomers.find((c) => c.id === purch.customerId);
+          if (cust) cust.used = Math.max(0, Number(((Number(cust.used) || 0) - (Number(purch.value) || 0)).toFixed(2)));
           saveState();
           renderMerchantPanel();
         });
@@ -2425,57 +2154,18 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
 
       tbody.querySelectorAll("button[data-del-purch]").forEach((btn) => {
         btn.addEventListener("click", () => {
-          if (!assertUserAuthorized("excluir compra ou parcela")) return;
           const pid = btn.getAttribute("data-del-purch");
-          if (!pid) return;
-          const purch = state.purchases.find(item => item.id === pid);
+          const purch = state.purchases.find((item) => item.id === pid);
           if (!purch) return;
           if (purch.status === "Em Aberto") {
-            const cust = state.groceryCustomers.find(c => c.id === purch.customerId);
-            if (cust) {
-              cust.used = Math.max(0, Number(((Number(cust.used) || 0) - (Number(purch.value) || 0)).toFixed(2)));
-              cust.updatedAt = Date.now();
-            }
+            const cust = state.groceryCustomers.find((c) => c.id === purch.customerId);
+            if (cust) cust.used = Math.max(0, Number(((Number(cust.used) || 0) - (Number(purch.value) || 0)).toFixed(2)));
           }
-          recordDeletion("purchase", pid, Date.now());
-          state.purchases = state.purchases.filter(item => item.id !== pid);
+          state.purchases = state.purchases.filter((item) => item.id !== pid);
           saveState();
           renderMerchantPanel();
         });
       });
-    }
-
-    function updateInstallmentPreview() {
-      const value = parseFloat(document.getElementById("purchValue")?.value) || 0;
-      const hasDown = document.getElementById("purchDownMode")?.value === "with";
-      const downPayment = hasDown ? Math.max(0, parseFloat(document.getElementById("purchDownPayment")?.value) || 0) : 0;
-      const count = Math.max(1, parseInt(document.getElementById("purchInstallments")?.value, 10) || 1);
-      const previewEl = document.getElementById("installmentPreview");
-      if (!previewEl) return;
-
-      if (value <= 0) {
-        previewEl.textContent = "Informe o valor da compra para ver o resumo das parcelas.";
-        return;
-      }
-
-      if (hasDown && downPayment >= value) {
-        previewEl.textContent = "A entrada deve ser menor que o valor total da compra.";
-        return;
-      }
-
-      const financed = Math.max(0, Number((value - downPayment).toFixed(2)));
-      const financedCents = Math.round(financed * 100);
-      const baseCents = Math.floor(financedCents / count);
-      const remCents = financedCents - (baseCents * count);
-      const baseVal = formatCurrency(baseCents / 100);
-      const lastVal = formatCurrency((baseCents + remCents) / 100);
-
-      const instText = remCents > 0 && count > 1
-        ? `${count - 1}x de ${baseVal} + 1x de ${lastVal}`
-        : `${count}x de ${lastVal}`;
-
-      const downText = hasDown && downPayment > 0 ? `Entrada de ${formatCurrency(downPayment)} + ` : "";
-      previewEl.textContent = `Resumo: ${downText}${instText} (Saldo parcelado: ${formatCurrency(financed)} • Total: ${formatCurrency(value)})`;
     }
 
     function bindMerchantEvents() {
@@ -2484,10 +2174,7 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       initMiniCalendars();
 
       document.getElementById("purchDownMode")?.addEventListener("change", (e) => {
-        const group = document.getElementById("downPaymentGroup");
-        if (group) {
-          group.classList.toggle("hidden", e.target.value !== "with");
-        }
+        document.getElementById("downPaymentGroup")?.classList.toggle("hidden", e.target.value !== "with");
         updateInstallmentPreview();
       });
 
@@ -2498,7 +2185,7 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
 
       document.getElementById("groceryCustomerForm")?.addEventListener("submit", (e) => {
         e.preventDefault();
-        if (!assertUserAuthorized("cadastrar cliente da mercearia")) return;
+        if (!assertUserAuthorized()) return;
         const ownerUserId = state.session?.userId;
         const name = String(document.getElementById("gcName")?.value || "").trim();
         const cpf = String(document.getElementById("gcCpf")?.value || "").trim();
@@ -2506,12 +2193,10 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
         const street = String(document.getElementById("gcStreet")?.value || "").trim();
         const propertyType = String(document.getElementById("gcPropertyType")?.value || "Casa").trim();
         const number = String(document.getElementById("gcNumber")?.value || "").trim();
-
         if (!name || !cpf) return;
 
-        const nowTs = Date.now();
         state.groceryCustomers.unshift({
-          id: "c_" + nowTs + "_" + Math.random().toString(36).slice(2, 6),
+          id: "c_" + Date.now(),
           ownerUserId,
           name,
           cpf,
@@ -2520,9 +2205,8 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
           number,
           limit,
           used: 0,
-          updatedAt: nowTs
+          updatedAt: Date.now()
         });
-
         saveState();
         document.getElementById("groceryCustomerForm")?.reset();
         const propSel = document.getElementById("gcPropertyType");
@@ -2532,50 +2216,33 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
 
       document.getElementById("purchaseForm")?.addEventListener("submit", (e) => {
         e.preventDefault();
-        if (!assertUserAuthorized("registrar compra na mercearia")) return;
+        if (!assertUserAuthorized()) return;
         const ownerUserId = state.session?.userId;
         const customerId = String(document.getElementById("purchCustomer")?.value || "").trim();
         const product = String(document.getElementById("purchProduct")?.value || "").trim();
         const value = parseFloat(document.getElementById("purchValue")?.value) || 0;
-        const hasDownPayment = document.getElementById("purchDownMode")?.value === "with";
-        const downPayment = hasDownPayment ? Math.max(0, parseFloat(document.getElementById("purchDownPayment")?.value) || 0) : 0;
+        const hasDown = document.getElementById("purchDownMode")?.value === "with";
+        const downPayment = hasDown ? Math.max(0, parseFloat(document.getElementById("purchDownPayment")?.value) || 0) : 0;
         const installmentCount = Math.max(1, Math.min(24, parseInt(document.getElementById("purchInstallments")?.value, 10) || 1));
         const buyDate = String(document.getElementById("purchDate")?.value || todayStr).trim();
         const dueDate = String(document.getElementById("purchDueDate")?.value || nextMonthStr).trim();
         const msgEl = document.getElementById("purchaseFeedback");
 
-        const cust = state.groceryCustomers.find(c => c.id === customerId && c.ownerUserId === ownerUserId);
-        if (!cust) {
+        const cust = state.groceryCustomers.find((c) => c.id === customerId && c.ownerUserId === ownerUserId);
+        if (!cust || !product || value <= 0) {
           if (msgEl) {
             msgEl.className = "feedback-msg feedback-error";
-            msgEl.textContent = "Selecione um cliente válido antes de registrar a compra.";
-          }
-          return;
-        }
-
-        if (!product || value <= 0) {
-          if (msgEl) {
-            msgEl.className = "feedback-msg feedback-error";
-            msgEl.textContent = "Preencha a descrição e um valor total maior que zero.";
-          }
-          return;
-        }
-
-        if (hasDownPayment && downPayment >= value) {
-          if (msgEl) {
-            msgEl.className = "feedback-msg feedback-error";
-            msgEl.textContent = "A entrada deve ser menor que o valor total da compra.";
+            msgEl.textContent = "Selecione um cliente e preencha descrição e valor maior que zero.";
           }
           return;
         }
 
         const financed = Math.max(0, Number((value - downPayment).toFixed(2)));
         const avail = Math.max(0, (Number(cust.limit) || 0) - (Number(cust.used) || 0));
-
         if (financed > avail) {
           if (msgEl) {
             msgEl.className = "feedback-msg feedback-error";
-            msgEl.textContent = `Saldo parcelado (${formatCurrency(financed)}) excede o limite disponível de ${cust.name} (${formatCurrency(avail)}).`;
+            msgEl.textContent = `Saldo parcelado (${formatCurrency(financed)}) excede o limite disponível (${formatCurrency(avail)}).`;
           }
           return;
         }
@@ -2585,49 +2252,27 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
         const remCents = financedCents - (baseCents * installmentCount);
         const nowTs = Date.now();
 
-        if (hasDownPayment && downPayment > 0) {
-          state.purchases.unshift({
-            id: "p_down_" + nowTs + "_" + Math.random().toString(36).slice(2, 5),
-            ownerUserId,
-            customerId: cust.id,
-            customerName: cust.name,
-            product: `${product} (Entrada)`,
-            value: Number(downPayment.toFixed(2)),
-            buyDate,
-            dueDate: buyDate,
-            status: "Pago",
-            updatedAt: nowTs
-          });
-        }
-
         for (let i = 1; i <= installmentCount; i++) {
           const instCents = i === installmentCount ? (baseCents + remCents) : baseCents;
-          const instValue = Number((instCents / 100).toFixed(2));
-          const instDueDate = addMonthsToDateStr(dueDate, i - 1);
-
           state.purchases.unshift({
-            id: "p_" + nowTs + "_" + i + "_" + Math.random().toString(36).slice(2, 5),
+            id: "p_" + nowTs + "_" + i,
             ownerUserId,
             customerId: cust.id,
             customerName: cust.name,
             product: installmentCount > 1 ? `${product} (${i}/${installmentCount})` : product,
-            value: instValue,
+            value: Number((instCents / 100).toFixed(2)),
             buyDate,
-            dueDate: instDueDate,
+            dueDate: addMonthsToDateStr(dueDate, i - 1),
             status: "Em Aberto",
             updatedAt: nowTs
           });
         }
 
         cust.used = Number(((Number(cust.used) || 0) + financed).toFixed(2));
-        cust.updatedAt = nowTs;
-
         saveState();
         document.getElementById("purchaseForm")?.reset();
         setPickerDate("purchDate", todayStr);
         setPickerDate("purchDueDate", nextMonthStr);
-        const downGroup = document.getElementById("downPaymentGroup");
-        if (downGroup) downGroup.classList.add("hidden");
         if (msgEl) {
           msgEl.className = "feedback-msg";
           msgEl.innerHTML = `✔ Compra registrada para <strong>${escapeHtml(cust.name)}</strong> (${installmentCount}x).`;
@@ -2635,373 +2280,49 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
         renderMerchantPanel();
       });
 
-      const normalizeText = (txt) =>
-        String(txt || "")
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .trim();
-
       const handleAiCommand = (customText = null) => {
-        if (!assertUserAuthorized("usar o assistente de IA")) return;
+        if (!assertUserAuthorized()) return;
         const ownerUserId = state.session?.userId;
         const currentUser = UserRepository.getUserById(ownerUserId);
-        const myCusts = state.groceryCustomers.filter(c => c.ownerUserId === ownerUserId);
-        const myPurchs = state.purchases.filter(p => p.ownerUserId === ownerUserId);
+        const myCusts = state.groceryCustomers.filter((c) => c.ownerUserId === ownerUserId);
+        const myPurchs = state.purchases.filter((p) => p.ownerUserId === ownerUserId);
         const aiOut = document.getElementById("aiOutput");
         const inputEl = document.getElementById("aiInput");
         if (!aiOut) return;
 
         const rawPrompt = customText !== null ? String(customText) : String(inputEl?.value || "").trim();
-        if (!rawPrompt) {
-          aiOut.innerHTML = "<strong>IA Rodrigues ProDev:</strong>\nDigite um comando ou clique em uma das opções rápidas acima.";
-          return;
+        const cmd = rawPrompt.toLowerCase();
+
+        if (cmd.includes("perfil")) {
+          aiOut.innerHTML = `<strong>IA Rodrigues ProDev — Meu Perfil:</strong>\n• Loja: <strong>${escapeHtml(currentUser?.name || "-")}</strong>\n• Usuário: <strong>${escapeHtml(currentUser?.user || "-")}</strong>\n• Status: <strong>${escapeHtml(currentUser?.status || "Ativo")}</strong>`;
+        } else if (cmd.includes("quitad")) {
+          const paid = myPurchs.filter((p) => p.status === "Pago");
+          aiOut.innerHTML = paid.length
+            ? `<strong>IA Rodrigues ProDev — Parcelas Quitadas (${paid.length}):</strong>\n` + paid.map((p) => `• ${escapeHtml(p.customerName)} — ${escapeHtml(p.product)}: <strong>${formatCurrency(p.value)}</strong>`).join("\n")
+            : `<strong>IA Rodrigues ProDev — Parcelas Quitadas:</strong>\nNenhuma parcela quitada encontrada.`;
+        } else if (cmd.includes("vencid")) {
+          const over = myPurchs.filter((p) => p.status === "Em Aberto" && p.dueDate < todayStr);
+          aiOut.innerHTML = over.length
+            ? `<strong>IA Rodrigues ProDev — Vencidos (${over.length}):</strong>\n` + over.map((p) => `• ${escapeHtml(p.customerName)} — ${formatCurrency(p.value)} (${formatDatePtBr(p.dueDate)})`).join("\n")
+            : `<strong>IA Rodrigues ProDev — Vencidos:</strong>\nNenhuma parcela vencida no momento. ✔`;
+        } else if (cmd.includes("limite")) {
+          aiOut.innerHTML = myCusts.length
+            ? `<strong>IA Rodrigues ProDev — Situação de Limites:</strong>\n` + myCusts.map((c) => `• <strong>${escapeHtml(c.name)}</strong> — Limite: ${formatCurrency(c.limit)} | Usado: ${formatCurrency(c.used)} | <strong>Livre: ${formatCurrency(Math.max(0, c.limit - c.used))}</strong>`).join("\n")
+            : `<strong>IA Rodrigues ProDev — Situação de Limites:</strong>\nNenhum cliente cadastrado.`;
+        } else {
+          const openVal = myPurchs.filter((p) => p.status === "Em Aberto").reduce((a, b) => a + (Number(b.value) || 0), 0);
+          const paidVal = myPurchs.filter((p) => p.status === "Pago").reduce((a, b) => a + (Number(b.value) || 0), 0);
+          aiOut.innerHTML = `<strong>IA Rodrigues ProDev — Resumo do Crediário:</strong>\n• Clientes: <strong>${myCusts.length}</strong>\n• Em aberto: <strong>${formatCurrency(openVal)}</strong>\n• Quitadas: <strong>${formatCurrency(paidVal)}</strong>`;
         }
 
-        const promptClean = normalizeText(rawPrompt);
-        const todayIso = new Date().toISOString().split("T")[0];
-
-        // 1. MEU PERFIL (RESTRITO À CONTA LOGADA)
-        if (promptClean.includes("meu perfil") || promptClean.includes("minha conta") || promptClean.includes("perfil")) {
-          aiOut.innerHTML =
-            `<strong>IA Rodrigues ProDev — Meu Perfil:</strong>\n` +
-            `• Nome / Mercearia: <strong>${escapeHtml(currentUser?.name || state.session?.name || "Não informado")}</strong>\n` +
-            `• Usuário: <strong>${escapeHtml(currentUser?.user || state.session?.user || "-")}</strong>\n` +
-            `• Status da Conta: <strong>${escapeHtml(currentUser?.status || "Ativo")}</strong>\n` +
-            `• Telefone: ${escapeHtml(currentUser?.phone || "Não informado")}\n` +
-            `• Endereço: ${escapeHtml(currentUser?.address || "Não informado")}`;
-          if (customText === null && inputEl) inputEl.value = "";
-          return;
-        }
-
-        // 2. RESUMO DO CREDIÁRIO
-        if (promptClean.includes("resumo") || promptClean.includes("crediario") || promptClean.includes("visao geral")) {
-          const openItems = myPurchs.filter(p => p.status === "Em Aberto");
-          const paidItems = myPurchs.filter(p => p.status === "Pago");
-          const overdueItems = openItems.filter(p => p.dueDate < todayIso);
-          const totalOpen = openItems.reduce((acc, p) => acc + (Number(p.value) || 0), 0);
-          const totalPaid = paidItems.reduce((acc, p) => acc + (Number(p.value) || 0), 0);
-          const totalOverdue = overdueItems.reduce((acc, p) => acc + (Number(p.value) || 0), 0);
-
-          aiOut.innerHTML =
-            `<strong>IA Rodrigues ProDev — Resumo do Crediário:</strong>\n` +
-            `• Clientes cadastrados: <strong>${myCusts.length}</strong>\n` +
-            `• Saldo em aberto (${openItems.length} parcela(s)): <strong>${formatCurrency(totalOpen)}</strong>\n` +
-            `• Parcelas quitadas (${paidItems.length}): <strong>${formatCurrency(totalPaid)}</strong>\n` +
-            `• Parcelas vencidas (${overdueItems.length}): <strong>${formatCurrency(totalOverdue)}</strong>`;
-          if (customText === null && inputEl) inputEl.value = "";
-          return;
-        }
-
-        // 3. SITUAÇÃO DE LIMITES
-        if (
-          promptClean.includes("situacao de limites") ||
-          promptClean.includes("limites") ||
-          promptClean.includes("limite disponivel") ||
-          promptClean.includes("saldo livre")
-        ) {
-          if (!myCusts.length) {
-            aiOut.innerHTML = "<strong>IA Rodrigues ProDev — Situação de Limites:</strong>\nNenhum cliente cadastrado na sua mercearia ainda.";
-            if (customText === null && inputEl) inputEl.value = "";
-            return;
-          }
-
-          const lines = myCusts.map((c) => {
-            const lim = Number(c.limit) || 0;
-            const used = Number(c.used) || 0;
-            const avail = Math.max(0, lim - used);
-            return `• <strong>${escapeHtml(c.name)}</strong> — Limite: ${formatCurrency(lim)} | Usado: ${formatCurrency(used)} | <strong>Livre: ${formatCurrency(avail)}</strong>`;
-          });
-
-          aiOut.innerHTML =
-            `<strong>IA Rodrigues ProDev — Situação de Limites (${myCusts.length} cliente(s)):</strong>\n` +
-            lines.join("\n");
-          if (customText === null && inputEl) inputEl.value = "";
-          return;
-        }
-
-        // 4. PARCELAS QUITADAS / PAGAS
-        if (
-          promptClean.includes("quitad") ||
-          promptClean.includes("pagas") ||
-          promptClean.includes("pago") ||
-          promptClean.includes("pagou") ||
-          promptClean.includes("recebid")
-        ) {
-          const paidPurchases = myPurchs.filter(p => p.status === "Pago");
-          if (!paidPurchases.length) {
-            aiOut.innerHTML =
-              `<strong>IA Rodrigues ProDev — Parcelas Quitadas:</strong>\n` +
-              `Nenhuma parcela quitada foi encontrada no seu painel até o momento.`;
-            if (customText === null && inputEl) inputEl.value = "";
-            return;
-          }
-
-          const totalPaidValue = paidPurchases.reduce((acc, p) => acc + (Number(p.value) || 0), 0);
-          const uniqueClients = Array.from(new Set(paidPurchases.map(p => p.customerName).filter(Boolean)));
-          const lines = paidPurchases.map(
-            p => `• <strong>${escapeHtml(p.customerName)}</strong> — ${escapeHtml(p.product)}: <strong>${formatCurrency(p.value)}</strong> (Venc.: ${formatDatePtBr(p.dueDate)})`
-          );
-
-          aiOut.innerHTML =
-            `<strong>IA Rodrigues ProDev — Parcelas Quitadas (${paidPurchases.length} parcela(s) • ${uniqueClients.length} cliente(s)):</strong>\n` +
-            `• Total quitado / recebido: <strong>${formatCurrency(totalPaidValue)}</strong>\n\n` +
-            lines.join("\n");
-          if (customText === null && inputEl) inputEl.value = "";
-          return;
-        }
-
-        // 4. PARCELAS EM ABERTO
-        if (promptClean.includes("parcelas em aberto") || promptClean.includes("em aberto")) {
-          const openPurchases = myPurchs.filter(p => p.status === "Em Aberto");
-          if (!openPurchases.length) {
-            aiOut.innerHTML = "<strong>IA Rodrigues ProDev — Parcelas em Aberto:</strong>\nNenhuma parcela em aberto no momento.";
-            if (customText === null && inputEl) inputEl.value = "";
-            return;
-          }
-
-          const totalOpenValue = openPurchases.reduce((acc, p) => acc + (Number(p.value) || 0), 0);
-          const lines = openPurchases.map(
-            p => `• <strong>${escapeHtml(p.customerName)}</strong> — ${escapeHtml(p.product)}: <strong>${formatCurrency(p.value)}</strong> (Vence: ${formatDatePtBr(p.dueDate)})`
-          );
-
-          aiOut.innerHTML =
-            `<strong>IA Rodrigues ProDev — Parcelas em Aberto (${openPurchases.length} • Total: ${formatCurrency(totalOpenValue)}):</strong>\n` +
-            lines.join("\n");
-          if (customText === null && inputEl) inputEl.value = "";
-          return;
-        }
-
-        // 5. APAGAR / EXCLUIR CLIENTE
-        if (
-          promptClean.includes("apagar cliente") ||
-          promptClean.includes("excluir cliente") ||
-          promptClean.includes("deletar cliente") ||
-          promptClean.startsWith("apagar ") ||
-          promptClean.startsWith("excluir ")
-        ) {
-          const targetCust = myCusts.find(
-            c => promptClean.includes(normalizeText(c.name)) || promptClean.includes(normalizeText(c.name.split(" ")[0]))
-          );
-
-          if (!targetCust) {
-            aiOut.innerHTML = "<strong>IA Rodrigues ProDev:</strong>\nInforme o nome do cliente cadastrado para excluir. Ex.: <em>'apagar cliente Carlos'</em>.";
-            if (customText === null && inputEl) inputEl.value = "";
-            return;
-          }
-
-          const deletedName = targetCust.name;
-          const nowTs = Date.now();
-          recordDeletion("customer", targetCust.id, nowTs);
-          const relatedPurchases = state.purchases.filter((p) => p.customerId === targetCust.id);
-          recordDeletion("purchase", relatedPurchases.map((p) => p.id), nowTs);
-
-          state.groceryCustomers = state.groceryCustomers.filter(c => c.id !== targetCust.id);
-          state.purchases = state.purchases.filter(p => p.customerId !== targetCust.id);
-
-          saveState();
-          renderMerchantPanel();
-
-          aiOut.innerHTML = `<strong>IA Rodrigues ProDev [CLIENTE EXCLUÍDO]:</strong>\n✔ Cliente <strong>${escapeHtml(deletedName)}</strong> e seus lançamentos foram removidos do seu painel.`;
-          if (customText === null && inputEl) inputEl.value = "";
-          return;
-        }
-
-        // 6. EDITAR / ALTERAR LIMITE DE CRÉDITO DO CLIENTE
-        if (
-          promptClean.includes("editar limite") ||
-          promptClean.includes("alterar limite") ||
-          promptClean.includes("mudar limite") ||
-          promptClean.includes("novo limite") ||
-          (promptClean.includes("limite") && (promptClean.includes("para") || promptClean.includes("valor")))
-        ) {
-          const targetCust = myCusts.find(
-            c => promptClean.includes(normalizeText(c.name)) || promptClean.includes(normalizeText(c.name.split(" ")[0]))
-          );
-          const numbersFound = rawPrompt.match(/(\d+[\.,]?\d*)/g);
-
-          if (!targetCust) {
-            aiOut.innerHTML = "<strong>IA Rodrigues ProDev:</strong>\nMencione o nome do cliente para alterar o limite. Ex.: <em>'editar limite de Carlos para 1500'</em>.";
-            if (customText === null && inputEl) inputEl.value = "";
-            return;
-          }
-
-          if (!numbersFound || !numbersFound.length) {
-            aiOut.innerHTML = `<strong>IA Rodrigues ProDev:</strong>\nInforme o novo valor do limite para <strong>${escapeHtml(targetCust.name)}</strong>. Ex.: <em>'mudar limite de ${escapeHtml(targetCust.name.split(" ")[0])} para 2000'</em>.`;
-            if (customText === null && inputEl) inputEl.value = "";
-            return;
-          }
-
-          const newLimit = parseFloat(numbersFound[numbersFound.length - 1].replace(",", "."));
-          if (isNaN(newLimit) || newLimit < 0) {
-            aiOut.innerHTML = "<strong>IA Rodrigues ProDev:</strong>\nInforme um valor numérico válido para o limite.";
-            if (customText === null && inputEl) inputEl.value = "";
-            return;
-          }
-
-          targetCust.limit = newLimit;
-          targetCust.updatedAt = Date.now();
-
-          saveState();
-          renderMerchantPanel();
-
-          const avail = Math.max(0, targetCust.limit - (targetCust.used || 0));
-          aiOut.innerHTML = `<strong>IA Rodrigues ProDev [LIMITE ATUALIZADO]:</strong>\n✔ Limite de <strong>${escapeHtml(targetCust.name)}</strong> alterado para <strong>${formatCurrency(newLimit)}</strong>.\n• Disponível agora: <strong>${formatCurrency(avail)}</strong>`;
-          if (customText === null && inputEl) inputEl.value = "";
-          return;
-        }
-
-        // 7. FILTRAR / BUSCAR CLIENTE
-        if (
-          promptClean.includes("filtrar") ||
-          promptClean.includes("buscar") ||
-          promptClean.includes("procurar") ||
-          promptClean.includes("ver cliente") ||
-          promptClean.includes("dados de")
-        ) {
-          const targetCust = myCusts.find(
-            c => promptClean.includes(normalizeText(c.name)) || promptClean.includes(normalizeText(c.name.split(" ")[0]))
-          );
-
-          if (!targetCust) {
-            aiOut.innerHTML = "<strong>IA Rodrigues ProDev:</strong>\nInforme o nome do cliente para filtrar. Ex.: <em>'filtrar cliente Carlos'</em>.";
-            if (customText === null && inputEl) inputEl.value = "";
-            return;
-          }
-
-          const custPurchases = myPurchs.filter(p => p.customerId === targetCust.id);
-          const openPurchases = custPurchases.filter(p => p.status === "Em Aberto");
-          const paidCustomerPurchases = custPurchases.filter(p => p.status === "Pago");
-          const avail = Math.max(0, targetCust.limit - (targetCust.used || 0));
-
-          let details = `<strong>Ficha do Cliente (${escapeHtml(targetCust.name)}):</strong>\n`;
-          details += `• CPF/Tel: ${escapeHtml(targetCust.cpf)}\n`;
-          details += `• Endereço: ${escapeHtml(targetCust.street || "Não informado")} (${escapeHtml(targetCust.propertyType)} Nº ${escapeHtml(targetCust.number)})\n`;
-          details += `• Limite Total: ${formatCurrency(targetCust.limit)} | Usado: ${formatCurrency(targetCust.used)} | <strong>Disponível: ${formatCurrency(avail)}</strong>\n`;
-          details += `• Parcelas Quitadas: <strong>${paidCustomerPurchases.length}</strong> | Em Aberto: <strong>${openPurchases.length}</strong>\n\n`;
-
-          if (openPurchases.length) {
-            details += `<strong>Parcelas em Aberto (${openPurchases.length}):</strong>\n`;
-            details += openPurchases.map(p => `• ${escapeHtml(p.product)}: ${formatCurrency(p.value)} (Vence: ${formatDatePtBr(p.dueDate)})`).join("\n");
-          } else {
-            details += `✔ Cliente sem nenhuma parcela em aberto.`;
-          }
-
-          aiOut.innerHTML = details;
-          if (customText === null && inputEl) inputEl.value = "";
-          return;
-        }
-
-        // 8. CONSULTAR PARCELAS / CLIENTES VENCIDOS
-        if (promptClean.includes("vencid") || promptClean.includes("atrasad") || promptClean.includes("em atraso")) {
-          const overdue = myPurchs.filter(p => p.status === "Em Aberto" && p.dueDate < todayIso);
-          if (!overdue.length) {
-            aiOut.innerHTML = "<strong>IA Rodrigues ProDev — Vencidos:</strong>\nNenhuma parcela vencida no momento. ✔";
-            if (customText === null && inputEl) inputEl.value = "";
-            return;
-          }
-          const lines = overdue.map(
-            p => `• <strong>${escapeHtml(p.customerName)}</strong> — ${escapeHtml(p.product)}: ${formatCurrency(p.value)} (Venceu em: ${formatDatePtBr(p.dueDate)})`
-          );
-          aiOut.innerHTML = `<strong>IA Rodrigues ProDev — Parcelas Vencidas (${overdue.length}):</strong>\n` + lines.join("\n");
-          if (customText === null && inputEl) inputEl.value = "";
-          return;
-        }
-
-        // 9. CONSULTAR VENCIMENTOS EM DATA ESPECÍFICA
-        const dateMatch = rawPrompt.match(/(\d{1,2}\/\d{1,2}\/\d{4})|(\d{4}-\d{2}-\d{2})/);
-        if (dateMatch && (promptClean.includes("vence") || promptClean.includes("dia") || promptClean.includes("data"))) {
-          let searchIso = dateMatch[0];
-          if (searchIso.includes("/")) {
-            const [d, m, y] = searchIso.split("/");
-            searchIso = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
-          }
-
-          const onDate = myPurchs.filter(p => p.dueDate === searchIso && p.status === "Em Aberto");
-          if (!onDate.length) {
-            aiOut.innerHTML = `<strong>IA Rodrigues ProDev:</strong>\nNenhuma parcela a vencer encontrada para <strong>${formatDatePtBr(searchIso)}</strong>.`;
-            if (customText === null && inputEl) inputEl.value = "";
-            return;
-          }
-
-          const lines = onDate.map(p => `• <strong>${escapeHtml(p.customerName)}</strong> — ${escapeHtml(p.product)}: ${formatCurrency(p.value)}`);
-          aiOut.innerHTML = `<strong>IA Rodrigues ProDev — Vencimentos em ${formatDatePtBr(searchIso)} (${onDate.length}):</strong>\n` + lines.join("\n");
-          if (customText === null && inputEl) inputEl.value = "";
-          return;
-        }
-
-        // 10. DAR BAIXA EM PARCELA DE CLIENTE
-        if (promptClean.includes("dar baixa") || promptClean.includes("quitar") || promptClean.includes("pagar")) {
-          const targetCust = myCusts.find(
-            c => promptClean.includes(normalizeText(c.name)) || promptClean.includes(normalizeText(c.name.split(" ")[0]))
-          );
-
-          if (!targetCust) {
-            aiOut.innerHTML = "<strong>IA Rodrigues ProDev:</strong>\nMencione o nome do cliente cadastrado para dar baixa. Ex.: <em>'dar baixa em Carlos'</em>.";
-            if (customText === null && inputEl) inputEl.value = "";
-            return;
-          }
-
-          const custPurchases = myPurchs.filter(p => p.customerId === targetCust.id && p.status === "Em Aberto");
-          if (!custPurchases.length) {
-            aiOut.innerHTML = `<strong>IA Rodrigues ProDev:</strong>\n<strong>${escapeHtml(targetCust.name)}</strong> não possui parcelas em aberto para dar baixa.`;
-            if (customText === null && inputEl) inputEl.value = "";
-            return;
-          }
-
-          const targetPurchase = custPurchases[0];
-          targetPurchase.status = "Pago";
-          targetPurchase.updatedAt = Date.now();
-          targetCust.used = Math.max(0, Number(((Number(targetCust.used) || 0) - (Number(targetPurchase.value) || 0)).toFixed(2)));
-          targetCust.updatedAt = Date.now();
-
-          saveState();
-          renderMerchantPanel();
-
-          aiOut.innerHTML =
-            `<strong>IA Rodrigues ProDev [BAIXA CONCLUÍDA]:</strong>\n` +
-            `✔ Parcela quitada para <strong>${escapeHtml(targetCust.name)}</strong>\n` +
-            `• Descrição: ${escapeHtml(targetPurchase.product)}\n` +
-            `• Valor quitado: <strong>${formatCurrency(targetPurchase.value)}</strong>\n` +
-            `• Limite livre atualizado: <strong>${formatCurrency(Math.max(0, targetCust.limit - targetCust.used))}</strong>`;
-          if (customText === null && inputEl) inputEl.value = "";
-          return;
-        }
-
-        // RESPOSTA PADRÃO DO ASSISTENTE PROFISSIONAL
-        aiOut.innerHTML =
-          `<strong>IA Rodrigues ProDev — Assistente do Seu Painel:</strong>\n` +
-          `Comando: "${escapeHtml(rawPrompt)}"\n\n` +
-          `• <strong>Parcelas Quitadas:</strong> <em>"parcelas quitadas"</em> ou clique no botão <strong>Parcelas Quitadas</strong>\n` +
-          `• <strong>Vencidos:</strong> <em>"clientes vencidos"</em> ou clique em <strong>Vencidos</strong>\n` +
-          `• <strong>Seu Perfil:</strong> <em>"meu perfil"</em> ou clique em <strong>Meu Perfil</strong>\n` +
-          `• <strong>Filtrar Cliente:</strong> <em>"filtrar cliente [Nome]"</em>\n` +
-          `• <strong>Editar Limite:</strong> <em>"editar limite de [Nome] para 1500"</em>\n` +
-          `• <strong>Dar Baixa:</strong> <em>"dar baixa em [Nome]"</em>\n` +
-          `• <strong>Apagar Cliente:</strong> <em>"apagar cliente [Nome]"</em>`;
         if (customText === null && inputEl) inputEl.value = "";
       };
 
-      document.getElementById("aiSummaryBtn")?.addEventListener("click", () => {
-        handleAiCommand("resumo do crediario");
-      });
-
-      document.getElementById("aiPaidBtn")?.addEventListener("click", () => {
-        handleAiCommand("parcelas quitadas");
-      });
-
-      document.getElementById("aiOverdueBtn")?.addEventListener("click", () => {
-        handleAiCommand("vencidos");
-      });
-
-      document.getElementById("aiLimitsBtn")?.addEventListener("click", () => {
-        handleAiCommand("situacao de limites");
-      });
-
-      document.getElementById("aiProfileBtn")?.addEventListener("click", () => {
-        handleAiCommand("meu perfil");
-      });
-
+      document.getElementById("aiSummaryBtn")?.addEventListener("click", () => handleAiCommand("resumo"));
+      document.getElementById("aiPaidBtn")?.addEventListener("click", () => handleAiCommand("quitadas"));
+      document.getElementById("aiOverdueBtn")?.addEventListener("click", () => handleAiCommand("vencidos"));
+      document.getElementById("aiLimitsBtn")?.addEventListener("click", () => handleAiCommand("limites"));
+      document.getElementById("aiProfileBtn")?.addEventListener("click", () => handleAiCommand("perfil"));
       document.getElementById("aiCommandForm")?.addEventListener("submit", (e) => {
         e.preventDefault();
         handleAiCommand();
@@ -3009,7 +2330,6 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
     }
 
     function syncView() {
-      updateCloudSyncBadge();
       const loginView = document.getElementById("loginView");
       const appView = document.getElementById("appView");
       const superAdminPanel = document.getElementById("superAdminPanel");
@@ -3018,7 +2338,6 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       const sessionSubtitle = document.getElementById("sessionSubtitle");
 
       const sess = AuthStore.getSession();
-
       if (!sess) {
         loginView?.classList.remove("hidden");
         appView?.classList.add("hidden");
@@ -3026,9 +2345,7 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
         return;
       }
 
-      if (!assertUserAuthorized("acessar o painel")) {
-        return;
-      }
+      if (!assertUserAuthorized()) return;
 
       if (sess.role === "super_admin") {
         loginView?.classList.add("hidden");
@@ -3051,16 +2368,10 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       renderMerchantPanel();
     }
 
-    function escapeHtml(str) {
-      return String(str ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-    }
-
     document.addEventListener("DOMContentLoaded", () => {
+      loadState();
+      applyRememberedCredentialsToForm();
+
       document.getElementById("tabLoginBtn")?.addEventListener("click", () => {
         activeAuthTab = "login";
         applyAuthModeUI();
@@ -3082,12 +2393,8 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       document.getElementById("loginForm")?.addEventListener("submit", processLoginSubmit);
       document.getElementById("registerForm")?.addEventListener("submit", processRegisterSubmit);
 
-      document.getElementById("refreshCloudBtn")?.addEventListener("click", async () => {
-        if (hasCentralDbConfig()) {
-          await CentralDatabase.syncWithCentral(true);
-        } else {
-          await hydrateStateFromIndexedDb();
-        }
+      document.getElementById("refreshCloudBtn")?.addEventListener("click", () => {
+        loadState();
         syncView();
       });
 
@@ -3098,43 +2405,22 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       });
 
       document.getElementById("clearDevicesLogBtn")?.addEventListener("click", () => {
-        if (!assertUserAuthorized("limpar o histórico de dispositivos")) return;
-        UserRepository.readLatestLocalState();
-        const nowTs = Date.now();
-        const currentLogs = Array.isArray(state.deviceLogs) ? state.deviceLogs : [];
-        recordDeletion("device_log", currentLogs.map(d => d.id), nowTs);
         state.deviceLogs = [];
         saveState();
         renderAdminDevicesLog();
       });
 
-      initCrossTabSync();
-
       document.getElementById("rememberMeCheck")?.addEventListener("change", (e) => {
-        const checked = Boolean(e.target?.checked);
-        if (!checked) {
+        if (!e.target?.checked) {
           clearRememberedCredentials();
         } else {
-          const currentUser = String(document.getElementById("loginUser")?.value || "").trim();
-          const currentPass = String(document.getElementById("loginPass")?.value || "");
-          if (currentUser || currentPass) {
-            saveRememberedCredentials(currentUser, currentPass, isAdminMode);
-          }
+          const u = String(document.getElementById("loginUser")?.value || "").trim();
+          const p = String(document.getElementById("loginPass")?.value || "");
+          if (u || p) saveRememberedCredentials(u, p, isAdminMode);
         }
       });
 
       bindMerchantEvents();
-      applyRememberedCredentialsToForm();
-      updateCloudSyncBadge();
-      void hydrateStateFromIndexedDb().then(() => {
-        syncView();
-      });
-      if (hasCentralDbConfig()) {
-        void CentralDatabase.syncWithCentral(true);
-        setInterval(() => {
-          void CentralDatabase.syncWithCentral(false);
-        }, 15000);
-      }
       syncView();
     });
   </script>
