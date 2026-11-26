@@ -649,7 +649,6 @@
       gap: 6px;
     }
 
-    /* Mini Calendário Acoplado para Data da Compra e 1º Vencimento */
     .date-picker-box {
       position: relative;
     }
@@ -831,9 +830,6 @@
   </style>
 </head>
 <body>
-  <!-- =====================================================================
-       TELA DE AUTENTICAÇÃO (LOGIN / CADASTRO DE USUÁRIO / SUPER ADMIN)
-       ===================================================================== -->
   <section id="loginView" class="auth-shell">
     <div class="auth-card">
       <div class="auth-brand">
@@ -949,9 +945,6 @@
     </div>
   </section>
 
-  <!-- =====================================================================
-       APLICAÇÃO LOGADA (#appView)
-       ===================================================================== -->
   <section id="appView" class="app-shell hidden">
     <header class="topbar">
       <div style="display: flex; align-items: center; gap: 12px;">
@@ -974,9 +967,6 @@
       </div>
     </header>
 
-    <!-- ===================================================================
-         PAINEL DO SUPER ADMIN: CONTROLE DE USUÁRIOS CADASTRADOS
-         =================================================================== -->
     <div id="superAdminPanel" class="hidden">
       <div class="stats-grid">
         <div class="stat-card">
@@ -1018,9 +1008,6 @@
       </div>
     </div>
 
-    <!-- ===================================================================
-         PAINEL DO USUÁRIO (MERCEARIA): CLIENTES, COMPRAS E PARCELAS
-         =================================================================== -->
     <div id="merchantPanel" class="hidden">
       <div class="stats-grid">
         <div class="stat-card">
@@ -1231,9 +1218,6 @@
   </section>
 
   <script>
-    /* =======================================================================
-       ESTADO INICIAL E PERSISTÊNCIA CENTRALIZADA (BANCO REMOTO + LOCAL)
-       ======================================================================= */
     const STORAGE_KEY = "rodrigues_prodev_state_v2026_11_closed_test";
     const BACKUP_STORAGE_KEY = "rodrigues_prodev_backup_db_v1";
     const REMEMBER_CREDS_KEY = "rodrigues_prodev_remember_creds_v1";
@@ -1414,14 +1398,10 @@
         const base = primaryData || backupData;
         const secondary = primaryData && backupData ? backupData : null;
 
-        const mergedUsers = mergeUsersList(base.users, secondary?.users);
-        const mergedCustomers = mergeById(base.groceryCustomers, secondary?.groceryCustomers);
-        const mergedPurchases = mergeById(base.purchases, secondary?.purchases);
-
         const restored = {
-          users: mergedUsers,
-          groceryCustomers: mergedCustomers,
-          purchases: mergedPurchases,
+          users: mergeUsersList(base.users, secondary?.users),
+          groceryCustomers: mergeById(base.groceryCustomers, secondary?.groceryCustomers),
+          purchases: mergeById(base.purchases, secondary?.purchases),
           session: base.session ?? secondary?.session ?? null,
           updatedAt: Math.max(Number(base.updatedAt) || 0, Number(secondary?.updatedAt) || 0)
         };
@@ -1439,9 +1419,6 @@
       }
     }
 
-    /* =======================================================================
-       BANCO CENTRALIZADO EM NUVEM (SUPABASE REST API + SINCRONIZAÇÃO)
-       ======================================================================= */
     let warnedPublishableRestFormat = false;
 
     const CentralDatabase = {
@@ -1466,7 +1443,7 @@
           warnedPublishableRestFormat = true;
           console.warn(
             "Supabase REST API retornou " + status + " com a chave sb_publishable_. " +
-            "Verifique as políticas (RLS) da tabela no Supabase para permitir acesso com a chave pública configurada no front-end (nunca coloque chave secreta no código do navegador)."
+            "Verifique as políticas (RLS) da tabela no Supabase para permitir acesso com a chave pública configurada no front-end."
           );
         }
       },
@@ -1633,7 +1610,7 @@
         });
         db.close();
       } catch (_err) {
-        // Fallback silencioso quando IndexedDB estiver bloqueado pelo navegador
+        // Fallback silencioso
       }
     }
 
@@ -1702,9 +1679,6 @@
       }
     }
 
-    /* =======================================================================
-       CAMADA DE REPOSITÓRIO / SERVIÇO DE AUTENTICAÇÃO
-       ======================================================================= */
     const UserRepository = {
       remoteEndpoint: "",
 
@@ -1722,13 +1696,9 @@
           const base = primaryData || backupData;
           const secondary = primaryData && backupData ? backupData : null;
 
-          const mergedUsers = mergeUsersList(base.users, secondary?.users);
-          const mergedCustomers = mergeById(base.groceryCustomers, secondary?.groceryCustomers);
-          const mergedPurchases = mergeById(base.purchases, secondary?.purchases);
-
-          state.users = mergedUsers.length ? mergedUsers : state.users;
-          state.groceryCustomers = mergedCustomers;
-          state.purchases = mergedPurchases;
+          state.users = mergeUsersList(base.users, secondary?.users);
+          state.groceryCustomers = mergeById(base.groceryCustomers, secondary?.groceryCustomers);
+          state.purchases = mergeById(base.purchases, secondary?.purchases);
 
           if (base && Object.prototype.hasOwnProperty.call(base, "session")) {
             state.session = base.session;
@@ -1820,7 +1790,7 @@
           });
         }
       } catch (_err) {
-        // Ignora caso BroadcastChannel não esteja disponível
+        // Ignora
       }
     }
 
@@ -1865,9 +1835,6 @@
       }
     }
 
-    /* =======================================================================
-       GUARDA CENTRAL DE AUTORIZAÇÃO SÍNCRONA / EM TEMPO REAL
-       ======================================================================= */
     function assertUserAuthorized(actionName = "acessar o sistema") {
       const sess = AuthStore.getSession();
       if (!sess) {
@@ -1933,7 +1900,7 @@
           })
         );
       } catch (_err) {
-        // Ignora erro de armazenamento
+        // Ignora
       }
     }
 
@@ -1941,7 +1908,7 @@
       try {
         localStorage.removeItem(REMEMBER_CREDS_KEY);
       } catch (_err) {
-        // Ignora erro de armazenamento
+        // Ignora
       }
     }
 
