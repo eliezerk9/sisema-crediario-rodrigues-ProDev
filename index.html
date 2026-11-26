@@ -1212,7 +1212,12 @@
           <button type="button" id="aiDueBtn" class="btn-secondary">Parcelas em Aberto</button>
           <button type="button" id="aiLimitsBtn" class="btn-secondary">Situação de Limites</button>
         </div>
-        <div id="aiOutput" class="ai-box">Clique em uma opção acima para gerar o resumo inteligente da sua mercearia.</div>
+        <div id="aiOutput" class="ai-box">Digite um comando no campo abaixo ou escolha um botão rápido.</div>
+
+        <form id="aiCommandForm" style="margin-top: 14px; display: flex; gap: 8px;">
+          <input id="aiInput" type="text" placeholder="Ex.: 'quais clientes estão vencidos?', 'quem vence dia 15/12/2026?', 'dar baixa na parcela 2 de Maria'" style="flex: 1;" />
+          <button type="submit" class="btn-primary" style="width: auto; margin-top: 0; padding: 10px 18px;">Enviar para IA</button>
+        </form>
       </div>
     </div>
   </section>
@@ -2805,6 +2810,103 @@
           return `• ${c.name}: Limite ${formatCurrency(c.limit)} | Usado ${formatCurrency(c.used)} | Disponível ${formatCurrency(avail)}`;
         });
         aiOut.textContent = "Situação de limites dos clientes:\n" + lines.join("\n");
+      });
+
+      // NOVO MOTOR DE PROCESSAMENTO DE COMANDOS DA IA DA MERCEARIA
+      document.getElementById("aiCommandForm")?.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const inputEl = document.getElementById("aiInput");
+        const aiOut = document.getElementById("aiOutput");
+        if (!inputEl || !aiOut) return;
+
+        const rawPrompt = String(inputEl.value || "").trim();
+        if (!rawPrompt) return;
+
+        const ownerUserId = state.session?.userId;
+        if (!ownerUserId) {
+          aiOut.textContent = "Erro de autorização: sessão do lojista inválida.";
+          return;
+        }
+
+        const promptLower = rawPrompt.toLowerCase();
+        const myCusts = state.groceryCustomers.filter(c => c.ownerUserId === ownerUserId);
+        const myPurchs = state.purchases.filter(p => p.ownerUserId === ownerUserId);
+        const todayIso = new Date().toISOString().split("T")[0];
+
+        // 1. COMANDO: CONSULTAR PARCELAS/CLIENTES VENCIDOS (Vencimento < Hoje e Status 'Em Aberto')
+        if (promptLower.includes("vencido") || promptLower.includes("atrasado") || promptLower.includes("em atraso")) {
+          const overdue = myPurchs.filter(p => p.status === "Em Aberto" && p.dueDate < todayIso);
+          if (!overdue.length) {
+            aiOut.textContent = "Nenhum cliente possui parcelas vencidas no momento! Todos os pagamentos estão em dia.";
+            inputEl.value = "";
+            return;
+          }
+          const lines = overdue.map(p => `• ${p.customerName} — ${p.product}: ${formatCurrency(p.value)} (Venceu em: ${formatDatePtBr(p.dueDate)})`);
+          aiOut.textContent = `Clientes e parcelas VENCIDAS (${overdue.length}):\n` + lines.join("\n");
+          inputEl.value = "";
+          return;
+        }
+
+        // 2. COMANDO: CONSULTAR VENCIMENTOS EM DATA ESPECÍFICA (Ex: "dia 25/12/2026" ou "2026-12-25")
+        const dateMatch = rawPrompt.match(/(\d{1,2}\/\d{1,2}\/\d{4})|(\d{4}-\d{2}-\d{2})/);
+        if (dateMatch && (promptLower.includes("vence") || promptLower.includes("dia") || promptLower.includes("data"))) {
+          let searchIso = dateMatch[0];
+          if (searchIso.includes("/")) {
+            const [d, m, y] = searchIso.split("/");
+            searchIso = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+          }
+
+          const onDate = myPurchs.filter(p => p.dueDate === searchIso && p.status === "Em Aberto");
+          if (!onDate.length) {
+            aiOut.textContent = `Nenhum boleto a vencer encontrado para a data ${formatDatePtBr(searchIso)}.`;
+            inputEl.value = "";
+            return;
+          }
+
+          const lines = onDate.map(p => `• ${p.customerName} — ${p.product}: ${formatCurrency(p.value)}`);
+          aiOut.textContent = `Parcelas a vencer em ${formatDatePtBr(searchIso)} (${onDate.length}):\n` + lines.join("\n");
+          inputEl.value = "";
+          return;
+        }
+
+        // 3. COMANDO DE AÇÃO EXECUTÁVEL: DAR BAIXA EM PARCELAS DE CLIENTE
+        if (promptLower.includes("dar baixa") || promptLower.includes("quitar") || promptLower.includes("pagar")) {
+          // Localiza o cliente citado na frase
+          const targetCust = myCusts.find(c => promptLower.includes(c.name.toLowerCase()) || promptLower.includes(c.name.split(" ")[0].toLowerCase()));
+          
+          if (!targetCust) {
+            aiOut.textContent = "IA: Para dar baixa, por favor mencione o nome do cliente cadastrado exatamente como na lista (Ex.: 'dar baixa na parcela de Maria').";
+            return;
+          }
+
+          const custPurchases = myPurchs.filter(p => p.customerId === targetCust.id && p.status === "Em Aberto");
+          if (!custPurchases.length) {
+            aiOut.textContent = `IA: O cliente ${targetCust.name} não possui parcelas em aberto para dar baixa.`;
+            inputEl.value = "";
+            return;
+          }
+
+          // Executa a baixa na parcela mais antiga em aberto ou na parcela solicitada
+          const targetPurchase = custPurchases[0];
+          targetPurchase.status = "Pago";
+          targetCust.used = Math.max(0, Number(((Number(targetCust.used) || 0) - (Number(targetPurchase.value) || 0)).toFixed(2)));
+
+          saveState();
+          renderMerchantPanel();
+
+          aiOut.textContent = `IA [AÇÃO EXECUTADA COM SUCESSO]:\n✔ Baixa efetuada para ${targetCust.name}\n• Parcela: ${targetPurchase.product}\n• Valor: ${formatCurrency(targetPurchase.value)}\n• Novo limite livre: ${formatCurrency(Math.max(0, targetCust.limit - targetCust.used))}`;
+          inputEl.value = "";
+          return;
+        }
+
+        // RESPONSAS DE ESCOPO FECHADO (Segurança: responde apenas sobre os dados da mercearia logada)
+        aiOut.textContent =
+          `IA Rodrigues ProDev (Modo Mercearia):\n` +
+          `Entendi sua mensagem, mas só posso executar comandos relacionados às suas vendas e clientes. Dica de uso:\n` +
+          `• "quais clientes estão vencidos?"\n` +
+          `• "quem vence no dia 20/12/2026?"\n` +
+          `• "dar baixa em [Nome do Cliente]"`;
+        inputEl.value = "";
       });
     }
 
