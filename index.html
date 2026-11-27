@@ -3,2577 +3,503 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Rodrigues ProDev — Sistema de Crediário e Mercearia</title>
+  <title>Prévia — Rodrigues ProDev (Crediário & Mercearia)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
-    /* =========================================================================
-       TOKENS VISUAIS E TEMA PROFISSIONAL PRODEV (HEXÁGONOS + NEON VERDE)
-       ========================================================================= */
-    :root {
-      --bg-base: #040806;
-      --bg-surface: rgba(9, 16, 12, 0.9);
-      --bg-card: rgba(12, 21, 16, 0.92);
-      --bg-input: rgba(6, 11, 8, 0.95);
-      --neon: #00ff66;
-      --neon-strong: #39ff88;
-      --neon-soft: rgba(0, 255, 102, 0.14);
-      --neon-border: rgba(0, 255, 102, 0.38);
-      --neon-glow: 0 0 26px rgba(0, 255, 102, 0.22), 0 18px 42px rgba(0, 0, 0, 0.78);
-      --text-main: #f4fbf7;
-      --text-muted: #9eb7a8;
-      --danger: #ff5263;
-      --warning: #ffbe2e;
-      --success: #00ff66;
-      --border-subtle: rgba(0, 255, 102, 0.15);
-      --radius-lg: 18px;
-      --radius-md: 12px;
-      --radius-sm: 9px;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html, body {
-      min-height: 100%;
+    body {
       font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background-color: var(--bg-base);
-      color: var(--text-main);
-      overflow-x: hidden;
-      line-height: 1.45;
-    }
-
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      z-index: -2;
       background-color: #040806;
       background-image:
-        radial-gradient(ellipse 72% 48% at 50% 24%, rgba(0, 255, 102, 0.22), rgba(0, 180, 72, 0.06) 48%, transparent 75%),
-        linear-gradient(28deg, transparent 49.4%, rgba(0, 255, 102, 0.16) 49.8%, rgba(0, 255, 102, 0.16) 50.2%, transparent 50.6%),
-        linear-gradient(-28deg, transparent 49.4%, rgba(0, 255, 102, 0.14) 49.8%, rgba(0, 255, 102, 0.14) 50.2%, transparent 50.6%),
-        repeating-linear-gradient(
-          90deg,
-          rgba(0, 255, 102, 0.055) 0px,
-          rgba(0, 255, 102, 0.055) 1px,
-          transparent 1px,
-          transparent 26px
-        ),
-        linear-gradient(30deg, rgba(0, 255, 102, 0.11) 12%, transparent 12.5%, transparent 87%, rgba(0, 255, 102, 0.11) 87.5%, rgba(0, 255, 102, 0.11)),
-        linear-gradient(150deg, rgba(0, 255, 102, 0.11) 12%, transparent 12.5%, transparent 87%, rgba(0, 255, 102, 0.11) 87.5%, rgba(0, 255, 102, 0.11)),
-        linear-gradient(30deg, rgba(0, 255, 102, 0.11) 12%, transparent 12.5%, transparent 87%, rgba(0, 255, 102, 0.11) 87.5%, rgba(0, 255, 102, 0.11)),
-        linear-gradient(150deg, rgba(0, 255, 102, 0.11) 12%, transparent 12.5%, transparent 87%, rgba(0, 255, 102, 0.11) 87.5%, rgba(0, 255, 102, 0.11)),
-        linear-gradient(60deg, rgba(0, 255, 102, 0.18) 25%, transparent 25.5%, transparent 75%, rgba(0, 255, 102, 0.18) 75%, rgba(0, 255, 102, 0.18)),
-        linear-gradient(60deg, rgba(0, 255, 102, 0.18) 25%, transparent 25.5%, transparent 75%, rgba(0, 255, 102, 0.18) 75%, rgba(0, 255, 102, 0.18));
-      background-size:
-        100% 100%,
-        100% 100%,
-        100% 100%,
-        26px 100%,
-        88px 152px,
-        88px 152px,
-        88px 152px,
-        88px 152px,
-        88px 152px,
-        88px 152px;
-      background-position:
-        0 0,
-        0 0,
-        0 0,
-        0 0,
-        0 0,
-        0 0,
-        44px 76px,
-        44px 76px,
-        0 0,
-        44px 76px;
-    }
-
-    body::after {
-      content: "";
-      position: fixed;
-      inset: 0;
-      z-index: -1;
-      background:
-        radial-gradient(circle at 50% 0%, rgba(0, 255, 102, 0.09), transparent 45%),
-        linear-gradient(180deg, rgba(3, 7, 5, 0.35) 0%, rgba(3, 7, 5, 0.78) 55%, rgba(3, 7, 5, 0.92) 100%);
-      pointer-events: none;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .muted {
-      color: var(--text-muted);
-    }
-
-    .brand-highlight {
-      color: var(--neon);
-      text-shadow: 0 0 16px rgba(0, 255, 102, 0.55);
-    }
-
-    .cloud-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-size: 0.74rem;
-      font-weight: 700;
-      border: 1px solid var(--neon-border);
-      background: rgba(0, 255, 102, 0.1);
-      color: var(--neon);
-    }
-
-    .cloud-pill.is-local {
-      border-color: rgba(255, 190, 46, 0.4);
-      background: rgba(255, 190, 46, 0.12);
-      color: var(--warning);
-    }
-
-    label {
-      display: block;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      margin-top: 12px;
-      margin-bottom: 5px;
-    }
-
-    input[type="text"],
-    input[type="password"],
-    input[type="number"],
-    select {
-      width: 100%;
-      padding: 11px 13px;
-      border-radius: var(--radius-sm);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      background: var(--bg-input);
-      color: var(--text-main);
-      font-size: 0.9rem;
-      font-family: inherit;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    input:focus,
-    select:focus {
-      outline: none;
-      border-color: var(--neon);
-      box-shadow: 0 0 0 3px rgba(0, 255, 102, 0.15);
-    }
-
-    /* =========================================================================
-       TELA DE ENTRADA (LOGIN / CADASTRO / SUPER ADMIN)
-       ========================================================================= */
-    .auth-shell {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px 16px;
-    }
-
-    .auth-card {
-      width: 100%;
-      max-width: 470px;
-      background: var(--bg-surface);
-      border: 1px solid var(--neon-border);
-      border-radius: var(--radius-lg);
-      padding: 26px 24px;
-      box-shadow: var(--neon-glow);
-      backdrop-filter: blur(14px);
-    }
-
-    .auth-brand {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .prodev-emblem {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      padding: 7px 14px;
-      border-radius: 999px;
-      background: rgba(0, 255, 102, 0.09);
-      border: 1px solid var(--neon-border);
-      box-shadow: 0 0 18px rgba(0, 255, 102, 0.16);
-      margin-bottom: 12px;
-    }
-
-    .prodev-emblem-mark {
-      width: 24px;
-      height: 24px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--neon);
-      filter: drop-shadow(0 0 6px rgba(0, 255, 102, 0.65));
-    }
-
-    .prodev-emblem-text {
-      color: var(--neon);
-      font-size: 0.76rem;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    .auth-brand h1 {
-      font-size: 1.55rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-    }
-
-    .auth-brand p {
-      color: var(--text-muted);
-      font-size: 0.88rem;
-      margin-top: 4px;
-    }
-
-    .tab-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      background: var(--bg-input);
-      padding: 5px;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--border-subtle);
-      margin-bottom: 18px;
-    }
-
-    .tab-btn {
-      padding: 10px 12px;
-      border: none;
-      border-radius: var(--radius-sm);
-      background: transparent;
-      color: var(--text-muted);
-      font-weight: 700;
-      font-size: 0.88rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .tab-btn.active {
-      background: var(--neon);
-      color: #041008;
-    }
-
-    .remember-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      margin-top: 12px;
-    }
-
-    .remember-label {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      margin: 0;
-      font-size: 0.84rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .remember-label input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      margin: 0;
-      accent-color: var(--neon);
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-
-    .password-wrap {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
-
-    .password-wrap input {
-      padding-right: 44px;
-    }
-
-    .eye-btn {
-      position: absolute;
-      right: 8px;
-      width: 32px;
-      height: 32px;
-      border: none;
-      border-radius: 8px;
-      background: transparent;
-      color: var(--text-muted);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: color 0.2s ease, background 0.2s ease;
-    }
-
-    .eye-btn:hover {
-      color: var(--neon);
-      background: rgba(0, 255, 102, 0.08);
-    }
-
-    .btn-primary {
-      width: 100%;
-      margin-top: 18px;
-      padding: 12px 16px;
-      border: none;
-      border-radius: var(--radius-sm);
-      background: var(--neon);
-      color: #041008;
-      font-weight: 800;
-      font-size: 0.94rem;
-      cursor: pointer;
-      box-shadow: 0 0 18px rgba(0, 255, 102, 0.28);
-      transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .btn-primary:hover:not(:disabled) {
-      background: var(--neon-strong);
-      transform: translateY(-1px);
-      box-shadow: 0 0 24px rgba(0, 255, 102, 0.42);
-    }
-
-    .btn-primary:disabled {
-      opacity: 0.65;
-      cursor: not-allowed;
-    }
-
-    .btn-secondary {
-      padding: 9px 13px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--neon-border);
-      background: rgba(0, 255, 102, 0.08);
-      color: var(--text-main);
-      font-weight: 600;
-      font-size: 0.82rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .btn-secondary:hover {
-      background: rgba(0, 255, 102, 0.16);
-      border-color: var(--neon);
-    }
-
-    .btn-danger {
-      padding: 7px 11px;
-      border-radius: 8px;
-      border: 1px solid rgba(255, 82, 99, 0.4);
-      background: rgba(255, 82, 99, 0.12);
-      color: #ff8a95;
-      font-weight: 700;
-      font-size: 0.78rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .btn-danger:hover {
-      background: rgba(255, 82, 99, 0.24);
-    }
-
-    .btn-approve {
-      padding: 7px 11px;
-      border-radius: 8px;
-      border: 1px solid rgba(0, 255, 102, 0.45);
-      background: rgba(0, 255, 102, 0.15);
-      color: var(--neon);
-      font-weight: 700;
-      font-size: 0.78rem;
-      cursor: pointer;
-    }
-
-    .btn-approve:hover {
-      background: rgba(0, 255, 102, 0.26);
-    }
-
-    .btn-warn {
-      padding: 7px 11px;
-      border-radius: 8px;
-      border: 1px solid rgba(255, 190, 46, 0.45);
-      background: rgba(255, 190, 46, 0.14);
-      color: var(--warning);
-      font-weight: 700;
-      font-size: 0.78rem;
-      cursor: pointer;
-    }
-
-    .btn-warn:hover {
-      background: rgba(255, 190, 46, 0.25);
-    }
-
-    .feedback-msg {
-      margin-top: 12px;
-      font-size: 0.84rem;
-      line-height: 1.45;
-      min-height: 18px;
-    }
-
-    .feedback-error {
-      color: #ff7b87;
-      background: rgba(255, 82, 99, 0.12);
-      border: 1px solid rgba(255, 82, 99, 0.35);
-      padding: 10px 12px;
-      border-radius: var(--radius-sm);
-    }
-
-    .contact-notice {
-      margin-top: 14px;
-      padding: 12px 14px;
-      border-radius: var(--radius-sm);
-      background: rgba(0, 255, 102, 0.08);
-      border: 1px solid var(--neon-border);
-      color: #d9f9e6;
-      font-size: 0.83rem;
-    }
-
-    .whatsapp-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      margin-top: 8px;
-      color: var(--neon);
-      font-weight: 700;
-      text-decoration: none;
-      font-size: 0.84rem;
-    }
-
-    .whatsapp-link:hover {
-      text-decoration: underline;
-    }
-
-    .admin-toggle-footer {
-      margin-top: 18px;
-      padding-top: 14px;
-      border-top: 1px solid var(--border-subtle);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .admin-icon-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      color: var(--text-muted);
-      padding: 8px 14px;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .admin-icon-btn:hover {
-      color: var(--neon);
-      border-color: var(--neon-border);
-      background: rgba(0, 255, 102, 0.08);
-    }
-
-    /* =========================================================================
-       APLICAÇÃO PRINCIPAL (PAINEL SUPER ADMIN & PAINEL DA MERCEARIA)
-       ========================================================================= */
-    .app-shell {
-      max-width: 1240px;
-      margin: 0 auto;
-      padding: 20px 16px 48px;
-    }
-
-    .topbar {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      background: var(--bg-surface);
-      border: 1px solid var(--neon-border);
-      border-radius: var(--radius-lg);
-      padding: 16px 20px;
-      box-shadow: var(--neon-glow);
-      margin-bottom: 20px;
-    }
-
-    .topbar-title {
-      font-size: 1.2rem;
-      font-weight: 800;
-    }
-
-    .topbar-sub {
-      font-size: 0.82rem;
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
-
-    .topbar-actions {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-      gap: 14px;
-      margin-bottom: 20px;
-    }
-
-    .stat-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      padding: 16px;
-    }
-
-    .stat-label {
-      font-size: 0.76rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      font-weight: 700;
-    }
-
-    .stat-value {
-      font-size: 1.45rem;
-      font-weight: 800;
-      margin-top: 6px;
-      color: var(--neon);
-    }
-
-    .panel-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-      gap: 18px;
-      margin-bottom: 20px;
-    }
-
-    .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-lg);
-      padding: 20px;
-      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(0, 255, 102, 0.08);
-      backdrop-filter: blur(12px);
-    }
-
-    .card h2 {
-      font-size: 1.05rem;
-      font-weight: 800;
-      margin-bottom: 4px;
-    }
-
-    .card .card-desc {
-      font-size: 0.82rem;
-      color: var(--text-muted);
-      margin-bottom: 14px;
-    }
-
-    .grid-2 {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 12px;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 3px 9px;
-      border-radius: 999px;
-      font-size: 0.74rem;
-      font-weight: 700;
-    }
-
-    .badge-active {
-      background: rgba(0, 255, 102, 0.16);
-      color: var(--neon);
-      border: 1px solid rgba(0, 255, 102, 0.35);
-    }
-
-    .badge-pending {
-      background: rgba(255, 190, 46, 0.16);
-      color: var(--warning);
-      border: 1px solid rgba(255, 190, 46, 0.35);
-    }
-
-    .badge-blocked {
-      background: rgba(255, 82, 99, 0.16);
-      color: #ff8a95;
-      border: 1px solid rgba(255, 82, 99, 0.35);
-    }
-
-    .table-wrap {
-      width: 100%;
-      overflow-x: auto;
-      margin-top: 10px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.84rem;
-      min-width: 640px;
-    }
-
-    th, td {
-      text-align: left;
-      padding: 10px 10px;
-      border-bottom: 1px solid var(--border-subtle);
-      vertical-align: middle;
-    }
-
-    th {
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .action-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .date-picker-box {
-      position: relative;
-    }
-
-    .date-trigger-btn {
-      width: 100%;
-      padding: 11px 13px;
-      border-radius: var(--radius-sm);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      background: var(--bg-input);
-      color: var(--text-main);
-      font-size: 0.9rem;
-      font-family: inherit;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      cursor: pointer;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .date-trigger-btn:hover,
-    .date-trigger-btn:focus {
-      outline: none;
-      border-color: var(--neon);
-      box-shadow: 0 0 0 3px rgba(0, 255, 102, 0.15);
-    }
-
-    .date-trigger-val {
-      font-weight: 600;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .date-trigger-icon {
-      color: var(--neon);
-      display: inline-flex;
-      align-items: center;
-      flex-shrink: 0;
-    }
-
-    .mini-calendar-popover {
-      position: absolute;
-      top: calc(100% + 6px);
-      left: 0;
-      width: 276px;
-      max-width: calc(100vw - 48px);
-      background: #09110e;
-      border: 1px solid var(--neon-border);
-      border-radius: var(--radius-md);
-      padding: 12px;
-      box-shadow: var(--neon-glow);
-      z-index: 60;
-    }
-
-    .mini-cal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-      margin-bottom: 10px;
-    }
-
-    .mini-cal-title {
-      font-size: 0.84rem;
-      font-weight: 800;
-      color: var(--text-main);
-      text-transform: capitalize;
-    }
-
-    .mini-cal-nav {
-      width: 28px;
-      height: 28px;
-      border-radius: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      background: var(--bg-input);
-      color: var(--text-main);
-      font-weight: 700;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .mini-cal-nav:hover {
-      border-color: var(--neon);
-      color: var(--neon);
-    }
-
-    .mini-cal-weekdays,
-    .mini-cal-days {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 3px;
-      text-align: center;
-    }
-
-    .mini-cal-weekdays span {
-      font-size: 0.68rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      padding: 3px 0;
-    }
-
-    .mini-cal-day {
-      height: 30px;
-      border: none;
-      border-radius: 7px;
-      background: transparent;
-      color: var(--text-main);
-      font-size: 0.78rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s ease, color 0.15s ease;
-    }
-
-    .mini-cal-day:hover:not(:disabled) {
-      background: rgba(0, 255, 102, 0.16);
-      color: var(--neon);
-    }
-
-    .mini-cal-day.is-selected {
-      background: var(--neon);
-      color: #041008;
-      font-weight: 800;
-    }
-
-    .mini-cal-day.is-today:not(.is-selected) {
-      border: 1px solid var(--neon-border);
-      color: var(--neon);
-    }
-
-    .mini-cal-day:disabled {
-      opacity: 0.25;
-      cursor: default;
-    }
-
-    .mini-cal-footer {
-      margin-top: 8px;
-      padding-top: 8px;
-      border-top: 1px solid var(--border-subtle);
-      display: flex;
-      justify-content: space-between;
-      gap: 6px;
-    }
-
-    .mini-cal-action {
-      border: none;
-      background: transparent;
-      color: var(--neon);
-      font-size: 0.75rem;
-      font-weight: 700;
-      cursor: pointer;
-      padding: 2px 4px;
-    }
-
-    .mini-cal-action:hover {
-      text-decoration: underline;
-    }
-
-    .ai-box {
-      margin-top: 14px;
-      background: linear-gradient(135deg, rgba(6, 12, 9, 0.95) 0%, rgba(10, 20, 15, 0.98) 100%),
-                  repeating-linear-gradient(45deg, rgba(0, 255, 102, 0.03) 0px, rgba(0, 255, 102, 0.03) 2px, transparent 2px, transparent 8px);
-      border: 1px solid var(--neon);
-      border-radius: var(--radius-md);
-      padding: 16px 18px;
-      font-size: 0.94rem;
-      font-weight: 600;
-      color: #ffffff;
-      line-height: 1.6;
-      white-space: pre-line;
-      box-shadow: 0 0 20px rgba(0, 255, 102, 0.25), inset 0 0 15px rgba(0, 255, 102, 0.08);
-      text-shadow: 0 0 2px rgba(0, 0, 0, 0.9);
-      letter-spacing: 0.01em;
-      min-height: 90px;
-    }
-
-    .ai-box strong {
-      color: var(--neon-strong);
-      font-weight: 800;
-      text-shadow: 0 0 10px rgba(0, 255, 102, 0.6);
-    }
-
-    @media (max-width: 520px) {
-      .auth-card {
-        padding: 20px 16px;
-      }
-      .card {
-        padding: 16px;
-      }
+        radial-gradient(ellipse 75% 48% at 50% 18%, rgba(0, 255, 102, 0.18), rgba(0, 180, 72, 0.04) 50%, transparent 75%),
+        linear-gradient(30deg, rgba(0, 255, 102, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(0, 255, 102, 0.08) 87.5%, rgba(0, 255, 102, 0.08)),
+        linear-gradient(150deg, rgba(0, 255, 102, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(0, 255, 102, 0.08) 87.5%, rgba(0, 255, 102, 0.08));
+      background-size: 100% 100%, 84px 146px, 84px 146px;
+      color: #f4fbf7;
+    }
+    .neon-glow {
+      box-shadow: 0 0 28px rgba(0, 255, 102, 0.18), 0 18px 40px rgba(0, 0, 0, 0.72);
     }
   </style>
 </head>
-<body>
-  <!-- Tela de Acesso: Login, Cadastro e Acesso Restrito Admin -->
-  <section id="loginView" class="auth-shell">
-    <div class="auth-card">
-      <div class="auth-brand">
-        <div class="prodev-emblem">
-          <span class="prodev-emblem-mark" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="12 2 21 7 21 17 12 22 3 17 3 7"></polygon>
-              <path d="M9 16V8h4.5a2.5 2.5 0 0 1 0 5H9"></path>
-              <path d="M12.5 13 16 17"></path>
-            </svg>
-          </span>
-          <span class="prodev-emblem-text">Rodrigues ProDev</span>
-        </div>
-        <h1>Crediário &amp; <span class="brand-highlight">Mercearia</span></h1>
-        <p id="authSubtitle">Acesse seu painel da mercearia ou cadastre sua conta para liberação.</p>
+<body class="min-h-screen antialiased">
+  <!-- Barra superior de navegação da prévia -->
+  <div class="sticky top-0 z-30 border-b border-emerald-400/20 bg-[#070d09]/95 backdrop-blur-md">
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+      <div class="flex items-center gap-2.5">
+        <span class="inline-flex h-2.5 w-2.5 rounded-full bg-[#00ff66] shadow-[0_0_10px_#00ff66]"></span>
+        <span class="text-sm font-extrabold tracking-tight text-white">
+          Rodrigues <span class="text-[#00ff66]">ProDev</span>
+        </span>
+        <span class="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-300">
+          Prévia Ao Vivo
+        </span>
       </div>
 
-      <div id="userTabs" class="tab-row">
-        <button type="button" id="tabLoginBtn" class="tab-btn active">Entrar</button>
-        <button type="button" id="tabRegisterBtn" class="tab-btn">Cadastrar Conta</button>
+      <div class="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          id="btnViewAuth"
+          class="rounded-lg bg-[#00ff66] px-3 py-1.5 text-xs font-extrabold text-[#041008] transition hover:bg-[#39ff88]"
+        >
+          Tela de Login / Cadastro
+        </button>
+        <button
+          type="button"
+          id="btnViewAdmin"
+          class="rounded-lg border border-emerald-400/35 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-200 transition hover:bg-emerald-500/20"
+        >
+          Painel Super Admin
+        </button>
+        <button
+          type="button"
+          id="btnViewMerchant"
+          class="rounded-lg border border-emerald-400/35 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-200 transition hover:bg-emerald-500/20"
+        >
+          Painel Mercearia
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1. TELA DE LOGIN / CADASTRO -->
+  <section id="viewAuth" class="mx-auto flex min-h-[calc(100vh-58px)] max-w-md items-center justify-center px-4 py-8">
+    <div class="neon-glow w-full rounded-2xl border border-[#00ff66]/40 bg-[#09100c]/95 p-6 backdrop-blur-md">
+      <div class="mb-5 text-center">
+        <div class="mb-2 inline-flex items-center gap-2 rounded-full border border-[#00ff66]/35 bg-[#00ff66]/10 px-3.5 py-1 text-xs font-extrabold uppercase tracking-wider text-[#00ff66]">
+          Rodrigues ProDev
+        </div>
+        <h1 class="text-2xl font-extrabold tracking-tight text-white">
+          Crediário &amp; <span class="text-[#00ff66]">Mercearia</span>
+        </h1>
+        <p id="authModeSubtitle" class="mt-1 text-sm text-[#9eb7a8]">
+          Acesse seu painel ou cadastre uma nova conta para liberação.
+        </p>
       </div>
 
-      <form id="loginForm" novalidate>
-        <label id="loginUserLabel" for="loginUser">Usuário ou CPF</label>
-        <input id="loginUser" type="text" placeholder="Digite seu usuário ou CPF" autocomplete="username" required />
+      <div id="authSubTabs" class="mb-4 grid grid-cols-2 gap-1.5 rounded-xl border border-emerald-400/15 bg-[#060b08] p-1">
+        <button type="button" id="subTabLogin" class="rounded-lg bg-[#00ff66] py-2 text-sm font-extrabold text-[#041008]">
+          Entrar
+        </button>
+        <button type="button" id="subTabRegister" class="rounded-lg py-2 text-sm font-bold text-[#9eb7a8] hover:text-white">
+          Cadastrar Conta
+        </button>
+      </div>
 
-        <label for="loginPass">Senha</label>
-        <div class="password-wrap">
-          <input id="loginPass" type="password" placeholder="Digite sua senha" autocomplete="current-password" required />
-          <button type="button" id="toggleLoginPassBtn" class="eye-btn" aria-label="Mostrar ou ocultar senha">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-          </button>
+      <form id="previewLoginForm" class="space-y-3.5">
+        <div>
+          <label id="previewLoginUserLabel" for="previewLoginUser" class="mb-1 block text-xs font-semibold text-[#9eb7a8]">
+            Usuário ou CPF
+          </label>
+          <input
+            id="previewLoginUser"
+            type="text"
+            placeholder="Digite seu usuário ou CPF"
+            class="w-full rounded-lg border border-white/15 bg-[#060b08] px-3.5 py-2.5 text-sm text-white placeholder:text-emerald-100/35 focus:border-[#00ff66] focus:outline-none"
+          />
         </div>
 
-        <div class="remember-row">
-          <label class="remember-label" for="rememberMeCheck">
-            <input id="rememberMeCheck" type="checkbox" />
+        <div>
+          <label for="previewLoginPass" class="mb-1 block text-xs font-semibold text-[#9eb7a8]">
+            Senha
+          </label>
+          <input
+            id="previewLoginPass"
+            type="password"
+            placeholder="Digite sua senha"
+            class="w-full rounded-lg border border-white/15 bg-[#060b08] px-3.5 py-2.5 text-sm text-white placeholder:text-emerald-100/35 focus:border-[#00ff66] focus:outline-none"
+          />
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-[#9eb7a8]">
+          <label class="inline-flex cursor-pointer items-center gap-2">
+            <input type="checkbox" class="h-4 w-4 rounded accent-[#00ff66]" />
             <span>Lembrar de mim</span>
           </label>
+          <span class="text-emerald-300/80">Admin: rodrigues</span>
         </div>
 
-        <button type="submit" id="loginSubmitBtn" class="btn-primary">Entrar no Sistema</button>
+        <button
+          type="submit"
+          class="mt-2 w-full rounded-lg bg-[#00ff66] py-3 text-sm font-extrabold text-[#041008] shadow-[0_0_18px_rgba(0,255,102,0.28)] transition hover:bg-[#39ff88]"
+        >
+          Entrar no Sistema
+        </button>
       </form>
 
-      <form id="registerForm" class="hidden" novalidate>
-        <label for="regName">Nome Completo / Nome da Mercearia</label>
-        <input id="regName" type="text" placeholder="Ex.: Mercearia Central" required />
-
-        <div class="grid-2">
-          <div>
-            <label for="regCpf">CPF ou CNPJ</label>
-            <input id="regCpf" type="text" placeholder="000.000.000-00" required />
-          </div>
-          <div>
-            <label for="regPhone">Telefone / WhatsApp</label>
-            <input id="regPhone" type="text" placeholder="(67) 99999-9999" required />
-          </div>
-        </div>
-
-        <label for="regAddress">Endereço Completo</label>
-        <input id="regAddress" type="text" placeholder="Rua, número, bairro, cidade" required />
-
-        <div class="grid-2">
-          <div>
-            <label for="regUser">Criar Usuário de Acesso</label>
-            <input id="regUser" type="text" placeholder="Ex.: mercearia_nova" required />
-          </div>
-          <div>
-            <label for="regPass">Criar Senha</label>
-            <div class="password-wrap">
-              <input id="regPass" type="password" placeholder="Crie uma senha" required />
-              <button type="button" id="toggleRegPassBtn" class="eye-btn" aria-label="Mostrar ou ocultar senha do cadastro">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <button type="submit" id="registerSubmitBtn" class="btn-primary">Enviar Cadastro para Liberação</button>
-      </form>
-
-      <div id="authFeedback" class="feedback-msg"></div>
-
-      <div class="contact-notice">
-        Acesso sujeito à liberação do administrador. Para ter acesso ao painel, entre em contato com <strong>Rodrigues ProDev</strong> pelo telefone/WhatsApp <strong>67 991267853</strong>.
+      <form id="previewRegisterForm" class="hidden space-y-3">
         <div>
-          <a
-            class="whatsapp-link"
-            href="https://wa.me/5567991267853?text=Ol%C3%A1%20Rodrigues%20ProDev%2C%20preciso%20de%20libera%C3%A7%C3%A3o%20de%20acesso%20ao%20sistema."
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Falar no WhatsApp (67 991267853)
-          </a>
+          <label class="mb-1 block text-xs font-semibold text-[#9eb7a8]">Nome / Mercearia</label>
+          <input id="regStoreName" type="text" placeholder="Ex.: Mercearia São José" class="w-full rounded-lg border border-white/15 bg-[#060b08] px-3.5 py-2 text-sm text-white focus:border-[#00ff66] focus:outline-none" />
         </div>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-[#9eb7a8]">CPF ou CNPJ</label>
+            <input id="regDoc" type="text" placeholder="000.000.000-00" class="w-full rounded-lg border border-white/15 bg-[#060b08] px-3.5 py-2 text-sm text-white focus:border-[#00ff66] focus:outline-none" />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-[#9eb7a8]">WhatsApp</label>
+            <input id="regPhone" type="text" placeholder="(67) 99999-9999" class="w-full rounded-lg border border-white/15 bg-[#060b08] px-3.5 py-2 text-sm text-white focus:border-[#00ff66] focus:outline-none" />
+          </div>
+        </div>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-[#9eb7a8]">Usuário</label>
+            <input id="regHandle" type="text" placeholder="Ex.: sao_jose" class="w-full rounded-lg border border-white/15 bg-[#060b08] px-3.5 py-2 text-sm text-white focus:border-[#00ff66] focus:outline-none" />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-[#9eb7a8]">Senha</label>
+            <input id="regPwd" type="password" placeholder="Crie uma senha" class="w-full rounded-lg border border-white/15 bg-[#060b08] px-3.5 py-2 text-sm text-white focus:border-[#00ff66] focus:outline-none" />
+          </div>
+        </div>
+        <button
+          type="submit"
+          class="w-full rounded-lg bg-[#00ff66] py-2.5 text-sm font-extrabold text-[#041008] transition hover:bg-[#39ff88]"
+        >
+          Enviar Cadastro (Pendente)
+        </button>
+      </form>
+
+      <div id="previewAuthMessage" class="mt-3 hidden rounded-lg border px-3.5 py-2.5 text-xs leading-relaxed"></div>
+
+      <div class="mt-4 rounded-xl border border-[#00ff66]/30 bg-[#00ff66]/8 p-3.5 text-xs text-emerald-100/90">
+        Acesso sujeito à liberação do administrador. Suporte <strong>Rodrigues ProDev</strong>: <strong>67 991267853</strong>.
       </div>
 
-      <div class="admin-toggle-footer">
-        <button type="button" id="toggleAdminBtn" class="admin-icon-btn">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-          </svg>
-          <span id="toggleAdminText">Acesso Restrito (Admin)</span>
+      <div class="mt-4 flex justify-center border-t border-emerald-400/15 pt-3.5">
+        <button
+          type="button"
+          id="togglePreviewAdminMode"
+          class="rounded-full border border-white/15 bg-white/[0.03] px-4 py-1.5 text-xs font-semibold text-[#9eb7a8] transition hover:border-[#00ff66]/40 hover:text-[#00ff66]"
+        >
+          Acesso Restrito (Admin)
         </button>
       </div>
     </div>
   </section>
 
-  <!-- Aplicação Principal: Painel Super Admin e Painel da Mercearia -->
-  <section id="appView" class="app-shell hidden">
-    <header class="topbar">
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <span class="prodev-emblem-mark" style="width: 36px; height: 36px; border-radius: 10px; background: rgba(0, 255, 102, 0.09); border: 1px solid var(--neon-border);" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="12 2 21 7 21 17 12 22 3 17 3 7"></polygon>
-            <path d="M9 16V8h4.5a2.5 2.5 0 0 1 0 5H9"></path>
-            <path d="M12.5 13 16 17"></path>
-          </svg>
-        </span>
-        <div>
-          <div id="sessionTitle" class="topbar-title">Rodrigues ProDev</div>
-          <div id="sessionSubtitle" class="topbar-sub">Sessão ativa</div>
-        </div>
+  <!-- 2. PAINEL SUPER ADMIN -->
+  <section id="viewAdmin" class="mx-auto hidden max-w-6xl px-4 py-6">
+    <div class="neon-glow mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#00ff66]/35 bg-[#09100c]/95 p-5">
+      <div>
+        <h2 class="text-lg font-extrabold text-white">
+          Painel Super Admin — <span class="text-[#00ff66]">Rodrigues ProDev</span>
+        </h2>
+        <p class="text-xs text-[#9eb7a8]">
+          Libere, suspenda, bloqueie ou exclua cadastros. Contas não ativadas expiram após 10 dias.
+        </p>
       </div>
-      <div class="topbar-actions">
-        <span id="cloudSyncBadge" class="cloud-pill is-local">Verificando Nuvem...</span>
-        <button type="button" id="refreshCloudBtn" class="btn-secondary">Sincronizar Agora</button>
-        <button type="button" id="logoutBtn" class="btn-secondary">Sair da Conta</button>
+      <span class="rounded-full border border-[#00ff66]/35 bg-[#00ff66]/10 px-3 py-1 text-xs font-bold text-[#00ff66]">
+        ● Sincronização Pronta
+      </span>
+    </div>
+
+    <div class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div class="rounded-xl border border-emerald-400/15 bg-[#0c1510]/95 p-4">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-[#9eb7a8]">Cadastrados</div>
+        <div id="adminCountTotal" class="mt-1 text-2xl font-extrabold text-[#00ff66]">2</div>
       </div>
-    </header>
-
-    <!-- Painel Super Admin -->
-    <div id="superAdminPanel" class="hidden">
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-label">Usuários Cadastrados</div>
-          <div id="statTotalUsers" class="stat-value">0</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Login Liberado (Ativos)</div>
-          <div id="statActiveUsers" class="stat-value">0</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Aguardando Liberação</div>
-          <div id="statPendingUsers" class="stat-value">0</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Suspensos / Bloqueados</div>
-          <div id="statBlockedUsers" class="stat-value">0</div>
-        </div>
+      <div class="rounded-xl border border-emerald-400/15 bg-[#0c1510]/95 p-4">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-[#9eb7a8]">Ativos</div>
+        <div id="adminCountActive" class="mt-1 text-2xl font-extrabold text-[#00ff66]">1</div>
       </div>
-
-      <div class="card">
-        <h2>Controle de Usuários Cadastrados</h2>
-        <p class="card-desc">Libere o login, suspenda, bloqueie ou exclua o cadastro de qualquer usuário do sistema.</p>
-
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Usuário / Mercearia</th>
-                <th>CPF/CNPJ &amp; Contato</th>
-                <th>Login / Senha</th>
-                <th>Status</th>
-                <th>Ações do Admin</th>
-              </tr>
-            </thead>
-            <tbody id="adminUsersTableBody"></tbody>
-          </table>
-        </div>
+      <div class="rounded-xl border border-emerald-400/15 bg-[#0c1510]/95 p-4">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-[#9eb7a8]">Pendentes</div>
+        <div id="adminCountPending" class="mt-1 text-2xl font-extrabold text-amber-300">1</div>
       </div>
-
-      <div class="card" style="margin-top: 20px;">
-        <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;">
-          <div>
-            <h2>Relatório de Dispositivos que Acessaram o Sistema</h2>
-            <p class="card-desc" style="margin-bottom: 0;">Controle de aparelhos, sistema operacional, navegador, usuário e data/hora de acesso.</p>
-          </div>
-          <button type="button" id="clearDevicesLogBtn" class="btn-danger">Limpar Histórico de Dispositivos</button>
-        </div>
-
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Usuário / Perfil</th>
-                <th>Tipo de Dispositivo</th>
-                <th>Sistema / Plataforma</th>
-                <th>Navegador / Detalhes</th>
-                <th>Data e Hora</th>
-              </tr>
-            </thead>
-            <tbody id="adminDevicesTableBody"></tbody>
-          </table>
-        </div>
+      <div class="rounded-xl border border-emerald-400/15 bg-[#0c1510]/95 p-4">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-[#9eb7a8]">Bloqueados</div>
+        <div id="adminCountBlocked" class="mt-1 text-2xl font-extrabold text-rose-400">0</div>
       </div>
     </div>
 
-    <!-- Painel da Mercearia -->
-    <div id="merchantPanel" class="hidden">
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-label">Clientes da Mercearia</div>
-          <div id="statMerchantCustomers" class="stat-value">0</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Saldo em Aberto (Crediário)</div>
-          <div id="statMerchantOpen" class="stat-value">R$ 0,00</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Total Recebido / Pago</div>
-          <div id="statMerchantPaid" class="stat-value">R$ 0,00</div>
-        </div>
+    <div class="neon-glow rounded-2xl border border-emerald-400/20 bg-[#0c1510]/95 p-5">
+      <h3 class="text-base font-extrabold text-white">Controle de Usuários Cadastrados</h3>
+      <p class="mt-0.5 mb-4 text-xs text-[#9eb7a8]">
+        Após liberar o acesso de um cliente, avise-o para sair e entrar novamente se já estiver com o sistema aberto.
+      </p>
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[600px] border-collapse text-left text-sm">
+          <thead>
+            <tr class="border-b border-emerald-400/15 text-xs uppercase text-[#9eb7a8]">
+              <th class="py-2.5 pr-3">Mercearia / Usuário</th>
+              <th class="py-2.5 px-3">Contato</th>
+              <th class="py-2.5 px-3">Status</th>
+              <th class="py-2.5 pl-3">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="adminUsersTable" class="divide-y divide-emerald-400/10"></tbody>
+        </table>
       </div>
+    </div>
+  </section>
 
-      <div class="panel-grid">
-        <div class="card">
-          <h2>Cadastrar Cliente da Mercearia</h2>
-          <p class="card-desc">Adicione o cliente, seu endereço completo e o limite de crédito no crediário da sua loja.</p>
-
-          <form id="groceryCustomerForm" novalidate>
-            <label for="gcName">Nome do Cliente</label>
-            <input id="gcName" type="text" placeholder="Ex.: João Pereira" required />
-
-            <div class="grid-2">
-              <div>
-                <label for="gcCpf">CPF ou Telefone</label>
-                <input id="gcCpf" type="text" placeholder="000.000.000-00" required />
-              </div>
-              <div>
-                <label for="gcLimit">Limite de Crédito (R$)</label>
-                <input id="gcLimit" type="number" step="0.01" min="0" placeholder="500.00" required />
-              </div>
-            </div>
-
-            <div class="grid-2">
-              <div>
-                <label for="gcStreet">Rua</label>
-                <input id="gcStreet" type="text" placeholder="Ex.: Rua das Palmeiras" required />
-              </div>
-              <div>
-                <label for="gcPropertyType">Tipo (Casa / Ap / Comércio)</label>
-                <select id="gcPropertyType" required>
-                  <option value="Casa" selected>Casa</option>
-                  <option value="Ap">Ap</option>
-                  <option value="Comércio">Comércio</option>
-                </select>
-              </div>
-            </div>
-
-            <label for="gcNumber">Número do Estabelecimento / Imóvel</label>
-            <input id="gcNumber" type="text" placeholder="Ex.: 420 ou Sala 02" required />
-
-            <button type="submit" class="btn-primary">Salvar Cliente</button>
-          </form>
-        </div>
-
-        <div class="card">
-          <h2>Registrar Compra na Mercearia</h2>
-          <p class="card-desc">Escolha com ou sem entrada, defina as parcelas de 1x até 24x e gere os vencimentos.</p>
-
-          <form id="purchaseForm" novalidate>
-            <label for="purchCustomer">Cliente da Mercearia</label>
-            <select id="purchCustomer" required></select>
-
-            <label for="purchProduct">Itens / Compra da Mercearia</label>
-            <input id="purchProduct" type="text" placeholder="Ex.: Cesta básica / Açougue e padaria" required />
-
-            <div class="grid-2">
-              <div>
-                <label for="purchValue">Valor Total da Compra (R$)</label>
-                <input id="purchValue" type="number" step="0.01" min="0.01" required />
-              </div>
-              <div>
-                <label for="purchDownMode">Modalidade de Entrada</label>
-                <select id="purchDownMode">
-                  <option value="none" selected>Sem entrada</option>
-                  <option value="with">Com entrada</option>
-                </select>
-              </div>
-            </div>
-
-            <div id="downPaymentGroup" class="hidden">
-              <label for="purchDownPayment">Valor da Entrada (R$)</label>
-              <input id="purchDownPayment" type="number" step="0.01" min="0" value="0" />
-            </div>
-
-            <div>
-              <label for="purchInstallments">Parcelamento (até 24x)</label>
-              <select id="purchInstallments">
-                <option value="1">1x (Parcela única)</option>
-                <option value="2">2x parcelas</option>
-                <option value="3" selected>3x parcelas</option>
-                <option value="4">4x parcelas</option>
-                <option value="5">5x parcelas</option>
-                <option value="6">6x parcelas</option>
-                <option value="8">8x parcelas</option>
-                <option value="10">10x parcelas</option>
-                <option value="12">12x parcelas</option>
-                <option value="15">15x parcelas</option>
-                <option value="18">18x parcelas</option>
-                <option value="20">20x parcelas</option>
-                <option value="24">24x parcelas</option>
-              </select>
-            </div>
-
-            <div id="installmentPreview" class="muted" style="margin-top: 8px; font-size: 0.84rem;"></div>
-
-            <div class="grid-2">
-              <div>
-                <label for="purchDateTrigger">Data da Compra</label>
-                <div class="date-picker-box" data-calendar-picker="purchDate">
-                  <input id="purchDate" type="hidden" required />
-                  <button type="button" id="purchDateTrigger" class="date-trigger-btn" aria-haspopup="dialog" aria-expanded="false">
-                    <span id="purchDateDisplay" class="date-trigger-val">Selecionar data</span>
-                    <span class="date-trigger-icon" aria-hidden="true">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                      </svg>
-                    </span>
-                  </button>
-                  <div id="purchDatePopover" class="mini-calendar-popover hidden" role="dialog" aria-label="Calendário da data da compra"></div>
-                </div>
-              </div>
-              <div>
-                <label for="purchDueDateTrigger">1º Vencimento</label>
-                <div class="date-picker-box" data-calendar-picker="purchDueDate">
-                  <input id="purchDueDate" type="hidden" required />
-                  <button type="button" id="purchDueDateTrigger" class="date-trigger-btn" aria-haspopup="dialog" aria-expanded="false">
-                    <span id="purchDueDateDisplay" class="date-trigger-val">Selecionar data</span>
-                    <span class="date-trigger-icon" aria-hidden="true">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                      </svg>
-                    </span>
-                  </button>
-                  <div id="purchDueDatePopover" class="mini-calendar-popover hidden" role="dialog" aria-label="Calendário do primeiro vencimento"></div>
-                </div>
-              </div>
-            </div>
-
-            <div id="purchaseFeedback" class="feedback-msg"></div>
-            <button type="submit" class="btn-primary">Registrar Compra</button>
-          </form>
-        </div>
+  <!-- 3. PAINEL MERCEARIA -->
+  <section id="viewMerchant" class="mx-auto hidden max-w-6xl px-4 py-6">
+    <div class="neon-glow mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#00ff66]/35 bg-[#09100c]/95 p-5">
+      <div>
+        <h2 class="text-lg font-extrabold text-white">
+          Mercearia Central — <span class="text-[#00ff66]">Rodrigues ProDev</span>
+        </h2>
+        <p class="text-xs text-[#9eb7a8]">Gestão de clientes, limites de crédito e parcelas do crediário (1x a 24x).</p>
       </div>
+      <span class="rounded-full border border-[#00ff66]/35 bg-[#00ff66]/10 px-3 py-1 text-xs font-bold text-[#00ff66]">
+        ● Conta Ativa
+      </span>
+    </div>
 
-      <div class="card" style="margin-bottom: 20px;">
-        <h2>Clientes Cadastrados</h2>
-        <p class="card-desc">Acompanhe limite, saldo utilizado, saldo livre e exclua clientes quando necessário.</p>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Cliente / CPF</th>
-                <th>Endereço</th>
-                <th>Limite</th>
-                <th>Saldo</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="merchantCustomersBody"></tbody>
-          </table>
-        </div>
+    <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div class="rounded-xl border border-emerald-400/15 bg-[#0c1510]/95 p-4">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-[#9eb7a8]">Clientes Cadastrados</div>
+        <div id="merchantStatCustomers" class="mt-1 text-2xl font-extrabold text-[#00ff66]">2</div>
       </div>
-
-      <div class="card">
-        <h2>Compras e Parcelas do Crediário</h2>
-        <p class="card-desc">Dê baixa nas parcelas pagas ou exclua lançamentos do crediário.</p>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Cliente</th>
-                <th>Descrição / Parcela</th>
-                <th>Valor</th>
-                <th>Datas</th>
-                <th>Status</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="merchantPurchasesBody"></tbody>
-          </table>
-        </div>
+      <div class="rounded-xl border border-emerald-400/15 bg-[#0c1510]/95 p-4">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-[#9eb7a8]">Saldo em Aberto</div>
+        <div id="merchantStatOpen" class="mt-1 text-2xl font-extrabold text-amber-300">R$ 340,00</div>
       </div>
+      <div class="rounded-xl border border-emerald-400/15 bg-[#0c1510]/95 p-4">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-[#9eb7a8]">Total Pago</div>
+        <div id="merchantStatPaid" class="mt-1 text-2xl font-extrabold text-[#00ff66]">R$ 160,00</div>
+      </div>
+    </div>
 
-      <div class="card" style="margin-top: 20px;">
-        <h2>Assistente IA Rodrigues ProDev</h2>
-        <p class="card-desc">Consulte parcelas quitadas ou vencidas, veja limites, abra seu perfil ou execute ações rápidas no painel.</p>
-
-        <div class="action-group" style="margin-bottom: 12px;">
-          <button type="button" id="aiSummaryBtn" class="btn-secondary">Resumo do Crediário</button>
-          <button type="button" id="aiPaidBtn" class="btn-approve">Parcelas Quitadas</button>
-          <button type="button" id="aiOverdueBtn" class="btn-warn">Vencidos</button>
-          <button type="button" id="aiLimitsBtn" class="btn-secondary">Situação de Limites</button>
-          <button type="button" id="aiProfileBtn" class="btn-secondary">Meu Perfil</button>
-        </div>
-
-        <form id="aiCommandForm" style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <input id="aiInput" type="text" placeholder="Ex.: parcelas quitadas, filtrar cliente..., editar limite..., dar baixa..." style="flex: 1; min-width: 220px;" />
-          <button type="submit" class="btn-primary" style="width: auto; margin-top: 0;">Enviar Comando</button>
-        </form>
-
-        <div id="aiOutput" class="ai-box"><strong>IA Rodrigues ProDev:</strong>
-Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um comando.</div>
+    <div class="neon-glow rounded-2xl border border-emerald-400/20 bg-[#0c1510]/95 p-5">
+      <h3 class="mb-3 text-base font-extrabold text-white">Lançamentos do Crediário</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[560px] border-collapse text-left text-sm">
+          <thead>
+            <tr class="border-b border-emerald-400/15 text-xs uppercase text-[#9eb7a8]">
+              <th class="py-2.5 pr-3">Cliente</th>
+              <th class="py-2.5 px-3">Descrição</th>
+              <th class="py-2.5 px-3">Valor</th>
+              <th class="py-2.5 px-3">Status</th>
+              <th class="py-2.5 pl-3">Ação</th>
+            </tr>
+          </thead>
+          <tbody id="merchantInstallmentsBody" class="divide-y divide-emerald-400/10">
+            <tr>
+              <td class="py-3 pr-3 font-semibold text-white">Maria Oliveira</td>
+              <td class="py-3 px-3 text-[#9eb7a8]">Cesta básica (1/3)</td>
+              <td class="py-3 px-3 font-bold text-white">R$ 160,00</td>
+              <td class="py-3 px-3">
+                <span class="rounded-full border border-[#00ff66]/35 bg-[#00ff66]/15 px-2.5 py-0.5 text-xs font-bold text-[#00ff66]">Pago</span>
+              </td>
+              <td class="py-3 pl-3 text-xs text-[#9eb7a8]">Quitada</td>
+            </tr>
+            <tr>
+              <td class="py-3 pr-3 font-semibold text-white">Carlos Souza</td>
+              <td class="py-3 px-3 text-[#9eb7a8]">Açougue e padaria (1/2)</td>
+              <td class="py-3 px-3 font-bold text-white">R$ 340,00</td>
+              <td class="py-3 px-3">
+                <span id="demoParcelBadge" class="rounded-full border border-amber-400/35 bg-amber-400/15 px-2.5 py-0.5 text-xs font-bold text-amber-300">Em Aberto</span>
+              </td>
+              <td class="py-3 pl-3">
+                <button
+                  type="button"
+                  id="demoPayBtn"
+                  class="rounded-lg border border-[#00ff66]/40 bg-[#00ff66]/15 px-3 py-1 text-xs font-bold text-[#00ff66] hover:bg-[#00ff66]/25"
+                >
+                  Dar Baixa
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </section>
 
   <script>
-    const SUPER_ADMIN_USER = "rodrigues";
-    const SUPER_ADMIN_PASS = "Rodrigues84326810";
-    const STORAGE_KEY = "rodrigues_prodev_preview_v1";
-    const REMEMBER_KEY = "rodrigues_prodev_preview_remember_v1";
-    const PENDING_EXPIRY_MS = 10 * 24 * 60 * 60 * 1000;
-
-    // Configuração da nuvem (Supabase) — substitua pela URL e Anon Key do seu projeto
-    const CLOUD_CONFIG = {
-      url: "https://SEU-PROJETO.supabase.co",
-      anonKey: "SUA-ANON-KEY-AQUI",
-      table: "rodrigues_prodev_store",
-      recordId: "main_state"
-    };
-
-    const todayStr = new Date().toISOString().split("T")[0];
-    const nextMonthStr = (() => {
-      const d = new Date(`${todayStr}T12:00:00`);
-      d.setMonth(d.getMonth() + 1);
-      return d.toISOString().split("T")[0];
-    })();
-
-    // Retorna um estado 100% limpo, sem contas falsas ou dados aleatórios
-    function createInitialPreviewState() {
-      const now = Date.now();
-      return {
-        users: [],
-        groceryCustomers: [],
-        purchases: [],
-        deviceLogs: [],
-        deletedUsers: {},
-        lastUpdatedAt: now,
-        session: null
-      };
-    }
-
-    let state = createInitialPreviewState();
-    let isAdminMode = false;
-    let activeAuthTab = "login";
-    let isAuthenticating = false;
-    let authQueue = Promise.resolve();
-    let cloudSyncInFlight = null;
-
-    const calendarViewState = {
-      purchDate: { year: new Date().getFullYear(), month: new Date().getMonth() },
-      purchDueDate: { year: new Date().getFullYear(), month: new Date().getMonth() }
-    };
-
-    function isCloudConfigured() {
-      return (
-        typeof CLOUD_CONFIG.url === "string" &&
-        CLOUD_CONFIG.url.startsWith("https://") &&
-        !CLOUD_CONFIG.url.includes("SEU-PROJETO") &&
-        typeof CLOUD_CONFIG.anonKey === "string" &&
-        CLOUD_CONFIG.anonKey.length > 20 &&
-        !CLOUD_CONFIG.anonKey.includes("SUA-ANON-KEY")
-      );
-    }
-
-    function updateCloudBadge(statusText, isLocal = false) {
-      const badge = document.getElementById("cloudSyncBadge");
-      if (!badge) return;
-      badge.textContent = statusText;
-      badge.classList.toggle("is-local", isLocal);
-    }
-
-    function escapeHtml(str) {
-      return String(str ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-    }
-
-    function formatCurrency(val) {
-      return (Number(val) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-    }
-
-    function formatDatePtBr(isoStr) {
-      if (!isoStr || typeof isoStr !== "string") return "-";
-      const parts = isoStr.split("-");
-      if (parts.length !== 3) return isoStr;
-      return `${parts[2]}/${parts[1]}/${parts[0]}`;
-    }
-
-    function addMonthsToDateStr(isoStr, monthsToAdd) {
-      const base = new Date(`${isoStr}T12:00:00`);
-      if (Number.isNaN(base.getTime())) return isoStr;
-      base.setMonth(base.getMonth() + monthsToAdd);
-      return base.toISOString().split("T")[0];
-    }
-
-    // Remove automaticamente contas que ficaram "Pendente" por mais de 10 dias
-    function pruneExpiredPendingUsers() {
-      const now = Date.now();
-      const cutoff = now - PENDING_EXPIRY_MS;
-      state.deletedUsers = state.deletedUsers && typeof state.deletedUsers === "object" ? state.deletedUsers : {};
-
-      state.users = (state.users || []).filter((u) => {
-        if (!u || !u.user || !u.name) return false; // descarta registros corrompidos ou incompletos
-        if (u.status !== "Ativo") {
-          const createdTs = Number(u.createdAtTs) || Number(new Date(u.createdAt || 0).getTime()) || 0;
-          if (createdTs > 0 && createdTs < cutoff) {
-            state.deletedUsers[u.id] = now;
-            return false;
-          }
-        }
-        if (state.deletedUsers[u.id]) {
-          return false;
-        }
-        return true;
-      });
-    }
-
-    function mergeStates(localState, cloudPayload) {
-      const base = createInitialPreviewState();
-      const loc = localState && typeof localState === "object" ? localState : base;
-      const cld = cloudPayload && typeof cloudPayload === "object" ? cloudPayload : null;
-
-      const mergedDeletedUsers = {
-        ...(loc.deletedUsers || {}),
-        ...((cld && cld.deletedUsers) || {})
+    (function () {
+      const views = {
+        auth: document.getElementById("viewAuth"),
+        admin: document.getElementById("viewAdmin"),
+        merchant: document.getElementById("viewMerchant")
       };
 
-      const byUserId = new Map();
-      const ingestUsers = (arr) => {
-        (arr || []).forEach((u) => {
-          if (!u || !u.id || !u.user || !u.name || mergedDeletedUsers[u.id]) return;
-          const prev = byUserId.get(u.id);
-          const uTs = Number(u.updatedAt) || Number(u.createdAtTs) || 0;
-          const pTs = prev ? (Number(prev.updatedAt) || Number(prev.createdAtTs) || 0) : -1;
-          if (!prev || uTs >= pTs) {
-            byUserId.set(u.id, {
-              ...u,
-              createdAtTs: Number(u.createdAtTs) || Number(new Date(u.createdAt || Date.now()).getTime()) || Date.now(),
-              updatedAt: uTs || Date.now()
-            });
-          }
+      const adminUsers = [
+        { id: "u1", name: "Mercearia Central", handle: "mercearia_central", phone: "(67) 99811-2233", status: "Ativo" },
+        { id: "u2", name: "Mercado Bom Preço", handle: "bom_preco", phone: "(67) 99122-3344", status: "Pendente" }
+      ];
+
+      let previewAdminMode = false;
+
+      function showView(name) {
+        Object.keys(views).forEach((k) => {
+          views[k]?.classList.toggle("hidden", k !== name);
         });
-      };
+        if (name === "admin") renderPreviewAdmin();
+      }
 
-      ingestUsers(loc.users);
-      if (cld) ingestUsers(cld.users);
+      function showAuthMsg(text, isError) {
+        const box = document.getElementById("previewAuthMessage");
+        if (!box) return;
+        box.classList.remove("hidden", "border-rose-500/40", "bg-rose-500/15", "text-rose-200", "border-[#00ff66]/40", "bg-[#00ff66]/10", "text-emerald-100");
+        box.classList.add(
+          ...(isError
+            ? ["border-rose-500/40", "bg-rose-500/15", "text-rose-200"]
+            : ["border-[#00ff66]/40", "bg-[#00ff66]/10", "text-emerald-100"])
+        );
+        box.textContent = text;
+      }
 
-      const mergeById = (arrA, arrB) => {
-        const map = new Map();
-        [...(arrA || []), ...(arrB || [])].forEach((item) => {
-          if (!item || !item.id) return;
-          const prev = map.get(item.id);
-          const aTs = Number(item.updatedAt) || 0;
-          const pTs = prev ? (Number(prev.updatedAt) || 0) : -1;
-          if (!prev || aTs >= pTs) map.set(item.id, item);
+      function renderPreviewAdmin() {
+        const tbody = document.getElementById("adminUsersTable");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+
+        adminUsers.forEach((u) => {
+          const isActive = u.status === "Ativo";
+          const isBlocked = u.status === "Bloqueado";
+          const badgeClass = isActive
+            ? "border-[#00ff66]/35 bg-[#00ff66]/15 text-[#00ff66]"
+            : isBlocked
+            ? "border-rose-500/35 bg-rose-500/15 text-rose-300"
+            : "border-amber-400/35 bg-amber-400/15 text-amber-300";
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="py-3 pr-3">
+              <div class="font-bold text-white">${u.name}</div>
+              <div class="text-xs text-[#9eb7a8]">@${u.handle}</div>
+            </td>
+            <td class="py-3 px-3 text-xs text-[#9eb7a8]">${u.phone}</td>
+            <td class="py-3 px-3">
+              <span class="rounded-full border px-2.5 py-0.5 text-xs font-bold ${badgeClass}">${u.status}</span>
+            </td>
+            <td class="py-3 pl-3">
+              <div class="flex flex-wrap gap-1.5">
+                <button type="button" data-act="Ativo" data-id="${u.id}" class="rounded-lg border border-[#00ff66]/40 bg-[#00ff66]/15 px-2.5 py-1 text-xs font-bold text-[#00ff66] hover:bg-[#00ff66]/25">
+                  Liberar
+                </button>
+                <button type="button" data-act="Bloqueado" data-id="${u.id}" class="rounded-lg border border-rose-500/40 bg-rose-500/15 px-2.5 py-1 text-xs font-bold text-rose-300 hover:bg-rose-500/25">
+                  Bloquear
+                </button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
         });
-        return Array.from(map.values());
-      };
 
-      const merged = {
-        users: Array.from(byUserId.values()),
-        groceryCustomers: mergeById(loc.groceryCustomers, cld && cld.groceryCustomers),
-        purchases: mergeById(loc.purchases, cld && cld.purchases),
-        deviceLogs: mergeById(loc.deviceLogs, cld && cld.deviceLogs).sort((a, b) => (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0)).slice(0, 80),
-        deletedUsers: mergedDeletedUsers,
-        lastUpdatedAt: Math.max(Number(loc.lastUpdatedAt) || 0, Number(cld && cld.lastUpdatedAt) || 0, Date.now()),
-        session: loc.session || null
-      };
+        tbody.querySelectorAll("button[data-act]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const id = btn.getAttribute("data-id");
+            const next = btn.getAttribute("data-act");
+            const item = adminUsers.find((x) => x.id === id);
+            if (item && next) {
+              item.status = next;
+              renderPreviewAdmin();
+            }
+          });
+        });
 
-      const cutoff = Date.now() - PENDING_EXPIRY_MS;
-      merged.users = merged.users.filter((u) => {
-        if (u.status !== "Ativo" && (Number(u.createdAtTs) || 0) > 0 && (Number(u.createdAtTs) || 0) < cutoff) {
-          merged.deletedUsers[u.id] = Date.now();
-          return false;
-        }
-        return true;
+        document.getElementById("adminCountTotal").textContent = String(adminUsers.length);
+        document.getElementById("adminCountActive").textContent = String(adminUsers.filter((x) => x.status === "Ativo").length);
+        document.getElementById("adminCountPending").textContent = String(adminUsers.filter((x) => x.status === "Pendente").length);
+        document.getElementById("adminCountBlocked").textContent = String(adminUsers.filter((x) => x.status === "Bloqueado").length);
+      }
+
+      document.getElementById("btnViewAuth")?.addEventListener("click", () => showView("auth"));
+      document.getElementById("btnViewAdmin")?.addEventListener("click", () => showView("admin"));
+      document.getElementById("btnViewMerchant")?.addEventListener("click", () => showView("merchant"));
+
+      document.getElementById("subTabLogin")?.addEventListener("click", () => {
+        document.getElementById("subTabLogin").className = "rounded-lg bg-[#00ff66] py-2 text-sm font-extrabold text-[#041008]";
+        document.getElementById("subTabRegister").className = "rounded-lg py-2 text-sm font-bold text-[#9eb7a8] hover:text-white";
+        document.getElementById("previewLoginForm")?.classList.remove("hidden");
+        document.getElementById("previewRegisterForm")?.classList.add("hidden");
       });
 
-      return merged;
-    }
+      document.getElementById("subTabRegister")?.addEventListener("click", () => {
+        document.getElementById("subTabRegister").className = "rounded-lg bg-[#00ff66] py-2 text-sm font-extrabold text-[#041008]";
+        document.getElementById("subTabLogin").className = "rounded-lg py-2 text-sm font-bold text-[#9eb7a8] hover:text-white";
+        document.getElementById("previewRegisterForm")?.classList.remove("hidden");
+        document.getElementById("previewLoginForm")?.classList.add("hidden");
+      });
 
-    async function pushStateToCloud(currentState) {
-      if (!isCloudConfigured()) {
-        updateCloudBadge("Modo Local (Configure Supabase)", true);
-        return false;
-      }
+      document.getElementById("togglePreviewAdminMode")?.addEventListener("click", () => {
+        previewAdminMode = !previewAdminMode;
+        const label = document.getElementById("previewLoginUserLabel");
+        const input = document.getElementById("previewLoginUser");
+        const toggleBtn = document.getElementById("togglePreviewAdminMode");
+        const subTabs = document.getElementById("authSubTabs");
 
-      try {
-        updateCloudBadge("Salvando na Nuvem...", false);
-        const endpoint = `${CLOUD_CONFIG.url}/rest/v1/${CLOUD_CONFIG.table}?on_conflict=id`;
-        const bodyPayload = [{
-          id: CLOUD_CONFIG.recordId,
-          payload: {
-            users: currentState.users,
-            groceryCustomers: currentState.groceryCustomers,
-            purchases: currentState.purchases,
-            deviceLogs: currentState.deviceLogs,
-            deletedUsers: currentState.deletedUsers,
-            lastUpdatedAt: currentState.lastUpdatedAt || Date.now()
-          },
-          updated_at: new Date().toISOString()
-        }];
-
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": CLOUD_CONFIG.anonKey,
-            "Authorization": `Bearer ${CLOUD_CONFIG.anonKey}`,
-            "Prefer": "resolution=merge-duplicates,return=representation"
-          },
-          body: JSON.stringify(bodyPayload)
-        });
-
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-        updateCloudBadge("Sincronizado na Nuvem", false);
-        return true;
-      } catch (err) {
-        console.warn("Falha ao enviar para a nuvem:", err);
-        updateCloudBadge("Offline / Falha Nuvem", true);
-        return false;
-      }
-    }
-
-    async function pullStateFromCloud() {
-      if (!isCloudConfigured()) {
-        updateCloudBadge("Modo Local (Configure Supabase)", true);
-        return null;
-      }
-
-      try {
-        updateCloudBadge("Sincronizando...", false);
-        const endpoint = `${CLOUD_CONFIG.url}/rest/v1/${CLOUD_CONFIG.table}?id=eq.${encodeURIComponent(CLOUD_CONFIG.recordId)}&select=payload,updated_at`;
-        const res = await fetch(endpoint, {
-          method: "GET",
-          headers: {
-            "apikey": CLOUD_CONFIG.anonKey,
-            "Authorization": `Bearer ${CLOUD_CONFIG.anonKey}`,
-            "Cache-Control": "no-cache"
-          }
-        });
-
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-        const rows = await res.json();
-        updateCloudBadge("Sincronizado na Nuvem", false);
-        if (Array.isArray(rows) && rows.length > 0 && rows[0].payload) {
-          return rows[0].payload;
-        }
-        return null;
-      } catch (err) {
-        console.warn("Falha ao buscar da nuvem:", err);
-        updateCloudBadge("Offline / Falha Nuvem", true);
-        return null;
-      }
-    }
-
-    async function syncWithCloud(forcePushIfEmpty = false) {
-      if (cloudSyncInFlight) {
-        return cloudSyncInFlight;
-      }
-      cloudSyncInFlight = (async () => {
-        try {
-          const cloudPayload = await pullStateFromCloud();
-          state = mergeStates(state, cloudPayload);
-          pruneExpiredPendingUsers();
-          try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-          } catch (err) {
-            console.error("Erro ao salvar cache local:", err);
-          }
-          if (isCloudConfigured() && (!cloudPayload || forcePushIfEmpty)) {
-            await pushStateToCloud(state);
-          }
-        } finally {
-          cloudSyncInFlight = null;
-        }
-      })();
-      return cloudSyncInFlight;
-    }
-
-    async function saveStateAndSyncCloud() {
-      pruneExpiredPendingUsers();
-      state.lastUpdatedAt = Date.now();
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      } catch (err) {
-        console.error("Erro ao salvar estado da prévia:", err);
-      }
-      if (isCloudConfigured()) {
-        await pushStateToCloud(state);
-      } else {
-        updateCloudBadge("Modo Local (Configure Supabase)", true);
-      }
-    }
-
-    function saveState() {
-      try {
-        pruneExpiredPendingUsers();
-        state.lastUpdatedAt = Date.now();
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        if (isCloudConfigured()) {
-          void pushStateToCloud(state);
+        if (previewAdminMode) {
+          subTabs?.classList.add("hidden");
+          document.getElementById("previewRegisterForm")?.classList.add("hidden");
+          document.getElementById("previewLoginForm")?.classList.remove("hidden");
+          if (label) label.textContent = "Usuário Administrador";
+          if (input) input.placeholder = "Digite: rodrigues";
+          if (toggleBtn) toggleBtn.textContent = "Voltar para Acesso do Usuário";
         } else {
-          updateCloudBadge("Modo Local (Configure Supabase)", true);
+          subTabs?.classList.remove("hidden");
+          if (label) label.textContent = "Usuário ou CPF";
+          if (input) input.placeholder = "Digite seu usuário ou CPF";
+          if (toggleBtn) toggleBtn.textContent = "Acesso Restrito (Admin)";
         }
-      } catch (err) {
-        console.error("Erro ao salvar estado da prévia:", err);
-      }
-    }
+      });
 
-    function loadState() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) {
-          state = createInitialPreviewState();
-          saveState();
+      document.getElementById("previewLoginForm")?.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const u = String(document.getElementById("previewLoginUser")?.value || "").trim().toLowerCase();
+        const p = String(document.getElementById("previewLoginPass")?.value || "").trim();
+
+        if (previewAdminMode) {
+          if (u === "rodrigues" && p === "Rodrigues84326810") {
+            showView("admin");
+          } else {
+            showAuthMsg("Usuário ou senha de administrador incorretos. (Usuário esperado: rodrigues)", true);
+          }
           return;
         }
-        const parsed = JSON.parse(raw);
-        if (parsed && typeof parsed === "object") {
-          state = {
-            users: Array.isArray(parsed.users) ? parsed.users : [],
-            groceryCustomers: Array.isArray(parsed.groceryCustomers) ? parsed.groceryCustomers : [],
-            purchases: Array.isArray(parsed.purchases) ? parsed.purchases : [],
-            deviceLogs: Array.isArray(parsed.deviceLogs) ? parsed.deviceLogs : [],
-            deletedUsers: parsed.deletedUsers && typeof parsed.deletedUsers === "object" ? parsed.deletedUsers : {},
-            lastUpdatedAt: Number(parsed.lastUpdatedAt) || Date.now(),
-            session: parsed.session || null
-          };
-          pruneExpiredPendingUsers();
+
+        const found = adminUsers.find((item) => item.handle.toLowerCase() === u);
+        if (!found) {
+          showAuthMsg("Usuário não encontrado nesta prévia. Cadastre na aba ao lado ou abra o Painel Super Admin.", true);
+          return;
         }
-      } catch {
-        state = createInitialPreviewState();
-      }
-      updateCloudBadge(isCloudConfigured() ? "Conectando Nuvem..." : "Modo Local (Configure Supabase)", !isCloudConfigured());
-    }
-
-    function saveRememberedCredentials(user, pass, adminFlag) {
-      try {
-        localStorage.setItem(REMEMBER_KEY, JSON.stringify({
-          user: String(user || ""),
-          pass: String(pass || ""),
-          isAdmin: Boolean(adminFlag)
-        }));
-      } catch {
-        // Ignora erro de armazenamento
-      }
-    }
-
-    function clearRememberedCredentials() {
-      try {
-        localStorage.removeItem(REMEMBER_KEY);
-      } catch {
-        // Ignora erro de armazenamento
-      }
-    }
-
-    function applyRememberedCredentialsToForm() {
-      try {
-        const raw = localStorage.getItem(REMEMBER_KEY);
-        if (!raw) return;
-        const parsed = JSON.parse(raw);
-        const check = document.getElementById("rememberMeCheck");
-        const userInput = document.getElementById("loginUser");
-        const passInput = document.getElementById("loginPass");
-        if (check) check.checked = true;
-        if (typeof parsed.isAdmin === "boolean") {
-          isAdminMode = parsed.isAdmin;
-          applyAuthModeUI();
+        if (found.status !== "Ativo") {
+          showAuthMsg(`Cadastro está ${found.status}. Libere no Painel Super Admin para entrar.`, true);
+          return;
         }
-        if (userInput && parsed.user) userInput.value = parsed.user;
-        if (passInput && parsed.pass) passInput.value = parsed.pass;
-      } catch {
-        // Ignora erro de leitura
-      }
-    }
-
-    function recordDeviceAccess(sess) {
-      if (!sess) return;
-      const now = new Date();
-      const ua = navigator.userAgent || "";
-      const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
-      const entry = {
-        id: "dev_" + now.getTime() + "_" + Math.random().toString(36).slice(2, 6),
-        userLabel: `${sess.name || sess.user} (${sess.role === "super_admin" ? "Admin" : "Usuário"})`,
-        deviceType: isMobile ? "Celular / Tablet" : "Computador / Desktop",
-        platform: navigator.platform || "Navegador Web",
-        browserDetails: "Preview Rodrigues ProDev",
-        accessedAtText: now.toLocaleString("pt-BR"),
-        updatedAt: now.getTime()
-      };
-      state.deviceLogs = [entry, ...(state.deviceLogs || [])].slice(0, 50);
-      saveState();
-    }
-
-    const UserRepository = {
-      getUserById(id) {
-        return state.users.find((u) => u.id === id) || null;
-      },
-      getUserByLoginOrCpf(loginOrCpf) {
-        const needle = String(loginOrCpf || "").trim().toLowerCase();
-        const digitsOnly = needle.replace(/\D/g, "");
-        return state.users.find((u) => {
-          const byUser = String(u.user || "").trim().toLowerCase() === needle;
-          const byCpfRaw = String(u.cpf || "").trim().toLowerCase() === needle;
-          const byCpfDigits = digitsOnly.length >= 6 && String(u.cpf || "").replace(/\D/g, "") === digitsOnly;
-          return byUser || byCpfRaw || byCpfDigits;
-        }) || null;
-      },
-      updateUserStatus(userId, nextStatus) {
-        const nowTs = Date.now();
-        state.users = state.users.map((u) => u.id === userId ? {
-          ...u,
-          status: nextStatus,
-          adminApprovedAt: nextStatus === "Ativo" ? nowTs : 0,
-          updatedAt: nowTs
-        } : u);
-        saveState();
-        if (state.session && state.session.role === "merchant_user" && state.session.userId === userId && nextStatus !== "Ativo") {
-          AuthStore.revokeSession(`Sua conta foi alterada para ${nextStatus}.`);
-        }
-      },
-      deleteUser(userId) {
-        state.deletedUsers = state.deletedUsers && typeof state.deletedUsers === "object" ? state.deletedUsers : {};
-        state.deletedUsers[userId] = Date.now();
-        state.users = state.users.filter((u) => u.id !== userId);
-        state.groceryCustomers = state.groceryCustomers.filter((c) => c.ownerUserId !== userId);
-        state.purchases = state.purchases.filter((p) => p.ownerUserId !== userId);
-        saveState();
-        if (state.session && state.session.role === "merchant_user" && state.session.userId === userId) {
-          AuthStore.revokeSession("Sua conta foi removida pelo administrador.");
-        }
-      }
-    };
-
-    const AuthStore = {
-      getSession() {
-        return state.session || null;
-      },
-      revokeSession(reasonMessage = "", showAuthNotice = true) {
-        state.session = null;
-        saveState();
-        document.getElementById("loginView")?.classList.remove("hidden");
-        document.getElementById("appView")?.classList.add("hidden");
-        applyAuthModeUI();
-        if (showAuthNotice && reasonMessage) {
-          setAuthFeedback(reasonMessage, true);
-        }
-      }
-    };
-
-    function assertUserAuthorized() {
-      const sess = AuthStore.getSession();
-      if (!sess) {
-        AuthStore.revokeSession("Sessão encerrada. Faça login novamente.");
-        return false;
-      }
-      if (sess.role === "super_admin") return true;
-      const userRec = UserRepository.getUserById(sess.userId);
-      if (!userRec || userRec.status !== "Ativo") {
-        AuthStore.revokeSession("Conta inativa ou não encontrada. Contate Rodrigues ProDev (67 991267853).");
-        return false;
-      }
-      return true;
-    }
-
-    function setPickerDate(inputId, isoDate) {
-      const hiddenInput = document.getElementById(inputId);
-      const displaySpan = document.getElementById(`${inputId}Display`);
-      if (hiddenInput) hiddenInput.value = isoDate;
-      if (displaySpan) displaySpan.textContent = formatDatePtBr(isoDate);
-    }
-
-    function closeAllMiniCalendars(exceptId = null) {
-      ["purchDate", "purchDueDate"].forEach((id) => {
-        if (id === exceptId) return;
-        document.getElementById(`${id}Popover`)?.classList.add("hidden");
-        document.getElementById(`${id}Trigger`)?.setAttribute("aria-expanded", "false");
-      });
-    }
-
-    function renderMiniCalendar(inputId) {
-      const pop = document.getElementById(`${inputId}Popover`);
-      if (!pop) return;
-      const view = calendarViewState[inputId] || { year: new Date().getFullYear(), month: new Date().getMonth() };
-      const selectedVal = document.getElementById(inputId)?.value || todayStr;
-      const firstDay = new Date(view.year, view.month, 1);
-      const startWeekday = firstDay.getDay();
-      const daysInMonth = new Date(view.year, view.month + 1, 0).getDate();
-      const monthLabel = firstDay.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
-
-      let dayCellsHtml = "";
-      for (let i = 0; i < startWeekday; i++) {
-        dayCellsHtml += `<button type="button" class="mini-cal-day" disabled></button>`;
-      }
-      for (let d = 1; d <= daysInMonth; d++) {
-        const mm = String(view.month + 1).padStart(2, "0");
-        const dd = String(d).padStart(2, "0");
-        const isoDay = `${view.year}-${mm}-${dd}`;
-        const classes = ["mini-cal-day"];
-        if (isoDay === selectedVal) classes.push("is-selected");
-        if (isoDay === todayStr) classes.push("is-today");
-        dayCellsHtml += `<button type="button" class="${classes.join(" ")}" data-cal-day="${isoDay}">${d}</button>`;
-      }
-
-      pop.innerHTML = `
-        <div class="mini-cal-header">
-          <button type="button" class="mini-cal-nav" data-cal-prev="${inputId}" aria-label="Mês anterior">‹</button>
-          <span class="mini-cal-title">${escapeHtml(monthLabel)}</span>
-          <button type="button" class="mini-cal-nav" data-cal-next="${inputId}" aria-label="Próximo mês">›</button>
-        </div>
-        <div class="mini-cal-weekdays">
-          <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
-        </div>
-        <div class="mini-cal-days">${dayCellsHtml}</div>
-        <div class="mini-cal-footer">
-          <button type="button" class="mini-cal-action" data-cal-today="${inputId}">Hoje</button>
-          <button type="button" class="mini-cal-action" data-cal-close="${inputId}">Fechar</button>
-        </div>
-      `;
-
-      pop.querySelector(`[data-cal-prev="${inputId}"]`)?.addEventListener("click", () => {
-        const prev = new Date(view.year, view.month - 1, 1);
-        calendarViewState[inputId] = { year: prev.getFullYear(), month: prev.getMonth() };
-        renderMiniCalendar(inputId);
+        showView("merchant");
       });
 
-      pop.querySelector(`[data-cal-next="${inputId}"]`)?.addEventListener("click", () => {
-        const next = new Date(view.year, view.month + 1, 1);
-        calendarViewState[inputId] = { year: next.getFullYear(), month: next.getMonth() };
-        renderMiniCalendar(inputId);
-      });
-
-      pop.querySelectorAll("[data-cal-day]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const chosen = btn.getAttribute("data-cal-day");
-          if (chosen) {
-            setPickerDate(inputId, chosen);
-            closeAllMiniCalendars();
-          }
-        });
-      });
-
-      pop.querySelector(`[data-cal-today="${inputId}"]`)?.addEventListener("click", () => {
-        const now = new Date();
-        calendarViewState[inputId] = { year: now.getFullYear(), month: now.getMonth() };
-        setPickerDate(inputId, todayStr);
-        closeAllMiniCalendars();
-      });
-
-      pop.querySelector(`[data-cal-close="${inputId}"]`)?.addEventListener("click", () => {
-        closeAllMiniCalendars();
-      });
-    }
-
-    function initMiniCalendars() {
-      ["purchDate", "purchDueDate"].forEach((inputId) => {
-        const triggerBtn = document.getElementById(`${inputId}Trigger`);
-        const popoverEl = document.getElementById(`${inputId}Popover`);
-        if (!triggerBtn || !popoverEl) return;
-
-        triggerBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const willOpen = popoverEl.classList.contains("hidden");
-          closeAllMiniCalendars(inputId);
-          if (willOpen) {
-            const currentVal = document.getElementById(inputId)?.value || todayStr;
-            const parsed = new Date(`${currentVal}T12:00:00`);
-            if (!Number.isNaN(parsed.getTime())) {
-              calendarViewState[inputId] = { year: parsed.getFullYear(), month: parsed.getMonth() };
-            }
-            renderMiniCalendar(inputId);
-            popoverEl.classList.remove("hidden");
-            triggerBtn.setAttribute("aria-expanded", "true");
-          }
-        });
-
-        popoverEl.addEventListener("click", (e) => e.stopPropagation());
-      });
-
-      document.addEventListener("click", () => closeAllMiniCalendars());
-    }
-
-    function enqueueAuthTask(fn) {
-      authQueue = authQueue.then(() => fn()).catch(() => {});
-      return authQueue;
-    }
-
-    function setLoginFormBusy(busy) {
-      isAuthenticating = busy;
-      const loginBtn = document.getElementById("loginSubmitBtn");
-      const regBtn = document.getElementById("registerSubmitBtn");
-      if (loginBtn) loginBtn.disabled = busy;
-      if (regBtn) regBtn.disabled = busy;
-    }
-
-    function setAuthFeedback(htmlOrText, isError = false) {
-      const el = document.getElementById("authFeedback");
-      if (!el) return;
-      el.className = isError ? "feedback-msg feedback-error" : "feedback-msg";
-      el.innerHTML = htmlOrText;
-    }
-
-    function applyAuthModeUI() {
-      const userTabs = document.getElementById("userTabs");
-      const loginForm = document.getElementById("loginForm");
-      const registerForm = document.getElementById("registerForm");
-      const loginUserLabel = document.getElementById("loginUserLabel");
-      const loginUserInput = document.getElementById("loginUser");
-      const subtitleEl = document.getElementById("authSubtitle");
-      const toggleAdminText = document.getElementById("toggleAdminText");
-
-      setAuthFeedback("");
-
-      if (isAdminMode) {
-        userTabs?.classList.add("hidden");
-        registerForm?.classList.add("hidden");
-        loginForm?.classList.remove("hidden");
-        if (loginUserLabel) loginUserLabel.textContent = "Usuário Administrador";
-        if (loginUserInput) loginUserInput.placeholder = "Digite o usuário admin";
-        if (subtitleEl) subtitleEl.textContent = "Acesso restrito ao administrador Rodrigues ProDev.";
-        if (toggleAdminText) toggleAdminText.textContent = "Voltar para Acesso do Usuário";
-        return;
-      }
-
-      userTabs?.classList.remove("hidden");
-      if (loginUserLabel) loginUserLabel.textContent = "Usuário ou CPF";
-      if (loginUserInput) loginUserInput.placeholder = "Digite seu usuário ou CPF";
-      if (toggleAdminText) toggleAdminText.textContent = "Acesso Restrito (Admin)";
-
-      const tabLoginBtn = document.getElementById("tabLoginBtn");
-      const tabRegisterBtn = document.getElementById("tabRegisterBtn");
-
-      if (activeAuthTab === "register") {
-        tabLoginBtn?.classList.remove("active");
-        tabRegisterBtn?.classList.add("active");
-        loginForm?.classList.add("hidden");
-        registerForm?.classList.remove("hidden");
-        if (subtitleEl) subtitleEl.textContent = "Preencha seus dados completos. O acesso será liberado pelo administrador.";
-      } else {
-        tabLoginBtn?.classList.add("active");
-        tabRegisterBtn?.classList.remove("active");
-        loginForm?.classList.remove("hidden");
-        registerForm?.classList.add("hidden");
-        if (subtitleEl) subtitleEl.textContent = "Acesse seu painel da mercearia ou cadastre sua conta para liberação.";
-      }
-    }
-
-    function bindPasswordToggle(btnId, inputId) {
-      const btn = document.getElementById(btnId);
-      const input = document.getElementById(inputId);
-      if (!btn || !input) return;
-      btn.addEventListener("click", () => {
-        input.type = input.type === "password" ? "text" : "password";
-      });
-    }
-
-    async function processLoginSubmit(e) {
-      e.preventDefault();
-      if (isAuthenticating) return;
-
-      return enqueueAuthTask(async () => {
-        setLoginFormBusy(true);
-        setAuthFeedback("");
-
-        try {
-          const rawUser = String(document.getElementById("loginUser")?.value || "").trim();
-          const rawPass = String(document.getElementById("loginPass")?.value || "");
-
-          if (!rawUser || !rawPass) {
-            setAuthFeedback("Preencha o usuário e a senha para entrar.", true);
-            return;
-          }
-
-          if (isCloudConfigured()) {
-            await syncWithCloud(false);
-          }
-
-          if (isAdminMode) {
-            if (rawUser.toLowerCase() === SUPER_ADMIN_USER.toLowerCase() && rawPass.trim() === SUPER_ADMIN_PASS) {
-              const rememberChecked = Boolean(document.getElementById("rememberMeCheck")?.checked);
-              if (rememberChecked) saveRememberedCredentials(rawUser.toLowerCase(), rawPass.trim(), true);
-              else clearRememberedCredentials();
-
-              state.session = {
-                role: "super_admin",
-                name: "Administrador Rodrigues ProDev",
-                user: SUPER_ADMIN_USER
-              };
-              saveState();
-              recordDeviceAccess(state.session);
-              syncView();
-              return;
-            }
-            setAuthFeedback(`Usuário ou senha de administrador incorretos. (Usuário esperado: <strong>${escapeHtml(SUPER_ADMIN_USER)}</strong>)`, true);
-            return;
-          }
-
-          const matchedUser = UserRepository.getUserByLoginOrCpf(rawUser);
-          if (!matchedUser || String(matchedUser.pass ?? "").trim() !== rawPass.trim()) {
-            setAuthFeedback("Usuário/CPF ou senha inválidos. Se ainda não tem conta, clique em <strong>Cadastrar Conta</strong>.", true);
-            return;
-          }
-
-          if (matchedUser.status !== "Ativo") {
-            setAuthFeedback(
-              `Seu cadastro está <strong>${escapeHtml(matchedUser.status)}</strong> e aguarda liberação manual do administrador (expira em 10 dias se não confirmado). Contato: <strong>Rodrigues ProDev — 67 991267853</strong>.`,
-              true
-            );
-            return;
-          }
-
-          const rememberChecked = Boolean(document.getElementById("rememberMeCheck")?.checked);
-          if (rememberChecked) saveRememberedCredentials(rawUser, rawPass.trim(), false);
-          else clearRememberedCredentials();
-
-          state.session = {
-            role: "merchant_user",
-            userId: matchedUser.id,
-            name: matchedUser.name,
-            user: matchedUser.user
-          };
-          saveState();
-          recordDeviceAccess(state.session);
-          syncView();
-        } finally {
-          setLoginFormBusy(false);
-        }
-      });
-    }
-
-    async function processRegisterSubmit(e) {
-      e.preventDefault();
-      if (isAuthenticating) return;
-
-      return enqueueAuthTask(async () => {
-        setLoginFormBusy(true);
-        setAuthFeedback("");
-
-        try {
-          const name = String(document.getElementById("regName")?.value || "").trim();
-          const cpf = String(document.getElementById("regCpf")?.value || "").trim();
-          const phone = String(document.getElementById("regPhone")?.value || "").trim();
-          const address = String(document.getElementById("regAddress")?.value || "").trim();
-          const user = String(document.getElementById("regUser")?.value || "").trim();
-          const pass = String(document.getElementById("regPass")?.value || "");
-
-          if (!name || !cpf || !phone || !address || !user || !pass) {
-            setAuthFeedback("Preencha todos os campos do cadastro para enviar.", true);
-            return;
-          }
-
-          if (isCloudConfigured()) {
-            await syncWithCloud(false);
-          }
-
-          if (state.users.some((u) => String(u.user || "").trim().toLowerCase() === user.toLowerCase())) {
-            setAuthFeedback("Este nome de usuário já está em uso. Escolha outro usuário.", true);
-            return;
-          }
-
-          const nowTs = Date.now();
-          state.deletedUsers = state.deletedUsers && typeof state.deletedUsers === "object" ? state.deletedUsers : {};
-          const newUserId = "u_" + nowTs;
-          delete state.deletedUsers[newUserId];
-
-          state.users.unshift({
-            id: newUserId,
-            name,
-            cpf,
-            phone,
-            address,
-            user,
-            pass,
-            status: "Pendente",
-            adminApprovedAt: 0,
-            createdAt: new Date(nowTs).toISOString(),
-            createdAtTs: nowTs,
-            updatedAt: nowTs
-          });
-          await saveStateAndSyncCloud();
-
-          document.getElementById("registerForm")?.reset();
-          activeAuthTab = "login";
-          applyAuthModeUI();
-          setAuthFeedback("Cadastro enviado como <strong>Pendente</strong>. Acesse o modo Admin para liberar ou aguarde confirmação (expira em 10 dias).");
-        } finally {
-          setLoginFormBusy(false);
-        }
-      });
-    }
-
-    function renderSuperAdmin() {
-      const totalEl = document.getElementById("statTotalUsers");
-      const activeEl = document.getElementById("statActiveUsers");
-      const pendingEl = document.getElementById("statPendingUsers");
-      const blockedEl = document.getElementById("statBlockedUsers");
-      const tbody = document.getElementById("adminUsersTableBody");
-
-      const realUsers = state.users || [];
-      if (totalEl) totalEl.textContent = String(realUsers.length);
-      if (activeEl) activeEl.textContent = String(realUsers.filter((u) => u.status === "Ativo").length);
-      if (pendingEl) pendingEl.textContent = String(realUsers.filter((u) => u.status === "Pendente").length);
-      if (blockedEl) blockedEl.textContent = String(realUsers.filter((u) => u.status === "Suspenso" || u.status === "Bloqueado").length);
-
-      if (!tbody) return;
-      tbody.innerHTML = "";
-
-      if (!realUsers.length) {
-        tbody.innerHTML = `<tr><td colspan="5" class="muted">Nenhum usuário cadastrado no momento.</td></tr>`;
-        return;
-      }
-
-      realUsers.forEach((u) => {
-        const tr = document.createElement("tr");
-        let badgeClass = "badge-pending";
-        if (u.status === "Ativo") badgeClass = "badge-active";
-        else if (u.status === "Suspenso" || u.status === "Bloqueado") badgeClass = "badge-blocked";
-
-        tr.innerHTML = `
-          <td>
-            <strong>${escapeHtml(u.name)}</strong><br />
-            <span class="muted">${escapeHtml(u.address || "")}</span>
-          </td>
-          <td>
-            ${escapeHtml(u.cpf || "")}<br />
-            <span class="muted">${escapeHtml(u.phone || "")}</span>
-          </td>
-          <td>
-            Usuário: <strong>${escapeHtml(u.user)}</strong><br />
-            <span class="muted">Senha: ${escapeHtml(u.pass)}</span>
-          </td>
-          <td><span class="badge ${badgeClass}">${escapeHtml(u.status)}</span></td>
-          <td>
-            <div class="action-group">
-              ${u.status !== "Ativo" ? `<button type="button" class="btn-approve" data-admin-action="Ativo" data-user-id="${escapeHtml(u.id)}">Ativar / Liberar</button>` : ""}
-              ${u.status !== "Suspenso" ? `<button type="button" class="btn-warn" data-admin-action="Suspenso" data-user-id="${escapeHtml(u.id)}">Suspender</button>` : ""}
-              ${u.status !== "Bloqueado" ? `<button type="button" class="btn-danger" data-admin-action="Bloqueado" data-user-id="${escapeHtml(u.id)}">Bloquear</button>` : ""}
-              <button type="button" class="btn-danger" data-admin-delete="${escapeHtml(u.id)}">Excluir</button>
-            </div>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      tbody.querySelectorAll("button[data-admin-action]").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-          const uid = btn.getAttribute("data-user-id");
-          const nextStatus = btn.getAttribute("data-admin-action");
-          if (uid && nextStatus) {
-            UserRepository.updateUserStatus(uid, nextStatus);
-            await saveStateAndSyncCloud();
-            renderSuperAdmin();
-          }
-        });
-      });
-
-      tbody.querySelectorAll("button[data-admin-delete]").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-          const uid = btn.getAttribute("data-admin-delete");
-          if (uid) {
-            UserRepository.deleteUser(uid);
-            await saveStateAndSyncCloud();
-            renderSuperAdmin();
-          }
-        });
-      });
-
-      renderAdminDevicesLog();
-    }
-
-    function renderAdminDevicesLog() {
-      const devBody = document.getElementById("adminDevicesTableBody");
-      if (!devBody) return;
-      devBody.innerHTML = "";
-      const logs = state.deviceLogs || [];
-      if (!logs.length) {
-        devBody.innerHTML = `<tr><td colspan="5" class="muted">Nenhum acesso registrado ainda.</td></tr>`;
-        return;
-      }
-      logs.forEach((entry) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td><strong>${escapeHtml(entry.userLabel)}</strong></td>
-          <td>${escapeHtml(entry.deviceType)}</td>
-          <td>${escapeHtml(entry.platform)}</td>
-          <td><span class="muted">${escapeHtml(entry.browserDetails)}</span></td>
-          <td>${escapeHtml(entry.accessedAtText)}</td>
-        `;
-        devBody.appendChild(tr);
-      });
-    }
-
-    function updateInstallmentPreview() {
-      const value = parseFloat(document.getElementById("purchValue")?.value) || 0;
-      const hasDown = document.getElementById("purchDownMode")?.value === "with";
-      const downPayment = hasDown ? Math.max(0, parseFloat(document.getElementById("purchDownPayment")?.value) || 0) : 0;
-      const count = Math.max(1, parseInt(document.getElementById("purchInstallments")?.value, 10) || 1);
-      const previewEl = document.getElementById("installmentPreview");
-      if (!previewEl) return;
-
-      if (value <= 0) {
-        previewEl.textContent = "Informe o valor da compra para ver o resumo das parcelas.";
-        return;
-      }
-      if (hasDown && downPayment >= value) {
-        previewEl.textContent = "A entrada deve ser menor que o valor total da compra.";
-        return;
-      }
-
-      const financed = Math.max(0, Number((value - downPayment).toFixed(2)));
-      const financedCents = Math.round(financed * 100);
-      const baseCents = Math.floor(financedCents / count);
-      const remCents = financedCents - (baseCents * count);
-      const baseVal = formatCurrency(baseCents / 100);
-      const lastVal = formatCurrency((baseCents + remCents) / 100);
-      const instText = remCents > 0 && count > 1 ? `${count - 1}x de ${baseVal} + 1x de ${lastVal}` : `${count}x de ${lastVal}`;
-      const downText = hasDown && downPayment > 0 ? `Entrada de ${formatCurrency(downPayment)} + ` : "";
-      previewEl.textContent = `Resumo: ${downText}${instText} (Parcelado: ${formatCurrency(financed)} • Total: ${formatCurrency(value)})`;
-    }
-
-    function renderMerchantPanel() {
-      if (!assertUserAuthorized()) return;
-      const ownerUserId = state.session?.userId;
-      const myCusts = state.groceryCustomers.filter((c) => c.ownerUserId === ownerUserId);
-      const myPurchs = state.purchases.filter((p) => p.ownerUserId === ownerUserId);
-
-      const openTotal = myPurchs.filter((p) => p.status === "Em Aberto").reduce((acc, p) => acc + (Number(p.value) || 0), 0);
-      const paidTotal = myPurchs.filter((p) => p.status === "Pago").reduce((acc, p) => acc + (Number(p.value) || 0), 0);
-
-      document.getElementById("statMerchantCustomers").textContent = String(myCusts.length);
-      document.getElementById("statMerchantOpen").textContent = formatCurrency(openTotal);
-      document.getElementById("statMerchantPaid").textContent = formatCurrency(paidTotal);
-
-      const selectEl = document.getElementById("purchCustomer");
-      if (selectEl) {
-        const prevVal = selectEl.value;
-        selectEl.innerHTML = "";
-        if (!myCusts.length) {
-          const opt = document.createElement("option");
-          opt.value = "";
-          opt.textContent = "Cadastre um cliente primeiro";
-          selectEl.appendChild(opt);
-        } else {
-          myCusts.forEach((c) => {
-            const opt = document.createElement("option");
-            opt.value = c.id;
-            const avail = Math.max(0, (Number(c.limit) || 0) - (Number(c.used) || 0));
-            opt.textContent = `${c.name} — Livre: ${formatCurrency(avail)}`;
-            selectEl.appendChild(opt);
-          });
-          if (prevVal && myCusts.some((c) => c.id === prevVal)) selectEl.value = prevVal;
-        }
-      }
-
-      updateInstallmentPreview();
-
-      const custBody = document.getElementById("merchantCustomersBody");
-      if (custBody) {
-        custBody.innerHTML = "";
-        if (!myCusts.length) {
-          custBody.innerHTML = `<tr><td colspan="5" class="muted">Nenhum cliente cadastrado ainda.</td></tr>`;
-        } else {
-          myCusts.forEach((c) => {
-            const lim = Number(c.limit) || 0;
-            const used = Number(c.used) || 0;
-            const avail = Math.max(0, lim - used);
-            const addr = [c.street, c.propertyType && c.number ? `${c.propertyType} ${c.number}` : (c.propertyType || c.number)].filter(Boolean).join(", ");
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-              <td><strong>${escapeHtml(c.name)}</strong><br /><span class="muted">${escapeHtml(c.cpf)}</span></td>
-              <td>${escapeHtml(addr || "Não informado")}</td>
-              <td>${formatCurrency(lim)}</td>
-              <td>Usado: ${formatCurrency(used)}<br /><strong>Livre: ${formatCurrency(avail)}</strong></td>
-              <td><button type="button" class="btn-danger" data-del-cust="${escapeHtml(c.id)}">Excluir</button></td>
-            `;
-            custBody.appendChild(tr);
-          });
-
-          custBody.querySelectorAll("button[data-del-cust]").forEach((btn) => {
-            btn.addEventListener("click", () => {
-              const cid = btn.getAttribute("data-del-cust");
-              state.groceryCustomers = state.groceryCustomers.filter((c) => c.id !== cid);
-              state.purchases = state.purchases.filter((p) => p.customerId !== cid);
-              saveState();
-              renderMerchantPanel();
-            });
-          });
-        }
-      }
-
-      const tbody = document.getElementById("merchantPurchasesBody");
-      if (!tbody) return;
-      tbody.innerHTML = "";
-      if (!myPurchs.length) {
-        tbody.innerHTML = `<tr><td colspan="6" class="muted">Nenhuma compra registrada ainda.</td></tr>`;
-        return;
-      }
-
-      myPurchs.forEach((p) => {
-        const isPaid = p.status === "Pago";
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td><strong>${escapeHtml(p.customerName)}</strong></td>
-          <td>${escapeHtml(p.product)}</td>
-          <td><strong>${formatCurrency(p.value)}</strong></td>
-          <td>Compra: ${formatDatePtBr(p.buyDate)}<br /><span class="muted">Venc.: ${formatDatePtBr(p.dueDate)}</span></td>
-          <td><span class="badge ${isPaid ? "badge-active" : "badge-pending"}">${escapeHtml(p.status)}</span></td>
-          <td>
-            <div class="action-group">
-              ${!isPaid ? `<button type="button" class="btn-approve" data-pay-purch="${escapeHtml(p.id)}">Dar Baixa</button>` : ""}
-              <button type="button" class="btn-danger" data-del-purch="${escapeHtml(p.id)}">Excluir</button>
-            </div>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      tbody.querySelectorAll("button[data-pay-purch]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const pid = btn.getAttribute("data-pay-purch");
-          const purch = state.purchases.find((item) => item.id === pid);
-          if (!purch || purch.status === "Pago") return;
-          purch.status = "Pago";
-          const cust = state.groceryCustomers.find((c) => c.id === purch.customerId);
-          if (cust) cust.used = Math.max(0, Number(((Number(cust.used) || 0) - (Number(purch.value) || 0)).toFixed(2)));
-          saveState();
-          renderMerchantPanel();
-        });
-      });
-
-      tbody.querySelectorAll("button[data-del-purch]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const pid = btn.getAttribute("data-del-purch");
-          const purch = state.purchases.find((item) => item.id === pid);
-          if (!purch) return;
-          if (purch.status === "Em Aberto") {
-            const cust = state.groceryCustomers.find((c) => c.id === purch.customerId);
-            if (cust) cust.used = Math.max(0, Number(((Number(cust.used) || 0) - (Number(purch.value) || 0)).toFixed(2)));
-          }
-          state.purchases = state.purchases.filter((item) => item.id !== pid);
-          saveState();
-          renderMerchantPanel();
-        });
-      });
-    }
-
-    function bindMerchantEvents() {
-      setPickerDate("purchDate", todayStr);
-      setPickerDate("purchDueDate", nextMonthStr);
-      initMiniCalendars();
-
-      document.getElementById("purchDownMode")?.addEventListener("change", (e) => {
-        document.getElementById("downPaymentGroup")?.classList.toggle("hidden", e.target.value !== "with");
-        updateInstallmentPreview();
-      });
-
-      ["purchValue", "purchDownPayment", "purchInstallments"].forEach((id) => {
-        document.getElementById(id)?.addEventListener("input", updateInstallmentPreview);
-        document.getElementById(id)?.addEventListener("change", updateInstallmentPreview);
-      });
-
-      document.getElementById("groceryCustomerForm")?.addEventListener("submit", (e) => {
+      document.getElementById("previewRegisterForm")?.addEventListener("submit", (e) => {
         e.preventDefault();
-        if (!assertUserAuthorized()) return;
-        const ownerUserId = state.session?.userId;
-        const name = String(document.getElementById("gcName")?.value || "").trim();
-        const cpf = String(document.getElementById("gcCpf")?.value || "").trim();
-        const limit = Math.max(0, parseFloat(document.getElementById("gcLimit")?.value) || 0);
-        const street = String(document.getElementById("gcStreet")?.value || "").trim();
-        const propertyType = String(document.getElementById("gcPropertyType")?.value || "Casa").trim();
-        const number = String(document.getElementById("gcNumber")?.value || "").trim();
-        if (!name || !cpf) return;
-
-        state.groceryCustomers.unshift({
-          id: "c_" + Date.now(),
-          ownerUserId,
+        const name = String(document.getElementById("regStoreName")?.value || "").trim();
+        const phone = String(document.getElementById("regPhone")?.value || "").trim() || "(67) 99000-0000";
+        const handle = String(document.getElementById("regHandle")?.value || "").trim();
+        if (!name || !handle) {
+          showAuthMsg("Preencha o nome da mercearia e o usuário.", true);
+          return;
+        }
+        adminUsers.unshift({
+          id: "u_" + Date.now(),
           name,
-          cpf,
-          street,
-          propertyType,
-          number,
-          limit,
-          used: 0,
-          updatedAt: Date.now()
+          handle,
+          phone,
+          status: "Pendente"
         });
-        saveState();
-        document.getElementById("groceryCustomerForm")?.reset();
-        const propSel = document.getElementById("gcPropertyType");
-        if (propSel) propSel.value = "Casa";
-        renderMerchantPanel();
+        document.getElementById("previewRegisterForm")?.reset();
+        showAuthMsg(`Cadastro de "${name}" enviado como Pendente. Veja no Painel Super Admin.`, false);
       });
 
-      document.getElementById("purchaseForm")?.addEventListener("submit", (e) => {
-        e.preventDefault();
-        if (!assertUserAuthorized()) return;
-        const ownerUserId = state.session?.userId;
-        const customerId = String(document.getElementById("purchCustomer")?.value || "").trim();
-        const product = String(document.getElementById("purchProduct")?.value || "").trim();
-        const value = parseFloat(document.getElementById("purchValue")?.value) || 0;
-        const hasDown = document.getElementById("purchDownMode")?.value === "with";
-        const downPayment = hasDown ? Math.max(0, parseFloat(document.getElementById("purchDownPayment")?.value) || 0) : 0;
-        const installmentCount = Math.max(1, Math.min(24, parseInt(document.getElementById("purchInstallments")?.value, 10) || 1));
-        const buyDate = String(document.getElementById("purchDate")?.value || todayStr).trim();
-        const dueDate = String(document.getElementById("purchDueDate")?.value || nextMonthStr).trim();
-        const msgEl = document.getElementById("purchaseFeedback");
-
-        const cust = state.groceryCustomers.find((c) => c.id === customerId && c.ownerUserId === ownerUserId);
-        if (!cust || !product || value <= 0) {
-          if (msgEl) {
-            msgEl.className = "feedback-msg feedback-error";
-            msgEl.textContent = "Selecione um cliente e preencha descrição e valor maior que zero.";
-          }
-          return;
+      document.getElementById("demoPayBtn")?.addEventListener("click", (e) => {
+        const badge = document.getElementById("demoParcelBadge");
+        if (badge) {
+          badge.textContent = "Pago";
+          badge.className = "rounded-full border border-[#00ff66]/35 bg-[#00ff66]/15 px-2.5 py-0.5 text-xs font-bold text-[#00ff66]";
         }
-
-        const financed = Math.max(0, Number((value - downPayment).toFixed(2)));
-        const avail = Math.max(0, (Number(cust.limit) || 0) - (Number(cust.used) || 0));
-        if (financed > avail) {
-          if (msgEl) {
-            msgEl.className = "feedback-msg feedback-error";
-            msgEl.textContent = `Saldo parcelado (${formatCurrency(financed)}) excede o limite disponível (${formatCurrency(avail)}).`;
-          }
-          return;
-        }
-
-        const financedCents = Math.round(financed * 100);
-        const baseCents = Math.floor(financedCents / installmentCount);
-        const remCents = financedCents - (baseCents * installmentCount);
-        const nowTs = Date.now();
-
-        for (let i = 1; i <= installmentCount; i++) {
-          const instCents = i === installmentCount ? (baseCents + remCents) : baseCents;
-          state.purchases.unshift({
-            id: "p_" + nowTs + "_" + i,
-            ownerUserId,
-            customerId: cust.id,
-            customerName: cust.name,
-            product: installmentCount > 1 ? `${product} (${i}/${installmentCount})` : product,
-            value: Number((instCents / 100).toFixed(2)),
-            buyDate,
-            dueDate: addMonthsToDateStr(dueDate, i - 1),
-            status: "Em Aberto",
-            updatedAt: nowTs
-          });
-        }
-
-        cust.used = Number(((Number(cust.used) || 0) + financed).toFixed(2));
-        saveState();
-        document.getElementById("purchaseForm")?.reset();
-        setPickerDate("purchDate", todayStr);
-        setPickerDate("purchDueDate", nextMonthStr);
-        if (msgEl) {
-          msgEl.className = "feedback-msg";
-          msgEl.innerHTML = `✔ Compra registrada para <strong>${escapeHtml(cust.name)}</strong> (${installmentCount}x).`;
-        }
-        renderMerchantPanel();
+        document.getElementById("merchantStatOpen").textContent = "R$ 0,00";
+        document.getElementById("merchantStatPaid").textContent = "R$ 500,00";
+        e.target.remove();
       });
 
-      const handleAiCommand = (customText = null) => {
-        if (!assertUserAuthorized()) return;
-        const ownerUserId = state.session?.userId;
-        const currentUser = UserRepository.getUserById(ownerUserId);
-        const myCusts = state.groceryCustomers.filter((c) => c.ownerUserId === ownerUserId);
-        const myPurchs = state.purchases.filter((p) => p.ownerUserId === ownerUserId);
-        const aiOut = document.getElementById("aiOutput");
-        const inputEl = document.getElementById("aiInput");
-        if (!aiOut) return;
-
-        const rawPrompt = customText !== null ? String(customText) : String(inputEl?.value || "").trim();
-        const cmd = rawPrompt.toLowerCase();
-
-        if (cmd.includes("perfil")) {
-          aiOut.innerHTML = `<strong>IA Rodrigues ProDev — Meu Perfil:</strong>\n• Loja: <strong>${escapeHtml(currentUser?.name || "-")}</strong>\n• Usuário: <strong>${escapeHtml(currentUser?.user || "-")}</strong>\n• Status: <strong>${escapeHtml(currentUser?.status || "Ativo")}</strong>`;
-        } else if (cmd.includes("quitad")) {
-          const paid = myPurchs.filter((p) => p.status === "Pago");
-          aiOut.innerHTML = paid.length
-            ? `<strong>IA Rodrigues ProDev — Parcelas Quitadas (${paid.length}):</strong>\n` + paid.map((p) => `• ${escapeHtml(p.customerName)} — ${escapeHtml(p.product)}: <strong>${formatCurrency(p.value)}</strong>`).join("\n")
-            : `<strong>IA Rodrigues ProDev — Parcelas Quitadas:</strong>\nNenhuma parcela quitada encontrada.`;
-        } else if (cmd.includes("vencid")) {
-          const over = myPurchs.filter((p) => p.status === "Em Aberto" && p.dueDate < todayStr);
-          aiOut.innerHTML = over.length
-            ? `<strong>IA Rodrigues ProDev — Vencidos (${over.length}):</strong>\n` + over.map((p) => `• ${escapeHtml(p.customerName)} — ${formatCurrency(p.value)} (${formatDatePtBr(p.dueDate)})`).join("\n")
-            : `<strong>IA Rodrigues ProDev — Vencidos:</strong>\nNenhuma parcela vencida no momento. ✔`;
-        } else if (cmd.includes("limite")) {
-          aiOut.innerHTML = myCusts.length
-            ? `<strong>IA Rodrigues ProDev — Situação de Limites:</strong>\n` + myCusts.map((c) => `• <strong>${escapeHtml(c.name)}</strong> — Limite: ${formatCurrency(c.limit)} | Usado: ${formatCurrency(c.used)} | <strong>Livre: ${formatCurrency(Math.max(0, c.limit - c.used))}</strong>`).join("\n")
-            : `<strong>IA Rodrigues ProDev — Situação de Limites:</strong>\nNenhum cliente cadastrado.`;
-        } else {
-          const openVal = myPurchs.filter((p) => p.status === "Em Aberto").reduce((a, b) => a + (Number(b.value) || 0), 0);
-          const paidVal = myPurchs.filter((p) => p.status === "Pago").reduce((a, b) => a + (Number(b.value) || 0), 0);
-          aiOut.innerHTML = `<strong>IA Rodrigues ProDev — Resumo do Crediário:</strong>\n• Clientes: <strong>${myCusts.length}</strong>\n• Em aberto: <strong>${formatCurrency(openVal)}</strong>\n• Quitadas: <strong>${formatCurrency(paidVal)}</strong>`;
-        }
-
-        if (customText === null && inputEl) inputEl.value = "";
-      };
-
-      document.getElementById("aiSummaryBtn")?.addEventListener("click", () => handleAiCommand("resumo"));
-      document.getElementById("aiPaidBtn")?.addEventListener("click", () => handleAiCommand("quitadas"));
-      document.getElementById("aiOverdueBtn")?.addEventListener("click", () => handleAiCommand("vencidos"));
-      document.getElementById("aiLimitsBtn")?.addEventListener("click", () => handleAiCommand("limites"));
-      document.getElementById("aiProfileBtn")?.addEventListener("click", () => handleAiCommand("perfil"));
-      document.getElementById("aiCommandForm")?.addEventListener("submit", (e) => {
-        e.preventDefault();
-        handleAiCommand();
-      });
-    }
-
-    function syncView() {
-      const loginView = document.getElementById("loginView");
-      const appView = document.getElementById("appView");
-      const superAdminPanel = document.getElementById("superAdminPanel");
-      const merchantPanel = document.getElementById("merchantPanel");
-      const sessionTitle = document.getElementById("sessionTitle");
-      const sessionSubtitle = document.getElementById("sessionSubtitle");
-
-      const sess = AuthStore.getSession();
-      if (!sess) {
-        loginView?.classList.remove("hidden");
-        appView?.classList.add("hidden");
-        applyAuthModeUI();
-        return;
-      }
-
-      if (!assertUserAuthorized()) return;
-
-      if (sess.role === "super_admin") {
-        loginView?.classList.add("hidden");
-        appView?.classList.remove("hidden");
-        superAdminPanel?.classList.remove("hidden");
-        merchantPanel?.classList.add("hidden");
-        if (sessionTitle) sessionTitle.innerHTML = `Painel Super Admin — <span class="brand-highlight">Rodrigues ProDev</span>`;
-        if (sessionSubtitle) sessionSubtitle.textContent = "Controle de usuários cadastrados, liberação, suspensão, bloqueio e exclusão.";
-        renderSuperAdmin();
-        return;
-      }
-
-      const currentUser = UserRepository.getUserById(sess.userId);
-      loginView?.classList.add("hidden");
-      appView?.classList.remove("hidden");
-      superAdminPanel?.classList.add("hidden");
-      merchantPanel?.classList.remove("hidden");
-      if (sessionTitle) sessionTitle.innerHTML = `${escapeHtml(currentUser.name)} — <span class="brand-highlight">Rodrigues ProDev</span>`;
-      if (sessionSubtitle) sessionSubtitle.textContent = `Usuário logado: ${currentUser.user} • Status: ${currentUser.status}`;
-      renderMerchantPanel();
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      loadState();
-      applyRememberedCredentialsToForm();
-
-      document.getElementById("tabLoginBtn")?.addEventListener("click", () => {
-        activeAuthTab = "login";
-        applyAuthModeUI();
-      });
-
-      document.getElementById("tabRegisterBtn")?.addEventListener("click", () => {
-        activeAuthTab = "register";
-        applyAuthModeUI();
-      });
-
-      document.getElementById("toggleAdminBtn")?.addEventListener("click", () => {
-        isAdminMode = !isAdminMode;
-        applyAuthModeUI();
-      });
-
-      bindPasswordToggle("toggleLoginPassBtn", "loginPass");
-      bindPasswordToggle("toggleRegPassBtn", "regPass");
-
-      document.getElementById("loginForm")?.addEventListener("submit", processLoginSubmit);
-      document.getElementById("registerForm")?.addEventListener("submit", processRegisterSubmit);
-      document.getElementById("refreshCloudBtn")?.addEventListener("click", async () => {
-        loadState();
-        await syncWithCloud(false);
-        syncView();
-      });
-
-      document.getElementById("logoutBtn")?.addEventListener("click", () => {
-        isAdminMode = false;
-        activeAuthTab = "login";
-        AuthStore.revokeSession("", false);
-      });
-
-      document.getElementById("clearDevicesLogBtn")?.addEventListener("click", () => {
-        state.deviceLogs = [];
-        saveState();
-        renderAdminDevicesLog();
-      });
-
-      document.getElementById("rememberMeCheck")?.addEventListener("change", (e) => {
-        if (!e.target?.checked) {
-          clearRememberedCredentials();
-        } else {
-          const u = String(document.getElementById("loginUser")?.value || "").trim();
-          const p = String(document.getElementById("loginPass")?.value || "");
-          if (u || p) saveRememberedCredentials(u, p, isAdminMode);
-        }
-      });
-
-      bindMerchantEvents();
-      syncView();
-      void (async () => {
-        await syncWithCloud(false);
-        syncView();
-      })();
-    });
+      showView("auth");
+    })();
   </script>
 </body>
 </html>
