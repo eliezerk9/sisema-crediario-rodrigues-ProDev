@@ -1288,23 +1288,14 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       return d.toISOString().split("T")[0];
     })();
 
+    // Retorna um estado 100% limpo, sem contas falsas ou dados aleatórios
     function createInitialPreviewState() {
       const now = Date.now();
       return {
         users: [],
         groceryCustomers: [],
         purchases: [],
-        deviceLogs: [
-          {
-            id: "dev_prev_1",
-            userLabel: "Sistema Rodrigues ProDev (Sessão Inicial)",
-            deviceType: "Computador / Desktop",
-            platform: navigator.platform || "Web",
-            browserDetails: "Preview Rodrigues ProDev",
-            accessedAtText: new Date(now).toLocaleString("pt-BR"),
-            updatedAt: now
-          }
-        ],
+        deviceLogs: [],
         deletedUsers: {},
         lastUpdatedAt: now,
         session: null
@@ -1375,6 +1366,7 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       state.deletedUsers = state.deletedUsers && typeof state.deletedUsers === "object" ? state.deletedUsers : {};
 
       state.users = (state.users || []).filter((u) => {
+        if (!u || !u.user || !u.name) return false; // descarta registros corrompidos ou incompletos
         if (u.status !== "Ativo") {
           const createdTs = Number(u.createdAtTs) || Number(new Date(u.createdAt || 0).getTime()) || 0;
           if (createdTs > 0 && createdTs < cutoff) {
@@ -1402,7 +1394,7 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
       const byUserId = new Map();
       const ingestUsers = (arr) => {
         (arr || []).forEach((u) => {
-          if (!u || !u.id || mergedDeletedUsers[u.id]) return;
+          if (!u || !u.id || !u.user || !u.name || mergedDeletedUsers[u.id]) return;
           const prev = byUserId.get(u.id);
           const uTs = Number(u.updatedAt) || Number(u.createdAtTs) || 0;
           const pTs = prev ? (Number(prev.updatedAt) || Number(prev.createdAtTs) || 0) : -1;
