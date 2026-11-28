@@ -9,22 +9,22 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg-base: #040806;
-      --bg-surface: rgba(9, 16, 12, 0.92);
-      --bg-card: rgba(12, 21, 16, 0.94);
-      --bg-input: rgba(6, 11, 8, 0.96);
+      --bg-base: #030705;
+      --bg-surface: rgba(8, 15, 11, 0.88);
+      --bg-card: rgba(11, 20, 15, 0.90);
+      --bg-input: rgba(4, 9, 6, 0.95);
       --neon: #00ff66;
       --neon-strong: #39ff88;
-      --neon-border: rgba(0, 255, 102, 0.38);
-      --neon-glow: 0 0 26px rgba(0, 255, 102, 0.22), 0 18px 42px rgba(0, 0, 0, 0.78);
+      --neon-border: rgba(0, 255, 102, 0.42);
+      --neon-glow: 0 0 32px rgba(0, 255, 102, 0.25), 0 20px 48px rgba(0, 0, 0, 0.85);
       --text-main: #f4fbf7;
-      --text-muted: #9eb7a8;
+      --text-muted: #8ea899;
       --danger: #ff5263;
       --warning: #ffbe2e;
-      --border-subtle: rgba(0, 255, 102, 0.16);
-      --radius-lg: 18px;
-      --radius-md: 12px;
-      --radius-sm: 9px;
+      --border-subtle: rgba(0, 255, 102, 0.18);
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
     }
 
     * {
@@ -42,19 +42,30 @@
       line-height: 1.45;
     }
 
+    /* Fundo Escuro com Grid Geométrico Hexagonal Estilo IA & Brilho Radial Neon */
     body::before {
       content: "";
       position: fixed;
       inset: 0;
       z-index: -2;
-      background-color: #040806;
+      background-color: #030705;
       background-image:
-        radial-gradient(ellipse 72% 48% at 50% 24%, rgba(0, 255, 102, 0.2), rgba(0, 180, 72, 0.05) 48%, transparent 75%),
-        linear-gradient(30deg, rgba(0, 255, 102, 0.1) 12%, transparent 12.5%, transparent 87%, rgba(0, 255, 102, 0.1) 87.5%, rgba(0, 255, 102, 0.1)),
-        linear-gradient(150deg, rgba(0, 255, 102, 0.1) 12%, transparent 12.5%, transparent 87%, rgba(0, 255, 102, 0.1) 87.5%, rgba(0, 255, 102, 0.1)),
-        linear-gradient(60deg, rgba(0, 255, 102, 0.15) 25%, transparent 25.5%, transparent 75%, rgba(0, 255, 102, 0.15) 75%, rgba(0, 255, 102, 0.15));
-      background-size: 100% 100%, 88px 152px, 88px 152px, 88px 152px;
-      background-position: 0 0, 0 0, 0 0, 0 0;
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0, 255, 102, 0.28), transparent 70%),
+        radial-gradient(ellipse 60% 40% at 50% 110%, rgba(0, 255, 102, 0.15), transparent 75%),
+        linear-gradient(30deg, rgba(0, 255, 102, 0.09) 12%, transparent 12.5%, transparent 87%, rgba(0, 255, 102, 0.09) 87.5%, rgba(0, 255, 102, 0.09)),
+        linear-gradient(150deg, rgba(0, 255, 102, 0.09) 12%, transparent 12.5%, transparent 87%, rgba(0, 255, 102, 0.09) 87.5%, rgba(0, 255, 102, 0.09)),
+        linear-gradient(60deg, rgba(0, 255, 102, 0.14) 25%, transparent 25.5%, transparent 75%, rgba(0, 255, 102, 0.14) 75%, rgba(0, 255, 102, 0.14));
+      background-size: 100% 100%, 100% 100%, 80px 140px, 80px 140px, 80px 140px;
+    }
+
+    /* Linhas Cibernéticas e Efeito Mágico de IA */
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background: linear-gradient(180deg, rgba(0, 255, 102, 0.03) 0%, rgba(0, 0, 0, 0.4) 100%);
+      pointer-events: none;
     }
 
     .hidden {
@@ -1551,11 +1562,17 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
             return;
           }
 
+          // Garante que o estado mais recente seja puxado antes de checar duplicidade
           if (isCloudConfigured()) {
             await syncWithCloud(false);
           }
 
-          if (state.users.some((u) => String(u.user || "").trim().toLowerCase() === user.toLowerCase())) {
+          // Checa duplicidade apenas contra cadastros de usuários não excluídos
+          const userExists = (state.users || []).some(
+            (u) => u && String(u.user || "").trim().toLowerCase() === user.toLowerCase()
+          );
+
+          if (userExists) {
             setAuthFeedback("Este nome de usuário já está em uso. Escolha outro usuário.", true);
             return;
           }
@@ -1565,7 +1582,7 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
           const newUserId = "u_" + nowTs;
           delete state.deletedUsers[newUserId];
 
-          state.users.unshift({
+          const newRecord = {
             id: newUserId,
             name,
             cpf,
@@ -1578,13 +1595,26 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
             createdAt: new Date(nowTs).toISOString(),
             createdAtTs: nowTs,
             updatedAt: nowTs
-          });
+          };
+
+          if (!Array.isArray(state.users)) {
+            state.users = [];
+          }
+
+          // Insere o novo usuário no topo da lista local
+          state.users.unshift(newRecord);
+
+          // Persiste localmente e força push para a nuvem
           await saveStateAndSyncCloud();
 
           document.getElementById("registerForm")?.reset();
           activeAuthTab = "login";
           applyAuthModeUI();
-          setAuthFeedback("Cadastro enviado como <strong>Pendente</strong>. Acesse o modo Admin para liberar ou aguarde confirmação (expira em 10 dias).");
+
+          // Renderiza o Painel Admin imediatamente
+          renderSuperAdmin();
+
+          setAuthFeedback("Cadastro enviado com sucesso! Ele já está visível na lista do Painel Admin como <strong>Pendente</strong> para ser ativado.");
         } finally {
           setLoginFormBusy(false);
         }
@@ -1592,13 +1622,18 @@ Pronta para ajudar no seu crediário. Clique em uma opção acima ou digite um c
     }
 
     function renderSuperAdmin() {
+      // Carrega estado local atualizado
       const totalEl = document.getElementById("statTotalUsers");
       const activeEl = document.getElementById("statActiveUsers");
       const pendingEl = document.getElementById("statPendingUsers");
       const blockedEl = document.getElementById("statBlockedUsers");
       const tbody = document.getElementById("adminUsersTableBody");
 
-      const realUsers = state.users || [];
+      // Garante filtragem correta de usuários válidos
+      const realUsers = (Array.isArray(state.users) ? state.users : []).filter(
+        (u) => u && u.id && !state.deletedUsers?.[u.id]
+      );
+
       if (totalEl) totalEl.textContent = String(realUsers.length);
       if (activeEl) activeEl.textContent = String(realUsers.filter((u) => u.status === "Ativo").length);
       if (pendingEl) pendingEl.textContent = String(realUsers.filter((u) => u.status === "Pendente").length);
